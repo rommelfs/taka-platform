@@ -19,13 +19,13 @@ class Taka_Tour_Renderer {
 	public function homepage() {
 		$this->enqueue_base();
 		$this->enqueue_pretix();
-		return taka_tour_render_template( 'homepage.php', array( 'seminars' => Taka_Tour_Data::seminars_for_language() ) );
+		return taka_tour_render_template( 'homepage.php', array( 'seminars' => Taka_Tour_Data::events_for_language() ) );
 	}
 
 	public function tour_schedule() {
 		$this->enqueue_base();
 		$this->enqueue_pretix();
-		return taka_tour_render_template( 'tour-schedule.php', array( 'seminars' => Taka_Tour_Data::seminars_for_language() ) );
+		return taka_tour_render_template( 'tour-schedule.php', array( 'seminars' => Taka_Tour_Data::events_for_language() ) );
 	}
 
 	public function tickets() {

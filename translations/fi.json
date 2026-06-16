@@ -123,17 +123,38 @@
     "trier-kinderseminar": {
       "subtitle": "Lasten seminaari",
       "description": "Lasten seminaari Trierissä osana TAKA European Touria.",
-      "type": "Lasten seminaari"
+      "type": "Lasten seminaari",
+      "audience": "Lapset ja nuoret",
+      "level": "Kaikki tasot"
     },
     "konz": {
       "subtitle": "Konz-seminaari",
       "description": "Kahden päivän seminaari Konzissa Takafumi Nakayama Sensein kanssa.",
-      "type": "2 päivän seminaari"
+      "type": "2 päivän seminaari",
+      "audience": "Aikuiset ja nuoret",
+      "level": "Kaikki tyylisuunnat ja tasot",
+      "parking": "Pysäköintitiedot ilmoitetaan myöhemmin."
     },
     "saarwellingen": {
       "subtitle": "Saarwellingen-seminaari",
       "description": "Alueellisten kiertuepysähdysten päätösseminaari.",
       "type": "Seminaari"
     }
+  },
+  "event": {
+    "date": "Päivä",
+    "time": "Aika",
+    "doors_open": "Ovet avataan",
+    "start": "Alkaa",
+    "end": "Päättyy",
+    "venue": "Paikka",
+    "address": "Osoite",
+    "parking": "Pysäköinti",
+    "organizer": "Järjestäjä",
+    "audience": "Kohderyhmä",
+    "level": "Taso",
+    "ticketshop_direct": "Avaa lipunmyynti",
+    "ticketshop_soon": "Lipunmyynti tulossa",
+    "details_follow": "Lisätiedot myöhemmin"
   }
 }

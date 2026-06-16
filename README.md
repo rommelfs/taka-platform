@@ -1,6 +1,6 @@
 # TAKA Tour Website Builder
 
-WordPress plugin for the TAKA European Tour 2026 website. It provides modular templates, central seminar data and GeneratePress-friendly shortcodes without Elementor, Divi or premium-plugin dependencies.
+WordPress plugin for the TAKA European Tour 2026 website. It provides modular templates, central event configuration and GeneratePress-friendly shortcodes without Elementor, Divi or premium-plugin dependencies.
 
 ## Shortcodes
 
@@ -8,16 +8,31 @@ WordPress plugin for the TAKA European Tour 2026 website. It provides modular te
 - `[taka_tour_schedule]` renders the seminar overview and equal seminar cards.
 - `[taka_tickets]` renders the standalone Konz Pretix ticket block.
 - `[taka_sponsor]` renders the kanso sponsor section.
+- `[taka_language_switcher]` renders the compact language selector.
 
 ## Multilingual support
 
-Supported query-parameter languages: `?taka_lang=de`, `en`, `nl`, `fr`, `lb`, `fi`. If no language is set, the plugin checks `HTTP_ACCEPT_LANGUAGE` and falls back to German.
+Supported query-parameter languages: `?taka_lang=de`, `en`, `nl`, `fr`, `lb`, `fi`, `ja`. If no language is set, the plugin checks `HTTP_ACCEPT_LANGUAGE` and falls back to German.
 
 Use `[taka_language_switcher]` to render language links. `[taka_homepage]` also includes the switcher in the hero.
 
 German is the master language. Translations are static JSON files in `translations/`; there is no live translation API or runtime external-translation dependency. Missing keys fall back to `translations/de.json` and then to the template fallback.
 
+## Event configuration
+
+Organizers, venues and tour events are maintained in `config/tour-events.php`. The file returns one PHP array with `organizers`, `venues` and `events`, so templates and renderers do not need hard-coded event metadata.
+
+Add an organizer by creating a new key under `organizers`, for example `my-dojo`, with `name`, `legal_name`, `website`, `logo`, `emails`, `contact_persons` and `social` fields.
+
+Add a venue by creating a new key under `venues`, for example `my-venue`, with `name`, `address`, `timezone`, `website`, `parking`, `accessibility`, `notes` and `geo`.
+
+Add an event by appending an item to `events` with fields such as `id`, `slug`, `title`, `date_start`, `date_end`, `organizer`, `venue`, `venues`, `format`, `audience`, `level`, `status`, `ticket_status`, `ticket_shop_url`, `ticket_provider` and `sort_order`. Setting `ticket_provider` to `pretix` and `ticket_shop_url` to a Pretix event URL automatically renders the embedded widget. Use `venues` when an event spans multiple places.
+
 ## Changelog
+
+### v0.8.0
+
+- Moved organizers, venues and events into central configuration file and rendered seminar cards from structured event data.
 
 ### v0.7.4
 

@@ -123,17 +123,38 @@
     "trier-kinderseminar": {
       "subtitle": "Séminaire enfants",
       "description": "Séminaire enfants à Trier dans le cadre du TAKA European Tour.",
-      "type": "Séminaire enfants"
+      "type": "Séminaire enfants",
+      "audience": "Enfants et jeunes",
+      "level": "Tous niveaux"
     },
     "konz": {
       "subtitle": "Séminaire Konz",
       "description": "Deux jours de séminaire à Konz avec Takafumi Nakayama Sensei.",
-      "type": "Séminaire de 2 jours"
+      "type": "Séminaire de 2 jours",
+      "audience": "Adultes et jeunes",
+      "level": "Tous styles et tous niveaux",
+      "parking": "Les informations de stationnement suivront."
     },
     "saarwellingen": {
       "subtitle": "Séminaire Saarwellingen",
       "description": "Séminaire final des étapes régionales.",
       "type": "Séminaire"
     }
+  },
+  "event": {
+    "date": "Date",
+    "time": "Horaire",
+    "doors_open": "Ouverture des portes",
+    "start": "Début",
+    "end": "Fin",
+    "venue": "Lieu",
+    "address": "Adresse",
+    "parking": "Parking",
+    "organizer": "Organisateur",
+    "audience": "Public",
+    "level": "Niveau",
+    "ticketshop_direct": "Ouvrir la billetterie",
+    "ticketshop_soon": "Billetterie à venir",
+    "details_follow": "Détails à venir"
   }
 }

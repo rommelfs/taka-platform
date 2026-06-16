@@ -7,22 +7,163 @@ defined( 'ABSPATH' ) || exit;
 
 class Taka_Tour_Data {
 	/**
-	 * Get seminar stations.
+	 * Get central tour configuration.
+	 *
+	 * @return array
+	 */
+	private static function config() {
+		static $config = null;
+
+		if ( null === $config ) {
+			$path = TAKA_TOUR_PLUGIN_DIR . 'config/tour-events.php';
+			$config = file_exists( $path ) ? require $path : array();
+		}
+
+		return is_array( $config ) ? $config : array();
+	}
+
+	/**
+	 * Get organizers from config.
+	 *
+	 * @return array
+	 */
+	public static function get_organizers() {
+		$config = self::config();
+		return $config['organizers'] ?? array();
+	}
+
+	/**
+	 * Get one organizer by ID.
+	 *
+	 * @param string $id Organizer ID.
+	 * @return array|null
+	 */
+	public static function get_organizer( $id ) {
+		$organizers = self::get_organizers();
+		return $organizers[ $id ] ?? null;
+	}
+
+	/**
+	 * Get venues from config.
+	 *
+	 * @return array
+	 */
+	public static function get_venues() {
+		$config = self::config();
+		return $config['venues'] ?? array();
+	}
+
+	/**
+	 * Get one venue by ID.
+	 *
+	 * @param string $id Venue ID.
+	 * @return array|null
+	 */
+	public static function get_venue( $id ) {
+		$venues = self::get_venues();
+		return $venues[ $id ] ?? null;
+	}
+
+	/**
+	 * Get events from config.
+	 *
+	 * @return array[]
+	 */
+	public static function get_events() {
+		$config = self::config();
+		return $config['events'] ?? array();
+	}
+
+	/**
+	 * Get one event by ID.
+	 *
+	 * @param string $id Event ID.
+	 * @return array|null
+	 */
+	public static function get_event( $id ) {
+		foreach ( self::get_events() as $event ) {
+			if ( $id === ( $event['id'] ?? '' ) ) {
+				return $event;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get public, sorted events.
+	 *
+	 * @return array[]
+	 */
+	public static function get_public_events() {
+		$events = array_values(
+			array_filter(
+				self::get_events(),
+				static function ( $event ) {
+					return 'draft' !== ( $event['status'] ?? '' );
+				}
+			)
+		);
+
+		usort(
+			$events,
+			static function ( $a, $b ) {
+				$sort_a = (int) ( $a['sort_order'] ?? 0 );
+				$sort_b = (int) ( $b['sort_order'] ?? 0 );
+
+				if ( $sort_a === $sort_b ) {
+					return strcmp( $a['date_start'] ?? '', $b['date_start'] ?? '' );
+				}
+
+				return $sort_a <=> $sort_b;
+			}
+		);
+
+		return $events;
+	}
+
+	/**
+	 * Get public events by organizer.
+	 *
+	 * @param string $organizer_id Organizer ID.
+	 * @return array[]
+	 */
+	public static function get_events_by_organizer( $organizer_id ) {
+		return array_values(
+			array_filter(
+				self::get_public_events(),
+				static function ( $event ) use ( $organizer_id ) {
+					return $organizer_id === ( $event['organizer'] ?? '' );
+				}
+			)
+		);
+	}
+
+	/**
+	 * Get public events by venue.
+	 *
+	 * @param string $venue_id Venue ID.
+	 * @return array[]
+	 */
+	public static function get_events_by_venue( $venue_id ) {
+		return array_values(
+			array_filter(
+				self::get_public_events(),
+				static function ( $event ) use ( $venue_id ) {
+					$venues = $event['venues'] ?? array();
+					return $venue_id === ( $event['venue'] ?? '' ) || in_array( $venue_id, $venues, true );
+				}
+			)
+		);
+	}
+
+	/**
+	 * Backward-compatible seminar accessor.
 	 *
 	 * @return array[]
 	 */
 	public static function seminars() {
-		return array(
-			array( 'slug' => 'helsinki', 'country' => 'Finland', 'flag' => '🇫🇮', 'date' => '29.–30. August 2026', 'title' => 'Helsinki', 'subtitle' => 'Helsinki Seminar', 'type' => '2-Tage-Seminar', 'hosts' => 'Patrik, Olga, Timo', 'description' => 'Zwei Tage Seminar in Helsinki.', 'pretix' => null, 'languages' => null, 'ticket_status' => 'Ticketshop folgt' ),
-			array( 'slug' => 'berlin', 'country' => 'Germany', 'flag' => '🇩🇪', 'date' => '5.–6. September 2026', 'title' => 'Berlin', 'subtitle' => 'Berlin Seminar', 'type' => '2-Tage-Seminar', 'hosts' => 'Details folgen', 'description' => 'Zwei Tage Seminar in Berlin.', 'pretix' => null, 'languages' => null, 'ticket_status' => 'Ticketshop folgt' ),
-			array( 'slug' => 'netherlands', 'country' => 'Netherlands', 'flag' => '🇳🇱', 'date' => '12.–13. September 2026', 'title' => 'Netherlands', 'subtitle' => 'Netherlands Seminar', 'type' => '2-Tage-Seminar', 'hosts' => 'Marcel, Dmitri, Albert', 'description' => 'Zwei Tage Seminar in den Niederlanden.', 'pretix' => null, 'languages' => null, 'ticket_status' => 'Ticketshop folgt' ),
-			array( 'slug' => 'belgium', 'country' => 'Belgium', 'flag' => '🇧🇪', 'date' => '19. September 2026', 'title' => 'Belgium', 'subtitle' => 'Belgium Seminar', 'type' => 'Halbtagseminar', 'hosts' => 'Filip, Jos', 'description' => 'Seminar geplant von 10:00 bis 13:00 Uhr.', 'pretix' => null, 'languages' => null, 'ticket_status' => 'Ticketshop folgt' ),
-			array( 'slug' => 'illange', 'country' => 'Luxembourg', 'flag' => '🇱🇺', 'date' => '21. September 2026', 'title' => 'Illange', 'subtitle' => 'Illange Seminar', 'type' => 'Seminar', 'hosts' => 'Details folgen', 'description' => 'Seminarstation in Luxemburg.', 'pretix' => null, 'languages' => null, 'ticket_status' => 'Ticketshop folgt' ),
-			array( 'slug' => 'hosingen', 'country' => 'Luxembourg', 'flag' => '🇱🇺', 'date' => '22. September 2026', 'title' => 'Hosingen', 'subtitle' => 'Hosingen Seminar', 'type' => 'Seminar', 'hosts' => 'Details folgen', 'description' => 'Seminarstation in Luxemburg.', 'pretix' => null, 'languages' => null, 'ticket_status' => 'Ticketshop folgt' ),
-			array( 'slug' => 'trier-kinderseminar', 'country' => 'Germany', 'flag' => '🇩🇪', 'date' => '26. September 2026', 'title' => 'Trier Kinderseminar', 'subtitle' => 'Kinderseminar', 'type' => 'Kinderseminar', 'hosts' => 'Kleiner Wald Dojo', 'description' => 'Kinderseminar in Trier im Rahmen der TAKA European Tour.', 'pretix' => array( 'event' => 'https://pretix.eu/kleinerwald/2026takakids/', 'enabled' => true ), 'languages' => null, 'ticket_status' => 'Tickets verfügbar' ),
-			array( 'slug' => 'konz', 'country' => 'Germany', 'flag' => '🇩🇪', 'date' => '26.–27. September 2026', 'title' => 'Konz', 'subtitle' => 'Konz Seminar', 'type' => '2-Tage-Seminar', 'hosts' => 'Kleiner Wald Dojo', 'description' => 'Zwei Tage Seminar in Konz mit Takafumi Nakayama Sensei.', 'pretix' => array( 'event' => 'https://pretix.eu/kleinerwald/2026takakonz/', 'enabled' => true ), 'languages' => null, 'ticket_status' => 'Tickets verfügbar' ),
-			array( 'slug' => 'saarwellingen', 'country' => 'Germany', 'flag' => '🇩🇪', 'date' => '28. September 2026', 'title' => 'Saarwellingen', 'subtitle' => 'Saarwellingen Seminar', 'type' => 'Seminar', 'hosts' => 'Patrick Haak', 'description' => 'Abschlussseminar der Tourstationen in der Region.', 'pretix' => null, 'languages' => null, 'ticket_status' => 'Ticketshop folgt' ),
-		);
+		return self::get_public_events();
 	}
 
 	/**
@@ -30,18 +171,18 @@ class Taka_Tour_Data {
 	 *
 	 * @return array
 	 */
-		public static function images() {
+	public static function images() {
 		return array(
-			'hero_image'     => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-hero.jpg',
-			'group_image'    => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-group.jpg',
-			'portrait_image' => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-portrait.jpg',
-			'group_large'    => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/Foto-04.10.23-20-02-21-scaled-1.jpg',
-			'kids_group'     => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/Kids-Seminar-Trier.jpeg',
-			'taka_portrait'  => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/Taka-Tour-2023-Berlin-Foto-30.09.23-17-00-52-1-scaled-1-e1781613695325.jpg',
-			'kobudo'         => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/Kobudo-Seminar-Trier-e1781607374996.jpeg',
-			'community_group' => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-gruppe-trier-2025.jpg',
+			'hero_image'        => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-hero.jpg',
+			'group_image'       => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-group.jpg',
+			'portrait_image'    => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-portrait.jpg',
+			'group_large'       => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/Foto-04.10.23-20-02-21-scaled-1.jpg',
+			'kids_group'        => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/Kids-Seminar-Trier.jpeg',
+			'taka_portrait'     => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/Taka-Tour-2023-Berlin-Foto-30.09.23-17-00-52-1-scaled-1-e1781613695325.jpg',
+			'kobudo'            => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/Kobudo-Seminar-Trier-e1781607374996.jpeg',
+			'community_group'   => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-gruppe-trier-2025.jpg',
 			'together_practice' => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-gemeinsam-2025.jpg',
-			'softblock'      => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-softblock-e1781607328699.jpeg',
+			'softblock'         => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-softblock-e1781607328699.jpeg',
 		);
 	}
 
@@ -82,47 +223,155 @@ class Taka_Tour_Data {
 	}
 
 	/**
-	 * Get seminars enriched for the active language.
+	 * Get events enriched for the active language.
+	 *
+	 * @param string|null $lang Optional language.
+	 * @return array[]
+	 */
+	public static function events_for_language( $lang = null ) {
+		$lang = $lang ?: taka_tour_current_language();
+		return array_map(
+			static function ( $event ) use ( $lang ) {
+				$slug = $event['slug'] ?? '';
+				$organizer = self::get_organizer( $event['organizer'] ?? '' );
+				$venue = self::get_venue( $event['venue'] ?? '' );
+				$event['languages'] = ! empty( $event['languages'] ) ? $event['languages'] : self::languages_for_country( $event['country'] ?? '' );
+				$event['subtitle'] = taka_tour_translate( 'seminars.' . $slug . '.subtitle', $event['subtitle'] ?? '', $lang );
+				$event['description'] = taka_tour_translate( 'seminars.' . $slug . '.description', $event['description'] ?? '', $lang );
+				$event['format'] = taka_tour_translate( 'seminars.' . $slug . '.type', $event['format'] ?? '', $lang );
+				$event['audience'] = taka_tour_translate( 'seminars.' . $slug . '.audience', $event['audience'] ?? '', $lang );
+				$event['level'] = taka_tour_translate( 'seminars.' . $slug . '.level', $event['level'] ?? '', $lang );
+				$event['parking'] = taka_tour_translate( 'seminars.' . $slug . '.parking', $event['parking'] ?? '', $lang );
+				$event['type'] = $event['format'];
+				$event['country_label'] = taka_tour_translate( 'country.' . sanitize_key( $event['country'] ?? '' ), $event['country'] ?? '', $lang );
+				$event['date'] = self::format_event_date( $event );
+				$event['organizer_data'] = is_array( $organizer ) ? $organizer : null;
+				$event['organizer_name'] = is_array( $organizer ) ? ( $organizer['name'] ?? '' ) : '';
+				if ( 'Details folgen' === $event['organizer_name'] ) {
+					$event['organizer_name'] = taka_tour_translate( 'event.details_follow', 'Details folgen', $lang );
+				}
+				$event['hosts'] = $event['organizer_name'];
+				$event['venue_data'] = is_array( $venue ) ? $venue : null;
+				$event['venue_name'] = is_array( $venue ) ? ( $venue['name'] ?? '' ) : '';
+				$event['address'] = is_array( $venue ) ? self::format_address( $venue['address'] ?? array() ) : '';
+				$event['parking_display'] = $event['parking'] ?: ( is_array( $venue ) ? ( $venue['parking'] ?? '' ) : '' );
+				$event['ticket_status_label'] = self::ticket_status_label( $event, $lang );
+				return $event;
+			},
+			self::get_public_events()
+		);
+	}
+
+	/**
+	 * Backward-compatible translated seminar accessor.
 	 *
 	 * @param string|null $lang Optional language.
 	 * @return array[]
 	 */
 	public static function seminars_for_language( $lang = null ) {
-		$lang = $lang ?: taka_tour_current_language();
-		return array_map(
-			static function ( $seminar ) use ( $lang ) {
-				$slug = $seminar['slug'];
-				$seminar['languages'] = ! empty( $seminar['languages'] ) ? $seminar['languages'] : self::languages_for_country( $seminar['country'] );
-				$seminar['subtitle'] = taka_tour_translate( 'seminars.' . $slug . '.subtitle', $seminar['subtitle'], $lang );
-				$seminar['description'] = taka_tour_translate( 'seminars.' . $slug . '.description', $seminar['description'], $lang );
-				$seminar['type'] = taka_tour_translate( 'seminars.' . $slug . '.type', $seminar['type'], $lang );
-				$seminar['country_label'] = taka_tour_translate( 'country.' . sanitize_key( $seminar['country'] ), $seminar['country'], $lang );
-				$seminar['ticket_status'] = taka_tour_translate( 'seminar.ticketshop_soon', $seminar['ticket_status'], $lang );
-				return $seminar;
-			},
-			self::seminars()
-		);
+		return self::events_for_language( $lang );
 	}
 
 	/**
-	 * Get enabled Pretix event URL for a seminar.
+	 * Get enabled Pretix event URL for an event.
 	 *
-	 * @param array $seminar Seminar data.
+	 * @param array $event Event data.
 	 * @return string
 	 */
-	public static function pretix_event_url( $seminar ) {
-		if ( ! empty( $seminar['pretix']['enabled'] ) && ! empty( $seminar['pretix']['event'] ) ) {
-			return $seminar['pretix']['event'];
+	public static function pretix_event_url( $event ) {
+		if ( 'pretix' === ( $event['ticket_provider'] ?? '' ) && ! empty( $event['ticket_shop_url'] ) ) {
+			return $event['ticket_shop_url'];
 		}
 
-		if ( ! empty( $seminar['pretix_url'] ) ) {
-			return $seminar['pretix_url'];
+		if ( ! empty( $event['pretix']['enabled'] ) && ! empty( $event['pretix']['event'] ) ) {
+			return $event['pretix']['event'];
+		}
+
+		if ( ! empty( $event['pretix_url'] ) ) {
+			return $event['pretix_url'];
 		}
 
 		return '';
 	}
 
+	/**
+	 * Get ticketed public events.
+	 *
+	 * @return array[]
+	 */
 	public static function ticketed_seminars() {
-		return array_values( array_filter( self::seminars(), static fn( $seminar ) => '' !== self::pretix_event_url( $seminar ) ) );
+		return array_values( array_filter( self::events_for_language(), static fn( $event ) => '' !== self::pretix_event_url( $event ) ) );
+	}
+
+	/**
+	 * Format event date range.
+	 *
+	 * @param array $event Event data.
+	 * @return string
+	 */
+	private static function format_event_date( $event ) {
+		$start = $event['date_start'] ?? '';
+		$end = $event['date_end'] ?? '';
+
+		if ( '' === $start ) {
+			return '';
+		}
+
+		$start_ts = strtotime( $start );
+		$end_ts = '' !== $end ? strtotime( $end ) : false;
+
+		if ( false === $start_ts ) {
+			return $start;
+		}
+
+		if ( false === $end_ts || $start === $end ) {
+			return gmdate( 'j.', $start_ts ) . ' ' . self::month_name( (int) gmdate( 'n', $start_ts ) ) . ' ' . gmdate( 'Y', $start_ts );
+		}
+
+		if ( gmdate( 'Ym', $start_ts ) === gmdate( 'Ym', $end_ts ) ) {
+			return gmdate( 'j.', $start_ts ) . '–' . gmdate( 'j.', $end_ts ) . ' ' . self::month_name( (int) gmdate( 'n', $end_ts ) ) . ' ' . gmdate( 'Y', $end_ts );
+		}
+
+		return gmdate( 'j.', $start_ts ) . ' ' . self::month_name( (int) gmdate( 'n', $start_ts ) ) . ' ' . gmdate( 'Y', $start_ts ) . ' – ' . gmdate( 'j.', $end_ts ) . ' ' . self::month_name( (int) gmdate( 'n', $end_ts ) ) . ' ' . gmdate( 'Y', $end_ts );
+	}
+
+	/**
+	 * Get German month name.
+	 *
+	 * @param int $month Month number.
+	 * @return string
+	 */
+	private static function month_name( $month ) {
+		$months = array( 1 => 'Januar', 2 => 'Februar', 3 => 'März', 4 => 'April', 5 => 'Mai', 6 => 'Juni', 7 => 'Juli', 8 => 'August', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Dezember' );
+		return $months[ $month ] ?? '';
+	}
+
+	/**
+	 * Format a partial venue address safely.
+	 *
+	 * @param array $address Address data.
+	 * @return string
+	 */
+	private static function format_address( $address ) {
+		$street = $address['street'] ?? '';
+		$city_line = trim( ( $address['postal_code'] ?? '' ) . ' ' . ( $address['city'] ?? '' ) );
+		$country = $address['country'] ?? '';
+		$parts = array_filter( array( $street, $city_line, $country ) );
+		return implode( ', ', $parts );
+	}
+
+	/**
+	 * Translate ticket status for display.
+	 *
+	 * @param array  $event Event data.
+	 * @param string $lang Language code.
+	 * @return string
+	 */
+	private static function ticket_status_label( $event, $lang ) {
+		if ( '' !== self::pretix_event_url( $event ) ) {
+			return taka_tour_translate( 'seminar.ticketshop_open_pretix', 'Tickets bei Pretix öffnen', $lang );
+		}
+
+		return taka_tour_translate( 'event.ticketshop_soon', taka_tour_translate( 'seminar.ticketshop_soon', 'Ticketshop folgt', $lang ), $lang );
 	}
 }

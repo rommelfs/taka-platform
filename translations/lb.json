@@ -123,17 +123,38 @@
     "trier-kinderseminar": {
       "subtitle": "Kannerseminar",
       "description": "Kannerseminar zu Trier am Kader vun der TAKA European Tour.",
-      "type": "Kannerseminar"
+      "type": "Kannerseminar",
+      "audience": "Kanner a Jugendlecher",
+      "level": "All Niveauen"
     },
     "konz": {
       "subtitle": "Konz Seminar",
       "description": "Zwee Deeg Seminar zu Konz mam Takafumi Nakayama Sensei.",
-      "type": "2-Deeg-Seminar"
+      "type": "2-Deeg-Seminar",
+      "audience": "Erwuessener a Jugendlecher",
+      "level": "All Stilrichtungen an Niveauen",
+      "parking": "Detailer iwwer d’Parking-Situatioun kommen no."
     },
     "saarwellingen": {
       "subtitle": "Saarwellingen Seminar",
       "description": "Ofschlossseminar vun de regionale Tourstatiounen.",
       "type": "Seminar"
     }
+  },
+  "event": {
+    "date": "Datum",
+    "time": "Zäit",
+    "doors_open": "Dieren op",
+    "start": "Ufank",
+    "end": "Enn",
+    "venue": "Plaz",
+    "address": "Adress",
+    "parking": "Parking",
+    "organizer": "Organisateur",
+    "audience": "Zilgrupp",
+    "level": "Niveau",
+    "ticketshop_direct": "Ticketshop direkt opmaachen",
+    "ticketshop_soon": "Ticketshop kënnt geschwënn",
+    "details_follow": "Detailer kommen no"
   }
 }

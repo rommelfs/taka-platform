@@ -9,7 +9,10 @@ defined( 'ABSPATH' ) || exit;
 	<?php echo taka_tour_render_template( 'partials/hero.php' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 	<?php echo taka_tour_render_template( 'tour-schedule.php', array( 'seminars' => $seminars ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 	<?php echo taka_tour_render_template( 'partials/image-grid.php' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-	<?php $images = Taka_Tour_Data::images(); ?>
+	<?php
+	$images = Taka_Tour_Data::images();
+	$host_organizer = Taka_Tour_Data::get_organizer( 'kleiner-wald' );
+	?>
 	<section class="taka-section taka-sensei taka-sensei-section">
 		<div class="taka-editorial-text">
 			<p class="taka-kicker"><?php echo esc_html( taka_tour_translate( 'sections.sensei.kicker', 'Sensei' ) ); ?></p>
@@ -30,7 +33,9 @@ defined( 'ABSPATH' ) || exit;
 		<div class="taka-centered-section-inner">
 			<p class="taka-kicker"><?php echo esc_html( taka_tour_translate( 'sections.host.kicker', 'Gastgeber' ) ); ?></p>
 			<h2><?php echo esc_html( taka_tour_translate( 'sections.host.headline', '5 Jahre Kleiner Wald Dojo' ) ); ?></h2>
-			<div class="taka-logo-card"><img src="https://takatour.eu/wp-content/uploads/sites/7/2026/06/Logo-Kleiner-Wald.svg" alt="<?php echo esc_attr__( 'Kleiner Wald Dojo', 'taka-tour' ); ?>"></div>
+			<?php if ( ! empty( $host_organizer['logo'] ) ) : ?>
+				<div class="taka-logo-card"><img src="<?php echo esc_url( $host_organizer['logo'] ); ?>" alt="<?php echo esc_attr( $host_organizer['name'] ?? 'Kleiner Wald Dojo' ); ?>"></div>
+			<?php endif; ?>
 		</div>
 	</section>
 	<?php echo taka_tour_render_template( 'sponsor.php' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
