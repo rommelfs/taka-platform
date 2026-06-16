@@ -11,6 +11,10 @@ WordPress plugin for the TAKA European Tour 2026 website. It provides modular te
 
 ## Changelog
 
+### v0.6.5
+
+- Added editorial real-image gallery, removed empty placeholders, refined homepage flow and image handling.
+
 ### v0.6.4
 
 - Added real seminar image grid and reworked hero as full tour overview with station links.

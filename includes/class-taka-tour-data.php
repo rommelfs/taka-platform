@@ -51,10 +51,10 @@ class Taka_Tour_Data {
 		$images = self::images();
 
 		return array(
+			array( 'title' => 'Community', 'text' => 'Internationale Karate-Familie.', 'image' => $images['community_group'], 'wide' => true ),
 			array( 'title' => 'Kobudo', 'text' => 'Bo-Arbeit, Distanz und Timing.', 'image' => $images['kobudo'] ),
-			array( 'title' => 'Community', 'text' => 'Internationale Karate-Familie.', 'image' => $images['community_group'] ),
-			array( 'title' => 'Gemeinsam üben', 'text' => 'Lernen durch Beobachten, Austausch und Wiederholung.', 'image' => $images['together_practice'] ),
 			array( 'title' => 'Soft Blocking', 'text' => 'Weiche Struktur statt roher Kraft.', 'image' => $images['softblock'] ),
+			array( 'title' => 'Gemeinsam üben', 'text' => 'Lernen durch Beobachten, Austausch und Wiederholung.', 'image' => $images['together_practice'] ),
 		);
 	}
 
