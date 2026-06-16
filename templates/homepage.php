@@ -12,6 +12,7 @@ defined( 'ABSPATH' ) || exit;
 	<?php
 	$images = Taka_Tour_Data::images();
 	$host_organizer = Taka_Tour_Data::get_organizer( 'kleiner-wald' );
+	$host_logo = $host_organizer['logo'] ?? ( $images['kleiner_wald_logo'] ?? '' );
 	?>
 	<section class="taka-section taka-sensei taka-sensei-section">
 		<div class="taka-editorial-text">
@@ -33,8 +34,8 @@ defined( 'ABSPATH' ) || exit;
 		<div class="taka-centered-section-inner">
 			<p class="taka-kicker"><?php echo esc_html( taka_tour_translate( 'sections.host.kicker', 'Gastgeber' ) ); ?></p>
 			<h2><?php echo esc_html( taka_tour_translate( 'sections.host.headline', '5 Jahre Kleiner Wald Dojo' ) ); ?></h2>
-			<?php if ( ! empty( $host_organizer['logo'] ) ) : ?>
-				<div class="taka-logo-card"><img src="<?php echo esc_url( $host_organizer['logo'] ); ?>" alt="<?php echo esc_attr( $host_organizer['name'] ?? 'Kleiner Wald Dojo' ); ?>"></div>
+			<?php if ( ! empty( $host_logo ) ) : ?>
+				<div class="taka-logo-card"><img src="<?php echo esc_url( $host_logo ); ?>" alt="<?php echo esc_attr( $host_organizer['name'] ?? 'Kleiner Wald Dojo' ); ?>"></div>
 			<?php endif; ?>
 		</div>
 	</section>

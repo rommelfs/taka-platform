@@ -28,6 +28,24 @@ Add a venue by creating a new key under `venues`, for example `my-venue`, with `
 
 Add an event by appending an item to `events` with fields such as `id`, `slug`, `title`, `date_start`, `date_end`, `organizer`, `venue`, `venues`, `format`, `audience`, `level`, `status`, `ticket_status`, `ticket_shop_url`, `ticket_provider` and `sort_order`. Setting `ticket_provider` to `pretix` and `ticket_shop_url` to a Pretix event URL automatically renders the embedded widget. Use `venues` when an event spans multiple places.
 
+## WordPress admin CMS
+
+Version 0.9.0 adds native WordPress editing screens under **TAKA Tour**. Administrators can maintain organizers (`taka_organizer`), venues (`taka_venue`) and events (`taka_event`) with regular custom post type screens instead of editing JSON or PHP by hand.
+
+Organizer records support legal name, website, logo media ID, e-mail lines, contact-person lines, social links, description and active status. Venue records support address fields, timezone, website, parking, accessibility, notes and optional geo coordinates. Event records support subtitle, country/city data, dates/times, format, audience, level, organizer/venue relations, ticket provider/status/URL, image media ID, photo credit, notes, parking and sort order.
+
+Global images are managed at **TAKA Tour → Einstellungen** with WordPress Media Picker fields for hero, portrait, community, Kobudo, Soft Blocking, together-practice, kids seminar, Kleiner Wald logo and optional sponsor logo. The plugin stores media attachment IDs and resolves them with `wp_get_attachment_image_url()`, falling back to the built-in URLs when an image is not selected.
+
+Use **TAKA Tour → Import → Konfiguration importieren** to seed or update CPT data from `config/tour-events.php`. The import stores `config_id` metadata and updates existing imported records instead of creating duplicates. Rendering prefers CPT data when events exist and falls back to `config/tour-events.php` when no event CPT data is available, so existing pages remain populated immediately after update.
+
+Prepared capabilities: `manage_taka_tour`, `edit_taka_events`, `edit_taka_organizers` and `edit_taka_venues`. Administrators receive these capabilities automatically; organizer-specific restrictions are intentionally left for the future self-service milestone.
+
+## Changelog
+
+### v0.9.0
+
+- Added WordPress admin event CMS with organizers, venues, events, media picker settings and config import fallback.
+
 ## Changelog
 
 ### v0.8.0

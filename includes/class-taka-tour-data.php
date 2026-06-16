@@ -11,6 +11,7 @@ class Taka_Tour_Data {
 	 *
 	 * @return array
 	 */
+	public static function load_config() {
 	private static function config() {
 		static $config = null;
 
@@ -22,12 +23,177 @@ class Taka_Tour_Data {
 		return is_array( $config ) ? $config : array();
 	}
 
+
+	/**
+	 * Check whether WordPress post APIs are available.
+	 *
+	 * @return bool
+	 */
+	private static function can_use_cpts() {
+		return function_exists( 'get_posts' ) && function_exists( 'get_post_meta' );
+	}
+
+	/**
+	 * Get CPT organizers keyed by post ID and imported config ID.
+	 *
+	 * @return array
+	 */
+	private static function get_cpt_organizers() {
+		if ( ! self::can_use_cpts() ) {
+			return array();
+		}
+
+		$posts = get_posts( array( 'post_type' => 'taka_organizer', 'post_status' => 'publish', 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
+		$items = array();
+		foreach ( $posts as $post ) {
+			$logo_id = absint( get_post_meta( $post->ID, '_taka_logo_id', true ) );
+			$logo_url = $logo_id && function_exists( 'wp_get_attachment_image_url' ) ? wp_get_attachment_image_url( $logo_id, 'full' ) : '';
+			$item = array(
+				'id'              => $post->ID,
+				'name'            => get_the_title( $post ),
+				'legal_name'      => (string) get_post_meta( $post->ID, '_taka_legal_name', true ),
+				'website'         => (string) get_post_meta( $post->ID, '_taka_website', true ),
+				'logo_id'         => $logo_id,
+				'logo'            => $logo_url ?: (string) get_post_meta( $post->ID, '_taka_logo_url', true ),
+				'emails'          => self::lines_to_array( get_post_meta( $post->ID, '_taka_emails', true ) ),
+				'contact_persons' => self::lines_to_array( get_post_meta( $post->ID, '_taka_contact_persons', true ) ),
+				'description'     => $post->post_content,
+				'active'          => '0' !== (string) get_post_meta( $post->ID, '_taka_active', true ),
+				'social'          => array(
+					'instagram' => (string) get_post_meta( $post->ID, '_taka_instagram', true ),
+					'facebook'  => (string) get_post_meta( $post->ID, '_taka_facebook', true ),
+					'youtube'   => (string) get_post_meta( $post->ID, '_taka_youtube', true ),
+				),
+			);
+			$items[ (string) $post->ID ] = $item;
+			$config_id = (string) get_post_meta( $post->ID, '_taka_config_id', true );
+			if ( '' !== $config_id ) {
+				$items[ $config_id ] = $item;
+			}
+		}
+		return $items;
+	}
+
+	/**
+	 * Get CPT venues keyed by post ID and imported config ID.
+	 *
+	 * @return array
+	 */
+	private static function get_cpt_venues() {
+		if ( ! self::can_use_cpts() ) {
+			return array();
+		}
+
+		$posts = get_posts( array( 'post_type' => 'taka_venue', 'post_status' => 'publish', 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
+		$items = array();
+		foreach ( $posts as $post ) {
+			$item = array(
+				'id'            => $post->ID,
+				'name'          => get_the_title( $post ),
+				'address'       => array(
+					'street'       => (string) get_post_meta( $post->ID, '_taka_street', true ),
+					'postal_code'  => (string) get_post_meta( $post->ID, '_taka_postal_code', true ),
+					'city'         => (string) get_post_meta( $post->ID, '_taka_city', true ),
+					'country'      => (string) get_post_meta( $post->ID, '_taka_country', true ),
+					'country_code' => (string) get_post_meta( $post->ID, '_taka_country_code', true ),
+				),
+				'timezone'      => (string) get_post_meta( $post->ID, '_taka_timezone', true ),
+				'website'       => (string) get_post_meta( $post->ID, '_taka_website', true ),
+				'parking'       => (string) get_post_meta( $post->ID, '_taka_parking', true ),
+				'accessibility' => (string) get_post_meta( $post->ID, '_taka_accessibility', true ),
+				'notes'         => (string) get_post_meta( $post->ID, '_taka_notes', true ),
+				'geo'           => array(
+					'lat' => get_post_meta( $post->ID, '_taka_lat', true ),
+					'lng' => get_post_meta( $post->ID, '_taka_lng', true ),
+				),
+			);
+			$items[ (string) $post->ID ] = $item;
+			$config_id = (string) get_post_meta( $post->ID, '_taka_config_id', true );
+			if ( '' !== $config_id ) {
+				$items[ $config_id ] = $item;
+			}
+		}
+		return $items;
+	}
+
+	/**
+	 * Get CPT events.
+	 *
+	 * @return array[]
+	 */
+	private static function get_cpt_events() {
+		if ( ! self::can_use_cpts() ) {
+			return array();
+		}
+
+		$posts = get_posts( array( 'post_type' => 'taka_event', 'post_status' => array( 'publish', 'draft', 'private' ), 'posts_per_page' => -1, 'orderby' => 'date', 'order' => 'ASC' ) );
+		$events = array();
+		foreach ( $posts as $post ) {
+			$image_id = absint( get_post_meta( $post->ID, '_taka_image_id', true ) );
+			$image_url = $image_id && function_exists( 'wp_get_attachment_image_url' ) ? wp_get_attachment_image_url( $image_id, 'full' ) : '';
+			$venue_id = (string) absint( get_post_meta( $post->ID, '_taka_venue_id', true ) );
+			$venue_ids = array_filter( array_map( 'strval', array_map( 'absint', (array) get_post_meta( $post->ID, '_taka_venue_ids', true ) ) ) );
+			$events[] = array(
+				'id'               => (string) ( get_post_meta( $post->ID, '_taka_config_id', true ) ?: $post->ID ),
+				'post_id'          => $post->ID,
+				'slug'             => (string) ( get_post_meta( $post->ID, '_taka_slug', true ) ?: $post->post_name ),
+				'title'            => get_the_title( $post ),
+				'subtitle'         => (string) get_post_meta( $post->ID, '_taka_subtitle', true ),
+				'description'      => $post->post_content,
+				'country'          => (string) get_post_meta( $post->ID, '_taka_country', true ),
+				'country_code'     => (string) get_post_meta( $post->ID, '_taka_country_code', true ),
+				'flag'             => (string) get_post_meta( $post->ID, '_taka_flag', true ),
+				'city'             => (string) get_post_meta( $post->ID, '_taka_city', true ),
+				'date_start'       => (string) get_post_meta( $post->ID, '_taka_date_start', true ),
+				'date_end'         => (string) get_post_meta( $post->ID, '_taka_date_end', true ),
+				'time_start'       => (string) get_post_meta( $post->ID, '_taka_time_start', true ),
+				'time_end'         => (string) get_post_meta( $post->ID, '_taka_time_end', true ),
+				'doors_open'       => (string) get_post_meta( $post->ID, '_taka_doors_open', true ),
+				'timezone'         => (string) get_post_meta( $post->ID, '_taka_timezone', true ),
+				'organizer'        => (string) absint( get_post_meta( $post->ID, '_taka_organizer_id', true ) ),
+				'venue'            => $venue_id,
+				'venues'           => ! empty( $venue_ids ) ? $venue_ids : array_filter( array( $venue_id ) ),
+				'format'           => (string) get_post_meta( $post->ID, '_taka_format', true ),
+				'audience'         => (string) get_post_meta( $post->ID, '_taka_audience', true ),
+				'level'            => (string) get_post_meta( $post->ID, '_taka_level', true ),
+				'status'           => 'draft' === $post->post_status ? 'draft' : 'confirmed',
+				'ticket_status'    => (string) get_post_meta( $post->ID, '_taka_ticket_status', true ),
+				'ticket_shop_url'  => (string) get_post_meta( $post->ID, '_taka_ticket_shop_url', true ),
+				'ticket_provider'  => (string) get_post_meta( $post->ID, '_taka_ticket_provider', true ),
+				'image_id'         => $image_id,
+				'image'            => $image_url ?: (string) get_post_meta( $post->ID, '_taka_image_url', true ),
+				'photo_credit'     => (string) get_post_meta( $post->ID, '_taka_photo_credit', true ),
+				'languages'        => self::csv_to_array( get_post_meta( $post->ID, '_taka_languages', true ) ),
+				'notes'            => (string) get_post_meta( $post->ID, '_taka_notes', true ),
+				'parking'          => (string) get_post_meta( $post->ID, '_taka_parking', true ),
+				'sort_order'       => (int) get_post_meta( $post->ID, '_taka_sort_order', true ),
+			);
+		}
+		return $events;
+	}
+
+	/** Convert textarea lines to array. */
+	private static function lines_to_array( $value ) {
+		return array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', (string) $value ) ) ) );
+	}
+
+	/** Convert comma-separated values to array. */
+	private static function csv_to_array( $value ) {
+		return array_values( array_filter( array_map( 'trim', explode( ',', (string) $value ) ) ) );
+	}
+
 	/**
 	 * Get organizers from config.
 	 *
 	 * @return array
 	 */
 	public static function get_organizers() {
+		$cpt_organizers = self::get_cpt_organizers();
+		if ( ! empty( $cpt_organizers ) ) {
+			return $cpt_organizers;
+		}
+
+		$config = self::load_config();
 		$config = self::config();
 		return $config['organizers'] ?? array();
 	}
@@ -49,6 +215,12 @@ class Taka_Tour_Data {
 	 * @return array
 	 */
 	public static function get_venues() {
+		$cpt_venues = self::get_cpt_venues();
+		if ( ! empty( $cpt_venues ) ) {
+			return $cpt_venues;
+		}
+
+		$config = self::load_config();
 		$config = self::config();
 		return $config['venues'] ?? array();
 	}
@@ -70,6 +242,12 @@ class Taka_Tour_Data {
 	 * @return array[]
 	 */
 	public static function get_events() {
+		$cpt_events = self::get_cpt_events();
+		if ( ! empty( $cpt_events ) ) {
+			return $cpt_events;
+		}
+
+		$config = self::load_config();
 		$config = self::config();
 		return $config['events'] ?? array();
 	}
@@ -172,6 +350,7 @@ class Taka_Tour_Data {
 	 * @return array
 	 */
 	public static function images() {
+		$images = array(
 		return array(
 			'hero_image'        => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-hero.jpg',
 			'group_image'       => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-group.jpg',
@@ -183,6 +362,22 @@ class Taka_Tour_Data {
 			'community_group'   => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-gruppe-trier-2025.jpg',
 			'together_practice' => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-gemeinsam-2025.jpg',
 			'softblock'         => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-softblock-e1781607328699.jpeg',
+			'kleiner_wald_logo' => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/Logo-Kleiner-Wald.svg',
+			'sponsor_logo'      => '',
+		);
+
+		if ( function_exists( 'get_option' ) && function_exists( 'wp_get_attachment_image_url' ) ) {
+			$media = get_option( 'taka_tour_images', array() );
+			foreach ( $images as $key => $fallback ) {
+				$attachment_id = absint( $media[ $key ] ?? 0 );
+				$media_url = $attachment_id ? wp_get_attachment_image_url( $attachment_id, 'full' ) : '';
+				if ( $media_url ) {
+					$images[ $key ] = $media_url;
+				}
+			}
+		}
+
+		return $images;
 		);
 	}
 
