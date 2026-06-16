@@ -35,10 +35,10 @@ class Taka_Tour_Data {
 			'hero_image'     => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-hero.jpg',
 			'group_image'    => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-group.jpg',
 			'portrait_image' => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-portrait.jpg',
-			'kobudo'         => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/Kobudo-Seminar-Trier-e1781606460764.jpeg',
+			'kobudo'         => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/Kobudo-Seminar-Trier-e1781607374996.jpeg',
 			'community_group' => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-gruppe-trier-2025.jpg',
 			'together_practice' => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-gemeinsam-2025.jpg',
-			'softblock'      => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-softblock-e1781606566623.jpeg',
+			'softblock'      => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-softblock-e1781607328699.jpeg',
 		);
 	}
 
