@@ -1,0 +1,69 @@
+<?php
+/**
+ * Helper functions for TAKA Tour Website Builder.
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Render a template with scoped variables.
+ *
+ * @param string $template Template file relative to templates directory.
+ * @param array  $args     Template variables.
+ * @return string
+ */
+function taka_tour_render_template( $template, $args = array() ) {
+	$template_path = TAKA_TOUR_PLUGIN_DIR . 'templates/' . ltrim( $template, '/' );
+
+	if ( ! file_exists( $template_path ) ) {
+		return '';
+	}
+
+	ob_start();
+	extract( $args, EXTR_SKIP ); // phpcs:ignore WordPress.PHP.DontExtract.extract_extract
+	include $template_path;
+	return ob_get_clean();
+}
+
+/**
+ * Return allowed HTML for rich template text.
+ *
+ * @return array
+ */
+function taka_tour_allowed_html() {
+	return array(
+		'a'      => array(
+			'href'   => array(),
+			'target' => array(),
+			'rel'    => array(),
+			'class'  => array(),
+		),
+		'br'     => array(),
+		'em'     => array(),
+		'strong' => array(),
+		'span'          => array( 'class' => array() ),
+		'pretix-widget' => array( 'event' => array() ),
+	);
+
+}
+
+/**
+ * Translate a plain-text value for the active TAKA Tour language.
+ *
+ * @param string      $key      Translation key.
+ * @param string      $fallback German fallback text.
+ * @param string|null $lang     Optional language code.
+ * @return string
+ */
+function taka_tour_translate( $key, $fallback, $lang = null ) {
+	return Taka_Tour_I18n::instance()->translate( $key, $fallback, $lang );
+}
+
+/**
+ * Return the active TAKA Tour language.
+ *
+ * @return string
+ */
+function taka_tour_current_language() {
+	return Taka_Tour_I18n::instance()->get_current_language();
+}

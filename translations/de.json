@@ -1,0 +1,160 @@
+{
+  "language": {
+    "code": "de",
+    "name": "Deutsch",
+    "switcher_label": "Sprache wählen"
+  },
+  "hero": {
+    "kicker": "TAKA European Tour 2026",
+    "headline": "Harmony in Motion",
+    "intro": "Eine europäische Seminarreise mit Takafumi Nakayama Sensei – von Helsinki über Berlin, die Niederlande, Belgien und Luxemburg bis in die Region Trier/Konz.",
+    "primary_button": "Seminare ansehen",
+    "secondary_button": "Tickets",
+    "stations_label": "Tourstationen"
+  },
+  "tour": {
+    "kicker": "European Tour",
+    "headline": "Seminare in Europa"
+  },
+  "seminar": {
+    "format_label": "Format",
+    "host_label": "Gastgeber",
+    "ticketshop_soon": "Ticketshop folgt",
+    "ticketshop_direct": "Ticketshop direkt öffnen",
+    "ticketshop_open_pretix": "Tickets bei Pretix öffnen"
+  },
+  "gallery": {
+    "kicker": "Training in Bewegung",
+    "headline": "Kobudo, Soft Blocking und gemeinsames Lernen",
+    "intro": "Echte Eindrücke aus vergangenen Seminaren: Bo-Arbeit, Partnertraining, gemeinsames Üben und internationale Karate-Gemeinschaft.",
+    "cards": {
+      "community": {
+        "title": "Community",
+        "text": "Internationale Karate-Familie."
+      },
+      "kobudo": {
+        "title": "Kobudo",
+        "text": "Bo-Arbeit, Distanz und Timing."
+      },
+      "softblock": {
+        "title": "Soft Blocking",
+        "text": "Weiche Struktur statt roher Kraft."
+      },
+      "together": {
+        "title": "Gemeinsam üben",
+        "text": "Lernen durch Beobachten, Austausch und Wiederholung."
+      },
+      "kids": {
+        "title": "Kinderseminar",
+        "text": "Kinderseminar Trier"
+      },
+      "group": {
+        "title": "Gruppenfoto",
+        "text": "Gemeinschaft über Dojo- und Landesgrenzen hinweg."
+      }
+    }
+  },
+  "sections": {
+    "sensei": {
+      "kicker": "Sensei",
+      "headline": "Takafumi Nakayama",
+      "text": "Präzision, Ruhe und Bewegungsqualität aus der okinawanischen Tradition."
+    },
+    "training": {
+      "kicker": "Training",
+      "headline": "Karate-Do, Kobujutsu und Soft Blocking",
+      "text": "Die Seminare verbinden Grundlagen, Partnerarbeit, Timing, Distanz und Körperstruktur."
+    },
+    "community": {
+      "kicker": "Community",
+      "headline": "Gemeinsam trainieren",
+      "text": "Ein europäisches Treffen für ernsthaftes Training und respektvollen Austausch."
+    },
+    "host": {
+      "kicker": "Gastgeber",
+      "headline": "5 Jahre Kleiner Wald Dojo"
+    },
+    "sponsor": {
+      "kicker": "Sponsor",
+      "headline": "kanso",
+      "text": "Zentrum für Körper, Geist und Seele in Konz.",
+      "link_text": "kan.so"
+    },
+    "place": {
+      "kicker": "Ort Konz",
+      "headline": "Praktische Infos",
+      "text": "Details zu Anreise, Zeiten und lokalen Informationen folgen in den Seminarbeschreibungen."
+    }
+  },
+  "footer": {
+    "text": "TAKA European Tour 2026"
+  },
+  "seminars": {
+    "helsinki": {
+      "subtitle": "Helsinki Seminar",
+      "description": "Zwei Tage Seminar in Helsinki.",
+      "type": "2-Tage-Seminar"
+    },
+    "berlin": {
+      "subtitle": "Berlin Seminar",
+      "description": "Zwei Tage Seminar in Berlin.",
+      "type": "2-Tage-Seminar"
+    },
+    "netherlands": {
+      "subtitle": "Netherlands Seminar",
+      "description": "Zwei Tage Seminar in den Niederlanden.",
+      "type": "2-Tage-Seminar"
+    },
+    "belgium": {
+      "subtitle": "Belgium Seminar",
+      "description": "Seminar geplant von 10:00 bis 13:00 Uhr.",
+      "type": "Halbtagseminar"
+    },
+    "illange": {
+      "subtitle": "Illange Seminar",
+      "description": "Seminarstation in Luxemburg.",
+      "type": "Seminar"
+    },
+    "hosingen": {
+      "subtitle": "Hosingen Seminar",
+      "description": "Seminarstation in Luxemburg.",
+      "type": "Seminar"
+    },
+    "trier-kinderseminar": {
+      "subtitle": "Kinderseminar",
+      "description": "Kinderseminar in Trier im Rahmen der TAKA European Tour.",
+      "type": "Kinderseminar",
+      "audience": "Kinder und Jugendliche",
+      "level": "Alle Level"
+    },
+    "konz": {
+      "subtitle": "Konz Seminar",
+      "description": "Zwei Tage Seminar in Konz mit Takafumi Nakayama Sensei.",
+      "type": "2-Tage-Seminar",
+      "audience": "Erwachsene und Jugendliche",
+      "level": "Alle Stilrichtungen und Level",
+      "parking": "Details zur Parkplatzsituation folgen."
+    },
+    "saarwellingen": {
+      "subtitle": "Saarwellingen Seminar",
+      "description": "Abschlussseminar der Tourstationen in der Region.",
+      "type": "Seminar"
+    }
+  },
+  "event": {
+    "date": "Datum",
+    "time": "Zeit",
+    "doors_open": "Türen öffnen",
+    "start": "Beginn",
+    "end": "Ende",
+    "venue": "Ort",
+    "address": "Adresse",
+    "parking": "Parken",
+    "organizer": "Veranstalter",
+    "audience": "Zielgruppe",
+    "level": "Level",
+    "ticketshop_direct": "Ticketshop direkt öffnen",
+    "ticketshop_soon": "Ticketshop folgt",
+    "details_follow": "Details folgen"
+  }
+}
