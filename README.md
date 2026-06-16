@@ -1,38 +1,103 @@
 # TAKA Tour Website Builder
 
-WordPress plugin for the TAKA European Tour 2026 website. It provides modular templates, central event configuration and GeneratePress-friendly shortcodes without Elementor, Divi or premium-plugin dependencies.
+Reusable WordPress plugin for international seminar and event tours. The TAKA European Tour 2026 is the first reference implementation, but the plugin is now structured as a WordPress-first event-tour manager with native admin screens, static multilingual labels, config fallback data and Pretix ticket widgets.
 
-## Shortcodes
+## Public shortcodes
 
-- `[taka_homepage]` renders the complete landing page.
-- `[taka_tour_schedule]` renders the seminar overview and equal seminar cards.
-- `[taka_tickets]` renders the standalone Konz Pretix ticket block.
-- `[taka_sponsor]` renders the kanso sponsor section.
+- `[taka_homepage]` renders the full landing page.
+- `[taka_tour_schedule]` renders the tour/event schedule and cards.
+- `[taka_tickets]` renders a standalone ticket-widget block for ticketed events.
+- `[taka_sponsor]` renders the sponsor section.
 - `[taka_language_switcher]` renders the compact language selector.
+
+Existing pages using `[taka_homepage]` remain compatible.
+
+## WordPress-first data flow
+
+WordPress is the primary live data source. If at least one `taka_event` post exists, the frontend renders published WordPress events. If no WordPress events exist, the plugin falls back to `config/tour-events.php` so a fresh install still renders the reference TAKA Tour.
+
+`config/tour-events.php` remains the seed, demo, fallback, import/export and backup format. It is no longer the live source of truth once WordPress event data exists.
+
+## Admin CMS
+
+The WordPress admin menu `TAKA Tour` contains:
+
+- Dashboard: version, config status, WordPress/config event counts and active frontend source.
+- Events: native CPT `taka_event`.
+- Organizers: native CPT `taka_organizer`.
+- Venues: native CPT `taka_venue`.
+- Media: global image settings using WordPress attachment IDs.
+- Import / Export: config import modes and portable PHP/JSON export.
+- Settings: architecture notes and future settings.
+
+The admin UI uses native WordPress posts, meta boxes, nonces, capability checks, sanitization and escaping.
+
+## Event model
+
+Events support: `id`, `slug`, `title`, `subtitle`, `description`, `country`, `country_code`, `flag`, `city`, `date_start`, `date_end`, `time_start`, `time_end`, `doors_open`, `timezone`, `organizer`, `venue`, `venues`, `format`, `audience`, `level`, `status`, `ticket_status`, `ticket_provider`, `ticket_shop_url`, `image_id`, `image_url`, `gallery_image_ids`, `photo_credit`, `languages`, `notes`, `parking` and `sort_order`.
+
+Only published `taka_event` posts appear on the frontend. Events are sorted by `sort_order`, `date_start`, `time_start` and title. Optional missing fields are skipped instead of producing warnings.
+
+## Organizer and venue model
+
+Organizers support `name`, `legal_name`, `website`, `logo_id`, `logo_url`, `emails`, `contact_persons`, `social_links`, `description` and `active`.
+
+Venues support address fields, `timezone`, `website`, `parking`, `accessibility`, `notes`, `geo.lat`, `geo.lng`, `image_id` and `gallery_image_ids`.
+
+Events can reference one organizer, one primary venue and additional venue IDs.
+
+## Import / Export
+
+The Import / Export screen can import `config/tour-events.php` as:
+
+- dry run / preview
+- import missing only
+- update existing
+- overwrite existing
+- optionally delete existing plugin data before import
+
+Imports are idempotent and use stable `_taka_config_id` identifiers to avoid duplicates. The result summary reports created, updated and skipped organizers, venues and events.
+
+Export provides the current WordPress data as a PHP array compatible with the config format and as JSON for external tools/backups.
+
+## Media handling
+
+Global media settings store WordPress attachment IDs for hero, portrait, gallery, logo and sponsor imagery. Events, organizers and venues also store attachment IDs plus optional fallback URLs.
+
+Frontend image resolution order is:
+
+1. WordPress attachment ID
+2. stored fallback URL
+3. config fallback URL
+4. no image
+
+## Pretix and ticket providers
+
+Admins set `ticket_provider = pretix` and a `ticket_shop_url`. The frontend automatically renders:
+
+```html
+<pretix-widget event="https://pretix.eu/.../"></pretix-widget>
+```
+
+and a direct fallback link. The ticket-provider layer is isolated so additional providers such as Eventbrite, WooCommerce, TicketTailor or external URL-only flows can be added later.
 
 ## Multilingual support
 
 Supported query-parameter languages: `?taka_lang=de`, `en`, `nl`, `fr`, `lb`, `fi`, `ja`. If no language is set, the plugin checks `HTTP_ACCEPT_LANGUAGE` and falls back to German.
 
-Use `[taka_language_switcher]` to render language links. `[taka_homepage]` also includes the switcher in the hero.
+Translations are static JSON files in `translations/`; there is no live translation API. Visible labels/buttons/status texts use the translation loader. Admin-created event content is rendered as entered, while frontend labels remain translated.
 
-German is the master language. Translations are static JSON files in `translations/`; there is no live translation API or runtime external-translation dependency. Missing keys fall back to `translations/de.json` and then to the template fallback.
+The compact selector remains:
 
-## Event configuration
+`🌍 🇩🇪 🇫🇷 🇳🇱 🇧🇪▼ 🇱🇺▼ 🇫🇮 🇯🇵`
 
-Organizers, venues and tour events are maintained in `config/tour-events.php`. The file returns one PHP array with `organizers`, `venues` and `events`, so templates and renderers do not need hard-coded event metadata.
-
-Add an organizer by creating a new key under `organizers`, for example `my-dojo`, with `name`, `legal_name`, `website`, `logo`, `emails`, `contact_persons` and `social` fields.
-
-Add a venue by creating a new key under `venues`, for example `my-venue`, with `name`, `address`, `timezone`, `website`, `parking`, `accessibility`, `notes` and `geo`.
-
-Add an event by appending an item to `events` with fields such as `id`, `slug`, `title`, `date_start`, `date_end`, `organizer`, `venue`, `venues`, `format`, `audience`, `level`, `status`, `ticket_status`, `ticket_shop_url`, `ticket_provider` and `sort_order`. Setting `ticket_provider` to `pretix` and `ticket_shop_url` to a Pretix event URL automatically renders the embedded widget. Use `venues` when an event spans multiple places.
-
-## Minimal admin prototype
-
-Version 0.9.1 connects published WordPress admin events to the frontend while preserving the config fallback when no WordPress events exist. The TAKA Tour dashboard also reports WordPress/config event counts and the active data source.
+Belgium dropdown: Nederlands, Français, Deutsch. Luxembourg dropdown: Lëtzebuergesch, Français, Deutsch.
 
 ## Changelog
+
+### v1.0.0
+
+- Refactored plugin into a WordPress-first event tour management system with admin CMS, import/export, media integration, WordPress data source flow and Pretix provider abstraction.
 
 ### v0.9.1
 
@@ -73,15 +138,3 @@ Version 0.9.1 connects published WordPress admin events to the frontend while pr
 ### v0.6.5
 
 - Added editorial real-image gallery, removed empty placeholders, refined homepage flow and image handling.
-
-### v0.6.4
-
-- Added real seminar image grid and reworked hero as full tour overview with station links.
-
-### v0.6.3
-
-- Fixed seminar data, removed bad map/caption, embedded Pretix widgets directly in seminar cards, corrected kanso sponsor link, reordered host/sponsor sections.
-
-### v0.6.2
-
-- Refactor to modular plugin structure, equal seminar cards, per-card pretix integration, Europe map, kanso sponsor section.
