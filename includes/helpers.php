@@ -56,7 +56,7 @@ function taka_tour_allowed_html() {
  * @return string
  */
 function taka_tour_translate( $key, $fallback, $lang = null ) {
-	return Taka_Tour_Translator::translate( $key, $fallback, $lang );
+	return Taka_Tour_I18n::instance()->translate( $key, $fallback, $lang );
 }
 
 /**
@@ -65,5 +65,5 @@ function taka_tour_translate( $key, $fallback, $lang = null ) {
  * @return string
  */
 function taka_tour_current_language() {
-	return Taka_Tour_Translator::current_language();
+	return Taka_Tour_I18n::instance()->get_current_language();
 }

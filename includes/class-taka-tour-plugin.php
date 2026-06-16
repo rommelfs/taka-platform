@@ -83,7 +83,7 @@ class Taka_Tour_Plugin {
 			return;
 		}
 
-		foreach ( Taka_Tour_Translator::languages() as $lang ) {
+		foreach ( Taka_Tour_I18n::instance()->get_all_languages() as $lang ) {
 			echo '<link rel="alternate" hreflang="' . esc_attr( $lang ) . '" href="' . esc_url( add_query_arg( 'taka_lang', $lang ) ) . '" />' . "\n";
 		}
 	}

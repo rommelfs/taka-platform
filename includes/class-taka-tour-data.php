@@ -30,28 +30,7 @@ class Taka_Tour_Data {
 	 *
 	 * @return array
 	 */
-	/**
-	 * Get manual translation overrides.
-	 *
-	 * @return array
-	 */
-	public static function manual_translations() {
-		return array(
-			'en' => array(
-				'hero.kicker' => 'TAKA European Tour 2026',
-				'hero.headline' => 'Harmony in Motion',
-				'hero.text' => 'A European seminar journey with Takafumi Nakayama Sensei – from Helsinki via Berlin, the Netherlands, Belgium and Luxembourg to the Trier/Konz region.',
-				'hero.button_tour' => 'View seminars',
-				'hero.button_tickets' => 'Tickets',
-			),
-			'fr' => array(),
-			'nl' => array(),
-			'fi' => array(),
-			'lb' => array(),
-		);
-	}
-
-	public static function images() {
+		public static function images() {
 		return array(
 			'hero_image'     => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-hero.jpg',
 			'group_image'    => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-group.jpg',
@@ -72,11 +51,29 @@ class Taka_Tour_Data {
 		$images = self::images();
 
 		return array(
-			array( 'title' => 'Community', 'text' => 'Internationale Karate-Familie.', 'image' => $images['community_group'], 'wide' => true ),
-			array( 'title' => 'Kobudo', 'text' => 'Bo-Arbeit, Distanz und Timing.', 'image' => $images['kobudo'] ),
-			array( 'title' => 'Soft Blocking', 'text' => 'Weiche Struktur statt roher Kraft.', 'image' => $images['softblock'] ),
-			array( 'title' => 'Gemeinsam üben', 'text' => 'Lernen durch Beobachten, Austausch und Wiederholung.', 'image' => $images['together_practice'] ),
+			array( 'id' => 'community', 'title' => 'Community', 'text' => 'Internationale Karate-Familie.', 'image' => $images['community_group'], 'wide' => true ),
+			array( 'id' => 'kobudo', 'title' => 'Kobudo', 'text' => 'Bo-Arbeit, Distanz und Timing.', 'image' => $images['kobudo'] ),
+			array( 'id' => 'softblock', 'title' => 'Soft Blocking', 'text' => 'Weiche Struktur statt roher Kraft.', 'image' => $images['softblock'] ),
+			array( 'id' => 'together', 'title' => 'Gemeinsam üben', 'text' => 'Lernen durch Beobachten, Austausch und Wiederholung.', 'image' => $images['together_practice'] ),
 		);
+	}
+
+	/**
+	 * Suggest languages from a seminar country.
+	 *
+	 * @param string $country Country name.
+	 * @return array
+	 */
+	public static function languages_for_country( $country ) {
+		$map = array(
+			'Finland'     => array( 'fi', 'en', 'de' ),
+			'Germany'     => array( 'de', 'en' ),
+			'Netherlands' => array( 'nl', 'en', 'de' ),
+			'Belgium'     => array( 'fr', 'nl', 'de', 'en' ),
+			'Luxembourg'  => array( 'fr', 'de', 'lb', 'en' ),
+		);
+
+		return $map[ $country ] ?? array( 'en' );
 	}
 
 	/**
@@ -90,7 +87,7 @@ class Taka_Tour_Data {
 		return array_map(
 			static function ( $seminar ) use ( $lang ) {
 				$slug = $seminar['slug'];
-				$seminar['languages'] = ! empty( $seminar['languages'] ) ? $seminar['languages'] : Taka_Tour_Translator::languages_for_country( $seminar['country'] );
+				$seminar['languages'] = ! empty( $seminar['languages'] ) ? $seminar['languages'] : self::languages_for_country( $seminar['country'] );
 				$seminar['subtitle'] = taka_tour_translate( 'seminar.' . $slug . '.subtitle', $seminar['subtitle'], $lang );
 				$seminar['description'] = taka_tour_translate( 'seminar.' . $slug . '.description', $seminar['description'], $lang );
 				$seminar['type'] = taka_tour_translate( 'seminar.' . $slug . '.type', $seminar['type'], $lang );

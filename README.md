@@ -15,13 +15,17 @@ Supported query-parameter languages: `?taka_lang=de`, `en`, `nl`, `fr`, `lb`, `f
 
 Use `[taka_language_switcher]` to render language links. `[taka_homepage]` also includes the switcher in the hero.
 
-German is the master language. Manual overrides live in `Taka_Tour_Data::manual_translations()`. Automatic translation is DeepL-ready and lazy-cached in options named `taka_tour_translation_{lang}_{hash}`. Configure the API key with the `taka_tour_deepl_api_key` option or the `taka_tour_deepl_api_key` filter. Luxemburgish (`lb`) intentionally falls back to German for now and is marked for manual translation.
+German is the master language. Translations are static JSON files in `translations/`; there is no live translation API or runtime external-translation dependency. Missing keys fall back to `translations/de.json` and then to the template fallback.
 
 ## Changelog
 
+### v0.7.1
+
+- Replaced runtime translation concept with static JSON translations, added Dutch, French, Luxembourgish, Finnish and Japanese, and improved language switcher labels.
+
 ### v0.7.0
 
-- Added internal multilingual architecture with language switcher, translation keys, DeepL-ready auto-translation cache and country-based language suggestions.
+- Added internal multilingual architecture with language switcher, translation keys and country-based language suggestions.
 
 ### v0.6.7
 

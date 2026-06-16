@@ -12,7 +12,7 @@ $pretix_event_url = Taka_Tour_Data::pretix_event_url( $seminar );
 	<h3><?php echo esc_html( $seminar['title'] ); ?></h3>
 	<p class="taka-subtitle"><?php echo esc_html( $seminar['subtitle'] ); ?></p>
 	<p><?php echo esc_html( $seminar['description'] ); ?></p>
-	<dl class="taka-details"><div><dt><?php echo esc_html( taka_tour_translate( 'seminar.format', 'Format' ) ); ?></dt><dd><?php echo esc_html( $seminar['type'] ); ?></dd></div><div><dt><?php echo esc_html( taka_tour_translate( 'seminar.host', 'Gastgeber' ) ); ?></dt><dd><?php echo esc_html( $seminar['hosts'] ); ?></dd></div></dl>
+	<dl class="taka-details"><div><dt><?php echo esc_html( taka_tour_translate( 'seminar.format_label', 'Format' ) ); ?></dt><dd><?php echo esc_html( $seminar['type'] ); ?></dd></div><div><dt><?php echo esc_html( taka_tour_translate( 'seminar.host_label', 'Gastgeber' ) ); ?></dt><dd><?php echo esc_html( $seminar['hosts'] ); ?></dd></div></dl>
 	<?php if ( '' !== $pretix_event_url ) : ?>
 		<div class="taka-seminar-pretix">
 			<?php echo taka_tour_render_template( 'partials/pretix-widget.php', array( 'event' => $pretix_event_url, 'label' => $seminar['title'] ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>

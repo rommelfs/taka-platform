@@ -18,8 +18,8 @@ $cards = Taka_Tour_Data::image_grid();
 			<article class="taka-editorial-card<?php echo ! empty( $card['wide'] ) ? ' taka-editorial-card--wide' : ''; ?>">
 				<img class="taka-editorial-card__image" src="<?php echo esc_url( $card['image'] ); ?>" alt="<?php echo esc_attr( $card['title'] ); ?>" loading="lazy">
 				<div class="taka-editorial-card__caption">
-					<h3><?php echo esc_html( taka_tour_translate( 'gallery.card.' . sanitize_key( $card['title'] ) . '.title', $card['title'] ) ); ?></h3>
-					<p><?php echo esc_html( taka_tour_translate( 'gallery.card.' . sanitize_key( $card['title'] ) . '.text', $card['text'] ) ); ?></p>
+					<h3><?php echo esc_html( taka_tour_translate( 'gallery.cards.' . $card['id'] . '.title', $card['title'] ) ); ?></h3>
+					<p><?php echo esc_html( taka_tour_translate( 'gallery.cards.' . $card['id'] . '.text', $card['text'] ) ); ?></p>
 				</div>
 			</article>
 		<?php endforeach; ?>
