@@ -6,15 +6,9 @@
 	<p><?php echo esc_html( $seminar['description'] ); ?></p>
 	<dl class="taka-details"><div><dt><?php echo esc_html__( 'Format', 'taka-tour' ); ?></dt><dd><?php echo esc_html( $seminar['type'] ); ?></dd></div><div><dt><?php echo esc_html__( 'Gastgeber', 'taka-tour' ); ?></dt><dd><?php echo esc_html( $seminar['hosts'] ); ?></dd></div></dl>
 	<?php if ( ! empty( $seminar['pretix_url'] ) ) : ?>
-		<div class="taka-card-actions">
-			<a class="taka-button" href="<?php echo esc_url( $seminar['pretix_url'] ); ?>"><?php echo esc_html__( 'Tickets kaufen', 'taka-tour' ); ?></a>
-			<button class="taka-button taka-button-secondary" type="button" data-taka-toggle aria-expanded="false"><?php echo esc_html__( 'Tickets anzeigen', 'taka-tour' ); ?></button>
-		</div>
-		<div class="taka-pretix-panel" hidden>
+		<div class="taka-pretix-panel taka-pretix-panel-visible">
 			<?php echo taka_tour_render_template( 'partials/pretix-widget.php', array( 'url' => $seminar['pretix_url'], 'label' => $seminar['title'] ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-			<?php if ( ! empty( $seminar['kids_pretix_url'] ) ) : ?>
-				<?php echo taka_tour_render_template( 'partials/pretix-widget.php', array( 'url' => $seminar['kids_pretix_url'], 'label' => __( 'Kindertraining', 'taka-tour' ) ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-			<?php endif; ?>
+			<a class="taka-ticket-direct-link" href="<?php echo esc_url( $seminar['pretix_url'] ); ?>" rel="noopener"><?php echo esc_html__( 'Ticketshop direkt öffnen', 'taka-tour' ); ?></a>
 		</div>
 	<?php else : ?>
 		<p class="taka-ticket-status"><?php echo esc_html( $seminar['ticket_status'] ); ?></p>
