@@ -46,6 +46,8 @@ Prepared capabilities: `manage_taka_tour`, `edit_taka_events`, `edit_taka_organi
 
 - Added WordPress admin event CMS with organizers, venues, events, media picker settings and config import fallback.
 
+## Changelog
+
 ### v0.8.0
 
 - Moved organizers, venues and events into central configuration file and rendered seminar cards from structured event data.

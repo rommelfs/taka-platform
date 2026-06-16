@@ -12,6 +12,7 @@ class Taka_Tour_Data {
 	 * @return array
 	 */
 	public static function load_config() {
+	private static function config() {
 		static $config = null;
 
 		if ( null === $config ) {
@@ -193,6 +194,7 @@ class Taka_Tour_Data {
 		}
 
 		$config = self::load_config();
+		$config = self::config();
 		return $config['organizers'] ?? array();
 	}
 
@@ -219,6 +221,7 @@ class Taka_Tour_Data {
 		}
 
 		$config = self::load_config();
+		$config = self::config();
 		return $config['venues'] ?? array();
 	}
 
@@ -245,6 +248,7 @@ class Taka_Tour_Data {
 		}
 
 		$config = self::load_config();
+		$config = self::config();
 		return $config['events'] ?? array();
 	}
 
@@ -347,6 +351,7 @@ class Taka_Tour_Data {
 	 */
 	public static function images() {
 		$images = array(
+		return array(
 			'hero_image'        => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-hero.jpg',
 			'group_image'       => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-group.jpg',
 			'portrait_image'    => 'https://takatour.eu/wp-content/uploads/sites/7/2026/06/taka-portrait.jpg',
@@ -373,6 +378,7 @@ class Taka_Tour_Data {
 		}
 
 		return $images;
+		);
 	}
 
 	/**
