@@ -5,11 +5,15 @@ WordPress plugin for the TAKA European Tour 2026 website. It provides modular te
 ## Shortcodes
 
 - `[taka_homepage]` renders the complete landing page.
-- `[taka_tour_schedule]` renders the Europe map and equal seminar cards.
+- `[taka_tour_schedule]` renders the seminar overview and equal seminar cards.
 - `[taka_tickets]` renders the standalone Konz Pretix ticket block.
 - `[taka_sponsor]` renders the kanso sponsor section.
 
 ## Changelog
+
+### v0.6.4
+
+- Added real seminar image grid and reworked hero as full tour overview with station links.
 
 ### v0.6.3
 

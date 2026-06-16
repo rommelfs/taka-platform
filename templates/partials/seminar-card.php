@@ -1,5 +1,5 @@
 <?php defined( 'ABSPATH' ) || exit; ?>
-<article class="taka-seminar-card" id="seminar-<?php echo esc_attr( sanitize_title( $seminar['title'] ) ); ?>">
+<article class="taka-seminar-card" id="seminar-<?php echo esc_attr( $seminar['slug'] ); ?>">
 	<div class="taka-card-meta"><span><?php echo esc_html( $seminar['flag'] ); ?></span><span><?php echo esc_html( $seminar['country'] ); ?></span><span><?php echo esc_html( $seminar['date'] ); ?></span></div>
 	<h3><?php echo esc_html( $seminar['title'] ); ?></h3>
 	<p class="taka-subtitle"><?php echo esc_html( $seminar['subtitle'] ); ?></p>
