@@ -13,6 +13,7 @@ class TAKA_Platform_Admin {
 	/** Register admin hooks. */
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
+		add_action( 'admin_menu', array( __CLASS__, 'limit_organizer_admin_menu' ), 999 );
 		add_action( 'admin_init', array( __CLASS__, 'ensure_capabilities' ) );
 		add_action( 'admin_init', array( __CLASS__, 'guard_event_edit_screen' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
@@ -25,36 +26,50 @@ class TAKA_Platform_Admin {
 		add_filter( 'map_meta_cap', array( __CLASS__, 'map_event_meta_caps' ), 10, 4 );
 		add_action( 'save_post_taka_organizer', array( __CLASS__, 'save_organizer' ) );
 		add_action( 'save_post_taka_venue', array( __CLASS__, 'save_venue' ) );
-			add_action( 'save_post_taka_event', array( __CLASS__, 'save_event' ) );
-			add_action( 'admin_post_taka_tour_save_media', array( __CLASS__, 'handle_save_media' ) );
-			add_action( 'admin_post_taka_tour_import_config', array( __CLASS__, 'handle_import_config' ) );
-			add_action( 'admin_post_taka_platform_save_hero', array( __CLASS__, 'handle_save_hero' ) );
-			add_action( 'admin_post_taka_platform_save_sections', array( __CLASS__, 'handle_save_sections' ) );
-			add_action( 'admin_post_taka_platform_save_dashboard_settings', array( __CLASS__, 'handle_save_dashboard_settings' ) );
+		add_action( 'save_post_taka_event', array( __CLASS__, 'save_event' ) );
+		add_action( 'admin_post_taka_tour_save_media', array( __CLASS__, 'handle_save_media' ) );
+		add_action( 'admin_post_taka_tour_import_config', array( __CLASS__, 'handle_import_config' ) );
+		add_action( 'admin_post_taka_platform_save_hero', array( __CLASS__, 'handle_save_hero' ) );
+		add_action( 'admin_post_taka_platform_save_sections', array( __CLASS__, 'handle_save_sections' ) );
+		add_action( 'admin_post_taka_platform_save_dashboard_settings', array( __CLASS__, 'handle_save_dashboard_settings' ) );
 	}
 
 
 	/** Ensure platform roles and capabilities are available. */
 	public static function ensure_capabilities() {
 		if ( ! function_exists( 'get_role' ) ) { return; }
+		$organizer_caps = array(
+			'read',
+			'upload_files',
+			'edit_taka_events',
+			'edit_taka_event',
+			'read_taka_event',
+			'publish_taka_events',
+			'edit_published_taka_events',
+			'edit_taka_organizer_profile',
+		);
+
 		if ( ! get_role( 'taka_organizer' ) && function_exists( 'add_role' ) ) {
 			add_role(
 				'taka_organizer',
 				__( 'TAKA Organizer', 'taka-platform' ),
-				array(
-					'read'                         => true,
-					'upload_files'                 => true,
-					'edit_taka_events'             => true,
-					'publish_taka_events'          => true,
-					'edit_taka_venues'             => false,
-					'edit_taka_organizer_profile'  => true,
-				)
+				array_fill_keys( $organizer_caps, true )
 			);
+		}
+
+		$organizer_role = get_role( 'taka_organizer' );
+		if ( $organizer_role ) {
+			foreach ( $organizer_caps as $cap ) {
+				$organizer_role->add_cap( $cap );
+			}
+			foreach ( array( 'manage_options', 'edit_users', 'activate_plugins', 'switch_themes', 'delete_users', 'edit_others_taka_events', 'delete_taka_event', 'delete_taka_events', 'delete_others_taka_events', 'read_private_taka_events' ) as $cap ) {
+				$organizer_role->remove_cap( $cap );
+			}
 		}
 
 		$role = get_role( 'administrator' );
 		if ( ! $role ) { return; }
-		foreach ( array( 'manage_taka_tour', 'edit_taka_events', 'edit_taka_event', 'edit_others_taka_events', 'publish_taka_events', 'read_taka_event', 'read_private_taka_events', 'delete_taka_event', 'delete_taka_events', 'edit_taka_organizers', 'edit_taka_venues', 'edit_taka_organizer_profile' ) as $cap ) {
+		foreach ( array( 'manage_taka_tour', 'edit_taka_events', 'edit_taka_event', 'edit_others_taka_events', 'publish_taka_events', 'edit_published_taka_events', 'read_taka_event', 'read_private_taka_events', 'delete_taka_event', 'delete_taka_events', 'delete_others_taka_events', 'edit_taka_organizers', 'edit_taka_venues', 'edit_taka_organizer_profile' ) as $cap ) {
 			$role->add_cap( $cap );
 		}
 	}
@@ -92,6 +107,7 @@ class TAKA_Platform_Admin {
 				'edit_posts'             => 'edit_taka_events',
 				'edit_others_posts'      => 'edit_others_taka_events',
 				'publish_posts'          => 'publish_taka_events',
+				'edit_published_posts'   => 'edit_published_taka_events',
 				'read_private_posts'     => 'read_private_taka_events',
 				'delete_posts'           => 'delete_taka_events',
 				'delete_others_posts'    => 'delete_others_taka_events',
@@ -108,11 +124,23 @@ class TAKA_Platform_Admin {
 	/** Register menu pages. */
 	public static function register_menu() {
 		add_menu_page( __( 'TAKA Platform', 'taka-platform' ), __( 'TAKA Platform', 'taka-platform' ), 'edit_taka_events', 'taka-platform', array( __CLASS__, 'render_dashboard' ), 'dashicons-tickets-alt', 28 );
-			add_submenu_page( 'taka-platform', __( 'Dashboard', 'taka-platform' ), __( 'Dashboard', 'taka-platform' ), 'edit_taka_events', 'taka-platform', array( __CLASS__, 'render_dashboard' ) );
-			add_submenu_page( 'taka-platform', __( 'Media', 'taka-platform' ), __( 'Media', 'taka-platform' ), 'manage_options', 'taka-tour-media', array( __CLASS__, 'render_media' ) );
-			add_submenu_page( 'taka-platform', __( 'Content Sections', 'taka-platform' ), __( 'Content Sections', 'taka-platform' ), 'manage_options', 'taka-platform-content-sections', array( __CLASS__, 'render_content_sections' ) );
-			add_submenu_page( 'taka-platform', __( 'Import / Export', 'taka-platform' ), __( 'Import / Export', 'taka-platform' ), 'manage_options', 'taka-tour-import-export', array( __CLASS__, 'render_import_export' ) );
+		add_submenu_page( 'taka-platform', __( 'Dashboard', 'taka-platform' ), __( 'Dashboard', 'taka-platform' ), 'edit_taka_events', 'taka-platform', array( __CLASS__, 'render_dashboard' ) );
+		add_submenu_page( 'taka-platform', __( 'Media', 'taka-platform' ), __( 'Media', 'taka-platform' ), 'manage_options', 'taka-tour-media', array( __CLASS__, 'render_media' ) );
+		add_submenu_page( 'taka-platform', __( 'Content Sections', 'taka-platform' ), __( 'Content Sections', 'taka-platform' ), 'manage_options', 'taka-platform-content-sections', array( __CLASS__, 'render_content_sections' ) );
+		add_submenu_page( 'taka-platform', __( 'Import / Export', 'taka-platform' ), __( 'Import / Export', 'taka-platform' ), 'manage_options', 'taka-tour-import-export', array( __CLASS__, 'render_import_export' ) );
 		add_submenu_page( 'taka-platform', __( 'Settings', 'taka-platform' ), __( 'Settings', 'taka-platform' ), 'manage_options', 'taka-tour-settings', array( __CLASS__, 'render_settings' ) );
+	}
+
+
+	/** Keep wp-admin focused for organizer users without removing backend access. */
+	public static function limit_organizer_admin_menu() {
+		if ( self::current_user_is_platform_admin() || ! current_user_can( 'edit_taka_events' ) ) {
+			return;
+		}
+
+		foreach ( array( 'edit.php', 'edit.php?post_type=page', 'edit-comments.php', 'tools.php', 'options-general.php', 'themes.php', 'plugins.php', 'users.php' ) as $menu_slug ) {
+			remove_menu_page( $menu_slug );
+		}
 	}
 
 	/** Enqueue WordPress media picker for plugin admin screens. */

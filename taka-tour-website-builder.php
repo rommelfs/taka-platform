@@ -2,14 +2,14 @@
 /**
  * Plugin Name: TAKA Platform
  * Description: Ticketing, Attendance, Knowledge & Administration for reusable event and seminar tours.
- * Version: 1.3.0
+ * Version: 1.3.1
  * Author: TAKA Platform
  * Text Domain: taka-platform
  */
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'TAKA_PLATFORM_VERSION', '1.3.0' );
+define( 'TAKA_PLATFORM_VERSION', '1.3.1' );
 define( 'TAKA_PLATFORM_PLUGIN_FILE', __FILE__ );
 define( 'TAKA_PLATFORM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TAKA_PLATFORM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -33,6 +33,8 @@ require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Frontend/class-organizer-dashb
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Frontend/class-renderer.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Core/class-plugin.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Admin/class-admin.php';
+
+register_activation_hook( TAKA_PLATFORM_PLUGIN_FILE, array( 'TAKA_Platform_Admin', 'ensure_capabilities' ) );
 
 // Legacy class aliases preserve old integrations while new code uses TAKA_Platform_* names.
 if ( ! class_exists( 'Taka_Tour_Data', false ) ) {

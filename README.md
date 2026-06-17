@@ -135,6 +135,10 @@ Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `tak
 
 ## Changelog
 
+### v1.3.1
+
+- Fixed backend access for TAKA Organizer users with refreshed role capabilities, event CPT capability mapping and limited wp-admin menus.
+
 ### v1.3.0
 
 - Added frontend organizer dashboard with scoped event listing, creation, editing and duplication for organizer self-service.
