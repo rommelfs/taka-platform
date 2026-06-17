@@ -1,0 +1,166 @@
+{
+  "language": {
+    "code": "fi",
+    "name": "Suomi",
+    "switcher_label": "Valitse kieli"
+  },
+  "hero": {
+    "kicker": "TAKA European Tour 2026",
+    "headline": "Harmony in Motion",
+    "intro": "Eurooppalainen seminaarikiertue Takafumi Nakayama Sensein kanssa – Helsingistä Berliinin, Alankomaiden, Belgian ja Luxemburgin kautta Trier/Konz-alueelle.",
+    "primary_button": "Katso seminaarit",
+    "secondary_button": "Tickets",
+    "stations_label": "Kiertuepaikat"
+  },
+  "tour": {
+    "kicker": "European Tour",
+    "headline": "Seminaarit Euroopassa"
+  },
+  "seminar": {
+    "format_label": "Muoto",
+    "host_label": "Järjestäjä",
+    "ticketshop_soon": "Lippukauppa tulossa",
+    "ticketshop_direct": "Avaa lippukauppa",
+    "ticketshop_open_pretix": "Avaa lippukauppa"
+  },
+  "gallery": {
+    "kicker": "Harjoittelu liikkeessä",
+    "headline": "Kobudo, Soft Blocking ja yhdessä oppiminen",
+    "intro": "Aitoja hetkiä aiemmista seminaareista: bo-harjoittelua, pariharjoittelua, yhteistä tekemistä ja kansainvälistä karateyhteisöä.",
+    "cards": {
+      "community": {
+        "title": "Yhteisö",
+        "text": "Kansainvälinen karateperhe."
+      },
+      "kobudo": {
+        "title": "Kobudo",
+        "text": "Bo-työskentelyä, etäisyyttä ja ajoitusta."
+      },
+      "softblock": {
+        "title": "Soft Blocking",
+        "text": "Pehmeää rakennetta raaan voiman sijaan."
+      },
+      "together": {
+        "title": "Yhdessä harjoittelu",
+        "text": "Oppimista havainnoinnin, vaihdon ja toiston kautta."
+      },
+      "kids": {
+        "title": "Lasten seminaari",
+        "text": "Lasten seminaari Trierissä"
+      },
+      "group": {
+        "title": "Ryhmäkuva",
+        "text": "Yhteisö yli dojo- ja maarajojen."
+      }
+    }
+  },
+  "sections": {
+    "sensei": {
+      "kicker": "Sensei",
+      "headline": "Takafumi Nakayama",
+      "text": "Tarkkuutta, rauhaa ja liikkeen laatua okinawalaisesta perinteestä."
+    },
+    "training": {
+      "kicker": "Training",
+      "headline": "Karate-Do, Kobujutsu ja Soft Blocking",
+      "text": "Seminaarit yhdistävät perusteet, pariharjoittelun, ajoituksen, etäisyyden ja kehon rakenteen."
+    },
+    "community": {
+      "kicker": "Community",
+      "headline": "Harjoitellaan yhdessä",
+      "text": "Eurooppalainen kohtaaminen vakavaan harjoitteluun ja kunnioittavaan vaihtoon."
+    },
+    "host": {
+      "kicker": "Järjestäjä",
+      "headline": "5 vuotta Kleiner Wald Dojoa"
+    },
+    "sponsor": {
+      "kicker": "Sponsor",
+      "headline": "kanso",
+      "text": "Kehon, mielen ja sielun keskus Konzissa.",
+      "link_text": "kan.so"
+    },
+    "place": {
+      "kicker": "Paikka Konz",
+      "headline": "Käytännön tiedot",
+      "text": "Matkaohjeet, aikataulut ja paikalliset tiedot lisätään seminaarikuvauksiin."
+    }
+  },
+  "footer": {
+    "text": "TAKA European Tour 2026"
+  },
+  "seminars": {
+    "helsinki": {
+      "subtitle": "Helsinki-seminaari",
+      "description": "Kahden päivän seminaari Helsingissä.",
+      "type": "2 päivän seminaari"
+    },
+    "berlin": {
+      "subtitle": "Berlin-seminaari",
+      "description": "Kahden päivän seminaari Berliinissä.",
+      "type": "2 päivän seminaari"
+    },
+    "netherlands": {
+      "subtitle": "Netherlands-seminaari",
+      "description": "Kahden päivän seminaari Alankomaissa.",
+      "type": "2 päivän seminaari"
+    },
+    "belgium": {
+      "subtitle": "Belgium-seminaari",
+      "description": "Seminaari suunniteltu klo 10:00–13:00.",
+      "type": "Puolen päivän seminaari"
+    },
+    "illange": {
+      "subtitle": "Illange-seminaari",
+      "description": "Seminaaripysäkki Ranskassa.",
+      "type": "Seminaari"
+    },
+    "hosingen": {
+      "subtitle": "Hosingen-seminaari",
+      "description": "Seminaaripysähdys Luxemburgissa.",
+      "type": "Seminaari"
+    },
+    "trier-kinderseminar": {
+      "subtitle": "Lasten seminaari",
+      "description": "Lasten seminaari Trierissä osana TAKA European Touria.",
+      "type": "Lasten seminaari",
+      "audience": "Lapset ja nuoret",
+      "level": "Kaikki tasot"
+    },
+    "konz": {
+      "subtitle": "Konz-seminaari",
+      "description": "Kahden päivän seminaari Konzissa Takafumi Nakayama Sensein kanssa.",
+      "type": "2 päivän seminaari",
+      "audience": "Aikuiset ja nuoret",
+      "level": "Kaikki tyylisuunnat ja tasot",
+      "parking": "Pysäköintitiedot ilmoitetaan myöhemmin."
+    },
+    "saarwellingen": {
+      "subtitle": "Saarwellingen-seminaari",
+      "description": "Alueellisten kiertuepysähdysten päätösseminaari.",
+      "type": "Seminaari"
+    }
+  },
+  "event": {
+    "date": "Päivä",
+    "time": "Aika",
+    "doors_open": "Ovet avataan",
+    "start": "Alkaa",
+    "end": "Päättyy",
+    "venue": "Paikka",
+    "address": "Osoite",
+    "parking": "Pysäköinti",
+    "organizer": "Järjestäjä",
+    "audience": "Kohderyhmä",
+    "level": "Taso",
+    "ticketshop_direct": "Avaa lipunmyynti",
+    "ticketshop_soon": "Lipunmyynti tulossa",
+    "details_follow": "Lisätiedot myöhemmin",
+    "practical_information": "Käytännön tiedot",
+    "accessibility": "Esteettömyys",
+    "notes": "Huomiot"
+  },
+  "country": {
+    "france": "Ranska"
+  }
+}

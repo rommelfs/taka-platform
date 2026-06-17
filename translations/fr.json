@@ -1,0 +1,166 @@
+{
+  "language": {
+    "code": "fr",
+    "name": "Français",
+    "switcher_label": "Choisir la langue"
+  },
+  "hero": {
+    "kicker": "TAKA European Tour 2026",
+    "headline": "Harmony in Motion",
+    "intro": "Un voyage de séminaires européen avec Takafumi Nakayama Sensei – de Helsinki à Berlin, aux Pays-Bas, en Belgique et au Luxembourg jusqu’à la région Trier/Konz.",
+    "primary_button": "Voir les séminaires",
+    "secondary_button": "Tickets",
+    "stations_label": "Étapes de la tournée"
+  },
+  "tour": {
+    "kicker": "European Tour",
+    "headline": "Séminaires en Europe"
+  },
+  "seminar": {
+    "format_label": "Format",
+    "host_label": "Hôte",
+    "ticketshop_soon": "Billetterie à venir",
+    "ticketshop_direct": "Ouvrir la billetterie",
+    "ticketshop_open_pretix": "Ouvrir la billetterie"
+  },
+  "gallery": {
+    "kicker": "Entraînement en mouvement",
+    "headline": "Kobudo, Soft Blocking et apprentissage partagé",
+    "intro": "Impressions réelles de séminaires passés : travail au bo, entraînement à deux, pratique commune et communauté internationale de karaté.",
+    "cards": {
+      "community": {
+        "title": "Communauté",
+        "text": "Une famille internationale de karaté."
+      },
+      "kobudo": {
+        "title": "Kobudo",
+        "text": "Travail au bo, distance et timing."
+      },
+      "softblock": {
+        "title": "Soft Blocking",
+        "text": "Une structure souple plutôt que la force brute."
+      },
+      "together": {
+        "title": "Pratiquer ensemble",
+        "text": "Apprendre par l’observation, l’échange et la répétition."
+      },
+      "kids": {
+        "title": "Séminaire enfants",
+        "text": "Séminaire enfants Trier"
+      },
+      "group": {
+        "title": "Photo de groupe",
+        "text": "Une communauté au-delà des dojos et des frontières."
+      }
+    }
+  },
+  "sections": {
+    "sensei": {
+      "kicker": "Sensei",
+      "headline": "Takafumi Nakayama",
+      "text": "Précision, calme et qualité du mouvement issus de la tradition d’Okinawa."
+    },
+    "training": {
+      "kicker": "Training",
+      "headline": "Karate-Do, Kobujutsu et Soft Blocking",
+      "text": "Les séminaires relient bases, travail à deux, timing, distance et structure corporelle."
+    },
+    "community": {
+      "kicker": "Community",
+      "headline": "S’entraîner ensemble",
+      "text": "Une rencontre européenne pour une pratique sérieuse et un échange respectueux."
+    },
+    "host": {
+      "kicker": "Hôte",
+      "headline": "5 ans du Kleiner Wald Dojo"
+    },
+    "sponsor": {
+      "kicker": "Sponsor",
+      "headline": "kanso",
+      "text": "Centre pour le corps, l’esprit et l’âme à Konz.",
+      "link_text": "kan.so"
+    },
+    "place": {
+      "kicker": "Lieu Konz",
+      "headline": "Informations pratiques",
+      "text": "Les détails de voyage, horaires et informations locales suivront dans les descriptions des séminaires."
+    }
+  },
+  "footer": {
+    "text": "TAKA European Tour 2026"
+  },
+  "seminars": {
+    "helsinki": {
+      "subtitle": "Séminaire Helsinki",
+      "description": "Deux jours de séminaire à Helsinki.",
+      "type": "Séminaire de 2 jours"
+    },
+    "berlin": {
+      "subtitle": "Séminaire Berlin",
+      "description": "Deux jours de séminaire à Berlin.",
+      "type": "Séminaire de 2 jours"
+    },
+    "netherlands": {
+      "subtitle": "Séminaire Netherlands",
+      "description": "Deux jours de séminaire aux Pays-Bas.",
+      "type": "Séminaire de 2 jours"
+    },
+    "belgium": {
+      "subtitle": "Séminaire Belgium",
+      "description": "Séminaire prévu de 10h00 à 13h00.",
+      "type": "Demi-journée"
+    },
+    "illange": {
+      "subtitle": "Séminaire Illange",
+      "description": "Étape de séminaire en France.",
+      "type": "Séminaire"
+    },
+    "hosingen": {
+      "subtitle": "Séminaire Hosingen",
+      "description": "Étape de séminaire au Luxembourg.",
+      "type": "Séminaire"
+    },
+    "trier-kinderseminar": {
+      "subtitle": "Séminaire enfants",
+      "description": "Séminaire enfants à Trier dans le cadre du TAKA European Tour.",
+      "type": "Séminaire enfants",
+      "audience": "Enfants et jeunes",
+      "level": "Tous niveaux"
+    },
+    "konz": {
+      "subtitle": "Séminaire Konz",
+      "description": "Deux jours de séminaire à Konz avec Takafumi Nakayama Sensei.",
+      "type": "Séminaire de 2 jours",
+      "audience": "Adultes et jeunes",
+      "level": "Tous styles et tous niveaux",
+      "parking": "Les informations de stationnement suivront."
+    },
+    "saarwellingen": {
+      "subtitle": "Séminaire Saarwellingen",
+      "description": "Séminaire final des étapes régionales.",
+      "type": "Séminaire"
+    }
+  },
+  "event": {
+    "date": "Date",
+    "time": "Horaire",
+    "doors_open": "Ouverture des portes",
+    "start": "Début",
+    "end": "Fin",
+    "venue": "Lieu",
+    "address": "Adresse",
+    "parking": "Parking",
+    "organizer": "Organisateur",
+    "audience": "Public",
+    "level": "Niveau",
+    "ticketshop_direct": "Ouvrir la billetterie",
+    "ticketshop_soon": "Billetterie à venir",
+    "details_follow": "Détails à venir",
+    "practical_information": "Informations pratiques",
+    "accessibility": "Accessibilité",
+    "notes": "Notes"
+  },
+  "country": {
+    "france": "France"
+  }
+}
