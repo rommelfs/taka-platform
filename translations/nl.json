@@ -175,7 +175,11 @@
     "previous_seminar": "Eerder seminar",
     "event_photo": "Evenementfoto",
     "previous_seminar_photo_alt": "%s foto van een eerder seminar",
-    "organizer_event_photo_alt": "%s evenementfoto"
+    "organizer_event_photo_alt": "%s evenementfoto",
+    "co_organizers": "Medeorganisatoren",
+    "add_co_organizer": "Medeorganisator toevoegen",
+    "remove_co_organizer": "Medeorganisator verwijderen",
+    "logo": "Logo"
   },
   "country": {
     "france": "Frankrijk"

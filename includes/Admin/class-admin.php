@@ -115,6 +115,23 @@ class TAKA_Platform_Admin {
 			);
 		}
 
+		if ( TAKA_PLATFORM_CPT_ORGANIZER === $post_type ) {
+			$args['map_meta_cap'] = true;
+			$args['capabilities'] = array(
+				'edit_post'              => 'edit_taka_organizer_profile',
+				'read_post'              => 'edit_taka_organizer_profile',
+				'delete_post'            => 'manage_options',
+				'edit_posts'             => 'edit_taka_organizer_profile',
+				'edit_others_posts'      => 'manage_options',
+				'publish_posts'          => 'manage_options',
+				'edit_published_posts'   => 'edit_taka_organizer_profile',
+				'read_private_posts'     => 'manage_options',
+				'delete_posts'           => 'manage_options',
+				'delete_others_posts'    => 'manage_options',
+				'create_posts'           => 'manage_options',
+			);
+		}
+
 		register_post_type(
 			$post_type,
 			$args
@@ -300,10 +317,15 @@ class TAKA_Platform_Admin {
 		if ( ! is_admin() || ! $query->is_main_query() || self::current_user_is_platform_admin() ) {
 			return;
 		}
-		if ( TAKA_PLATFORM_CPT_EVENT !== ( $query->get( 'post_type' ) ?: '' ) ) {
+		$post_type = $query->get( 'post_type' ) ?: '';
+		if ( ! in_array( $post_type, array( TAKA_PLATFORM_CPT_EVENT, TAKA_PLATFORM_CPT_ORGANIZER ), true ) ) {
 			return;
 		}
 		$organizer_ids = self::get_current_user_organizer_ids();
+		if ( TAKA_PLATFORM_CPT_ORGANIZER === $post_type ) {
+			$query->set( 'post__in', ! empty( $organizer_ids ) ? $organizer_ids : array( 0 ) );
+			return;
+		}
 		if ( empty( $organizer_ids ) ) {
 			$query->set( 'post__in', array( 0 ) );
 			return;
@@ -326,7 +348,7 @@ class TAKA_Platform_Admin {
 			return $caps;
 		}
 		$post = get_post( (int) $args[0] );
-		if ( ! $post || TAKA_PLATFORM_CPT_EVENT !== $post->post_type ) {
+		if ( ! $post || ! in_array( $post->post_type, array( TAKA_PLATFORM_CPT_EVENT, TAKA_PLATFORM_CPT_ORGANIZER ), true ) ) {
 			return $caps;
 		}
 		if ( user_can( $user_id, 'manage_options' ) ) {
@@ -334,6 +356,9 @@ class TAKA_Platform_Admin {
 		}
 		if ( 'delete_post' === $cap ) {
 			return array( 'do_not_allow' );
+		}
+		if ( TAKA_PLATFORM_CPT_ORGANIZER === $post->post_type ) {
+			return in_array( (int) $post->ID, self::get_user_organizer_ids( $user_id ), true ) ? array( 'edit_taka_organizer_profile' ) : array( 'do_not_allow' );
 		}
 		return self::user_can_access_event( $user_id, $post->ID ) ? array( 'edit_taka_events' ) : array( 'do_not_allow' );
 	}
@@ -347,6 +372,9 @@ class TAKA_Platform_Admin {
 		$post    = get_post( $post_id );
 		if ( $post && TAKA_PLATFORM_CPT_EVENT === $post->post_type && ! self::user_can_access_event( get_current_user_id(), $post_id ) ) {
 			wp_die( esc_html__( 'You are not allowed to edit this event.', 'taka-platform' ) );
+		}
+		if ( $post && TAKA_PLATFORM_CPT_ORGANIZER === $post->post_type && ! in_array( $post_id, self::get_current_user_organizer_ids(), true ) ) {
+			wp_die( esc_html__( 'You are not allowed to edit this organizer.', 'taka-platform' ) );
 		}
 	}
 
@@ -687,7 +715,7 @@ class TAKA_Platform_Admin {
 		return (int) $post_id;
 	}
 
-	private static function organizer_meta_from_config( $item ) { return array( '_taka_legal_name' => $item['legal_name'] ?? '', '_taka_website' => $item['website'] ?? '', '_taka_logo_id' => (int) ( $item['logo_id'] ?? 0 ), '_taka_logo_url' => $item['logo_url'] ?? ( $item['logo'] ?? '' ), '_taka_emails' => implode( "\n", $item['emails'] ?? array() ), '_taka_contact_persons' => self::contact_persons_to_lines( $item['contact_persons'] ?? array() ), '_taka_instagram' => $item['social']['instagram'] ?? '', '_taka_facebook' => $item['social']['facebook'] ?? '', '_taka_youtube' => $item['social']['youtube'] ?? '', '_taka_active' => 1 ); }
+	private static function organizer_meta_from_config( $item ) { $social = is_array( $item['social'] ?? null ) ? $item['social'] : ( is_array( $item['social_links'] ?? null ) ? $item['social_links'] : array() ); return array( '_taka_legal_name' => $item['legal_name'] ?? '', '_taka_website' => $item['website'] ?? '', '_taka_logo_id' => (int) ( $item['logo_id'] ?? 0 ), '_taka_logo_url' => $item['logo_url'] ?? ( $item['logo'] ?? '' ), '_taka_emails' => implode( "\n", $item['emails'] ?? array() ), '_taka_contact_persons' => self::contact_persons_to_lines( $item['contact_persons'] ?? array() ), '_taka_instagram' => $social['instagram'] ?? '', '_taka_facebook' => $social['facebook'] ?? '', '_taka_youtube' => $social['youtube'] ?? '', '_taka_platform_co_organizers' => self::sanitize_co_organizers( $item['co_organizers'] ?? array() ), '_taka_active' => 1 ); }
 	private static function venue_meta_from_config( $item ) { $a = $item['address'] ?? array(); $g = $item['geo'] ?? array(); return array( '_taka_image_id' => (int) ( $item['image_id'] ?? 0 ), '_taka_image_url' => $item['image_url'] ?? ( $item['image'] ?? '' ), '_taka_parking_image_id' => (int) ( $item['parking_image_id'] ?? 0 ), '_taka_parking_image_url' => $item['parking_image_url'] ?? '', '_taka_gallery_image_ids' => implode( ',', $item['gallery_image_ids'] ?? array() ), '_taka_street' => $a['street'] ?? '', '_taka_postal_code' => $a['postal_code'] ?? '', '_taka_city' => $a['city'] ?? '', '_taka_country' => $a['country'] ?? '', '_taka_country_code' => $a['country_code'] ?? '', '_taka_timezone' => $item['timezone'] ?? '', '_taka_website' => $item['website'] ?? '', '_taka_parking' => $item['parking'] ?? '', '_taka_accessibility' => $item['accessibility'] ?? '', '_taka_notes' => $item['notes'] ?? '', '_taka_lat' => $g['lat'] ?? '', '_taka_lng' => $g['lng'] ?? '' ); }
 	private static function event_meta_from_config( $item ) { return array( '_taka_subtitle' => $item['subtitle'] ?? '', '_taka_country' => $item['country'] ?? '', '_taka_country_code' => $item['country_code'] ?? '', '_taka_flag' => $item['flag'] ?? '', '_taka_city' => $item['city'] ?? '', '_taka_date_start' => $item['date_start'] ?? '', '_taka_date_end' => $item['date_end'] ?? '', '_taka_time_start' => $item['time_start'] ?? '', '_taka_time_end' => $item['time_end'] ?? '', '_taka_doors_open' => $item['doors_open'] ?? '', '_taka_timezone' => $item['timezone'] ?? '', '_taka_format' => $item['format'] ?? '', '_taka_audience' => $item['audience'] ?? '', '_taka_level' => $item['level'] ?? '', '_taka_ticket_status' => $item['ticket_status'] ?? '', '_taka_ticket_provider' => $item['ticket_provider'] ?? '', '_taka_ticket_shop_url' => $item['ticket_shop_url'] ?? '', '_taka_image_id' => (int) ( $item['image_id'] ?? 0 ), '_taka_image_url' => $item['image_url'] ?? ( $item['image'] ?? '' ), '_taka_group_image_id' => (int) ( $item['group_image_id'] ?? 0 ), '_taka_group_image_url' => $item['group_image_url'] ?? ( $item['group_image'] ?? '' ), '_taka_gallery_image_ids' => implode( ',', $item['gallery_image_ids'] ?? array() ), '_taka_photo_credit' => $item['photo_credit'] ?? '', '_taka_languages' => implode( ',', $item['languages'] ?? array() ), '_taka_notes' => $item['notes'] ?? '', '_taka_parking' => $item['parking'] ?? '', '_taka_sort_order' => (int) ( $item['sort_order'] ?? 0 ) ); }
 
@@ -708,6 +736,7 @@ class TAKA_Platform_Admin {
 		self::text( $post->ID, 'facebook', __( 'Facebook', 'taka-platform' ) );
 		self::text( $post->ID, 'youtube', __( 'YouTube', 'taka-platform' ) );
 		self::checkbox( $post->ID, 'active', __( 'Active', 'taka-platform' ) );
+		self::render_co_organizers( $post->ID );
 	}
 
 	/** Venue meta. */
@@ -747,7 +776,10 @@ class TAKA_Platform_Admin {
 		self::textarea( $post->ID, 'parking', __( 'Parking notes', 'taka-platform' ) );
 	}
 
-	public static function save_organizer( $post_id ) { self::save( $post_id, array( 'legal_name', 'website', 'logo_id', 'logo_url', 'emails', 'contact_persons', 'instagram', 'facebook', 'youtube', 'active' ) ); }
+	public static function save_organizer( $post_id ) {
+		self::save( $post_id, array( 'legal_name', 'website', 'logo_id', 'logo_url', 'emails', 'contact_persons', 'instagram', 'facebook', 'youtube', 'active' ) );
+		self::save_co_organizers( $post_id );
+	}
 	public static function save_venue( $post_id ) { self::save( $post_id, array( 'street', 'postal_code', 'city', 'country', 'country_code', 'timezone', 'lat', 'lng', 'website', 'image_id', 'image_url', 'parking_image_id', 'parking_image_url', 'gallery_image_ids', 'parking', 'accessibility', 'notes' ) ); }
 	public static function save_event( $post_id ) {
 		if ( ! self::current_user_is_platform_admin() ) {
@@ -766,6 +798,52 @@ class TAKA_Platform_Admin {
 		self::save( $post_id, array( 'subtitle', 'country', 'country_code', 'flag', 'city', 'date_start', 'date_end', 'time_start', 'time_end', 'doors_open', 'timezone', 'format', 'audience', 'level', 'ticket_provider', 'ticket_status', 'photo_credit', 'languages', 'organizer_id', 'venue_id', 'venue_ids', 'ticket_shop_url', 'image_id', 'image_url', 'group_image_id', 'group_image_url', 'gallery_image_ids', 'short_description', 'long_description', 'ticket_card_text', 'accessibility', 'sort_order', 'notes', 'parking' ) );
 	}
 
+	/** Save repeatable co-organizer entries for an organizer. */
+	private static function save_co_organizers( $post_id ) {
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
+		if ( ! isset( $_POST[ self::NONCE ] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE ] ) ), self::NONCE ) || ! current_user_can( 'edit_post', $post_id ) ) { return; }
+		$posted = isset( $_POST['taka_platform_co_organizers'] ) && is_array( $_POST['taka_platform_co_organizers'] ) ? wp_unslash( $_POST['taka_platform_co_organizers'] ) : array();
+		update_post_meta( $post_id, '_taka_platform_co_organizers', self::sanitize_co_organizers( $posted ) );
+	}
+
+	/** Sanitize co-organizer entries from admin forms or imported config. */
+	private static function sanitize_co_organizers( $items ) {
+		if ( ! is_array( $items ) ) {
+			return array();
+		}
+
+		$clean = array();
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			$name = sanitize_text_field( $item['name'] ?? '' );
+			if ( '' === $name ) {
+				continue;
+			}
+			$social = is_array( $item['social_links'] ?? null ) ? $item['social_links'] : array();
+			$clean[] = array(
+				'name' => $name,
+				'legal_name' => sanitize_text_field( $item['legal_name'] ?? '' ),
+				'website' => esc_url_raw( $item['website'] ?? '' ),
+				'logo_id' => absint( $item['logo_id'] ?? 0 ),
+				'logo_url' => esc_url_raw( $item['logo_url'] ?? ( $item['logo'] ?? '' ) ),
+				'email' => sanitize_email( $item['email'] ?? '' ),
+				'description' => sanitize_textarea_field( $item['description'] ?? '' ),
+				'social_links' => array(
+					'instagram' => esc_url_raw( $social['instagram'] ?? '' ),
+					'facebook' => esc_url_raw( $social['facebook'] ?? '' ),
+					'youtube' => esc_url_raw( $social['youtube'] ?? '' ),
+				),
+				'sort_order' => (int) ( $item['sort_order'] ?? 0 ),
+				'active' => array_key_exists( 'active', $item ) ? ( ! empty( $item['active'] ) ? 1 : 0 ) : 1,
+			);
+		}
+
+		usort( $clean, static function ( $a, $b ) { return ( (int) ( $a['sort_order'] ?? 0 ) <=> (int) ( $b['sort_order'] ?? 0 ) ) ?: strcmp( (string) ( $a['name'] ?? '' ), (string) ( $b['name'] ?? '' ) ); } );
+		return $clean;
+	}
+
 	/** Save fields. */
 	private static function save( $post_id, $fields ) {
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
@@ -781,6 +859,62 @@ class TAKA_Platform_Admin {
 			else { $value = sanitize_text_field( $value ); }
 			update_post_meta( $post_id, $key, $value );
 		}
+	}
+
+	/** Render repeatable co-organizer UI on organizer edit screens. */
+	private static function render_co_organizers( $post_id ) {
+		$items = get_post_meta( $post_id, '_taka_platform_co_organizers', true );
+		$items = self::sanitize_co_organizers( is_array( $items ) ? $items : array() );
+		?>
+		<div class="taka-co-organizers" data-taka-co-organizers>
+			<h3><?php echo esc_html__( 'Co-organizers', 'taka-platform' ); ?></h3>
+			<p class="description"><?php echo esc_html__( 'Add partner organizers that should appear below the main organizer in frontend organizer information.', 'taka-platform' ); ?></p>
+			<div data-taka-co-organizer-list>
+				<?php foreach ( $items as $index => $item ) : ?>
+					<?php self::render_co_organizer_row( (int) $index, $item ); ?>
+				<?php endforeach; ?>
+			</div>
+			<button type="button" class="button" data-taka-co-organizer-add><?php echo esc_html__( 'Add co-organizer', 'taka-platform' ); ?></button>
+			<template data-taka-co-organizer-template>
+				<?php self::render_co_organizer_row( '__index__', array( 'active' => 1 ) ); ?>
+			</template>
+		</div>
+		<?php
+	}
+
+	/** Render one co-organizer row. */
+	private static function render_co_organizer_row( $index, $item ) {
+		$index_attr = (string) $index;
+		$prefix = 'taka_platform_co_organizers[' . $index_attr . ']';
+		$logo_id = absint( $item['logo_id'] ?? 0 );
+		$logo_url = (string) ( $item['logo_url'] ?? '' );
+		$input_id = 'taka_co_organizer_logo_' . sanitize_html_class( $index_attr );
+		$preview_id = $input_id . '_preview';
+		$social = is_array( $item['social_links'] ?? null ) ? $item['social_links'] : array();
+		?>
+		<div class="taka-co-organizer-item" data-taka-co-organizer-item style="border:1px solid #dcdcde;padding:12px;margin:12px 0;background:#fff;">
+			<p><strong><?php echo esc_html__( 'Co-organizer', 'taka-platform' ); ?></strong> <button type="button" class="button-link-delete" data-taka-co-organizer-remove><?php echo esc_html__( 'Remove co-organizer', 'taka-platform' ); ?></button></p>
+			<p><label><?php echo esc_html__( 'Name', 'taka-platform' ); ?><br><input class="widefat" type="text" name="<?php echo esc_attr( $prefix ); ?>[name]" value="<?php echo esc_attr( $item['name'] ?? '' ); ?>"></label></p>
+			<p><label><?php echo esc_html__( 'Legal name', 'taka-platform' ); ?><br><input class="widefat" type="text" name="<?php echo esc_attr( $prefix ); ?>[legal_name]" value="<?php echo esc_attr( $item['legal_name'] ?? '' ); ?>"></label></p>
+			<p><label><?php echo esc_html__( 'Website', 'taka-platform' ); ?><br><input class="widefat" type="url" name="<?php echo esc_attr( $prefix ); ?>[website]" value="<?php echo esc_attr( $item['website'] ?? '' ); ?>"></label></p>
+			<p><label><?php echo esc_html__( 'Email', 'taka-platform' ); ?><br><input class="widefat" type="email" name="<?php echo esc_attr( $prefix ); ?>[email]" value="<?php echo esc_attr( $item['email'] ?? '' ); ?>"></label></p>
+			<p>
+				<strong><?php echo esc_html__( 'Logo', 'taka-platform' ); ?></strong><br>
+				<input id="<?php echo esc_attr( $input_id ); ?>" type="hidden" name="<?php echo esc_attr( $prefix ); ?>[logo_id]" value="<?php echo esc_attr( (string) $logo_id ); ?>">
+				<button type="button" class="button" data-taka-media-pick data-target="<?php echo esc_attr( $input_id ); ?>" data-preview="<?php echo esc_attr( $preview_id ); ?>"><?php echo esc_html__( 'Select logo', 'taka-platform' ); ?></button>
+				<button type="button" class="button" data-taka-media-remove data-target="<?php echo esc_attr( $input_id ); ?>" data-preview="<?php echo esc_attr( $preview_id ); ?>"><?php echo esc_html__( 'Remove image', 'taka-platform' ); ?></button>
+				<div id="<?php echo esc_attr( $preview_id ); ?>"><?php self::image_preview( $logo_id, $logo_url ); ?></div>
+			</p>
+			<p><label><?php echo esc_html__( 'Fallback logo URL', 'taka-platform' ); ?><br><input class="widefat" type="url" name="<?php echo esc_attr( $prefix ); ?>[logo_url]" value="<?php echo esc_attr( $logo_url ); ?>"></label></p>
+			<p><label><?php echo esc_html__( 'Description', 'taka-platform' ); ?><br><textarea class="widefat" rows="3" name="<?php echo esc_attr( $prefix ); ?>[description]"><?php echo esc_textarea( $item['description'] ?? '' ); ?></textarea></label></p>
+			<p><label><?php echo esc_html__( 'Instagram', 'taka-platform' ); ?><br><input class="widefat" type="url" name="<?php echo esc_attr( $prefix ); ?>[social_links][instagram]" value="<?php echo esc_attr( $social['instagram'] ?? '' ); ?>"></label></p>
+			<p><label><?php echo esc_html__( 'Facebook', 'taka-platform' ); ?><br><input class="widefat" type="url" name="<?php echo esc_attr( $prefix ); ?>[social_links][facebook]" value="<?php echo esc_attr( $social['facebook'] ?? '' ); ?>"></label></p>
+			<p><label><?php echo esc_html__( 'YouTube', 'taka-platform' ); ?><br><input class="widefat" type="url" name="<?php echo esc_attr( $prefix ); ?>[social_links][youtube]" value="<?php echo esc_attr( $social['youtube'] ?? '' ); ?>"></label></p>
+			<p><label><?php echo esc_html__( 'Sort order', 'taka-platform' ); ?><br><input type="number" name="<?php echo esc_attr( $prefix ); ?>[sort_order]" value="<?php echo esc_attr( (string) ( $item['sort_order'] ?? 0 ) ); ?>"></label></p>
+			<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[active]" value="0">
+			<p><label><input type="checkbox" name="<?php echo esc_attr( $prefix ); ?>[active]" value="1" <?php checked( ! array_key_exists( 'active', $item ) || ! empty( $item['active'] ) ); ?>> <?php echo esc_html__( 'Active', 'taka-platform' ); ?></label></p>
+		</div>
+		<?php
 	}
 
 	private static function nonce() { wp_nonce_field( self::NONCE, self::NONCE ); }

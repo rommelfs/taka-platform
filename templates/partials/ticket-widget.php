@@ -34,9 +34,11 @@ $event_key = sanitize_html_class( (string) ( $seminar['slug'] ?? $seminar['id'] 
 				array(
 					'drawer_id' => $drawer_id,
 					'title'     => $drawer['title'] ?? '',
-					'rows'      => $drawer['rows'] ?? array(),
-					'image'     => $drawer['image'] ?? '',
-					'type'      => $drawer['type'] ?? $drawer_key,
+					'rows'        => $drawer['rows'] ?? array(),
+					'cards'       => $drawer['cards'] ?? array(),
+					'cards_title' => $drawer['cards_title'] ?? '',
+					'image'       => $drawer['image'] ?? '',
+					'type'        => $drawer['type'] ?? $drawer_key,
 				)
 			); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			?>

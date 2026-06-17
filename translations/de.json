@@ -175,7 +175,11 @@
     "previous_seminar": "Früheres Seminar",
     "event_photo": "Eventfoto",
     "previous_seminar_photo_alt": "%s – Foto eines früheren Seminars",
-    "organizer_event_photo_alt": "%s – Eventfoto"
+    "organizer_event_photo_alt": "%s – Eventfoto",
+    "co_organizers": "Co-Veranstalter",
+    "add_co_organizer": "Co-Veranstalter hinzufügen",
+    "remove_co_organizer": "Co-Veranstalter entfernen",
+    "logo": "Logo"
   },
   "country": {
     "france": "Frankreich"

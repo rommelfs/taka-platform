@@ -175,7 +175,11 @@
     "previous_seminar": "Previous seminar",
     "event_photo": "Event photo",
     "previous_seminar_photo_alt": "%s previous seminar photo",
-    "organizer_event_photo_alt": "%s event photo"
+    "organizer_event_photo_alt": "%s event photo",
+    "co_organizers": "Co-organizers",
+    "add_co_organizer": "Add co-organizer",
+    "remove_co_organizer": "Remove co-organizer",
+    "logo": "Logo"
   },
   "country": {
     "france": "France"

@@ -175,7 +175,11 @@
     "previous_seminar": "過去のセミナー",
     "event_photo": "イベント写真",
     "previous_seminar_photo_alt": "%s 過去のセミナー写真",
-    "organizer_event_photo_alt": "%s イベント写真"
+    "organizer_event_photo_alt": "%s イベント写真",
+    "co_organizers": "共催者",
+    "add_co_organizer": "共催者を追加",
+    "remove_co_organizer": "共催者を削除",
+    "logo": "ロゴ"
   },
   "country": {
     "france": "フランス"

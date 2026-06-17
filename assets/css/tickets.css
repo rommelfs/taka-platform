@@ -303,3 +303,101 @@
 		max-width: none;
 	}
 }
+
+.taka-info-modal__cards {
+	border-top: 1px solid rgba(17, 17, 17, .1);
+	margin-top: 1.4rem;
+	padding-top: 1.2rem;
+}
+
+.taka-info-modal__section-title {
+	color: #111;
+	font-size: 1rem;
+	font-weight: 850;
+	letter-spacing: .04em;
+	margin: 0 0 .85rem;
+	text-transform: uppercase;
+}
+
+.taka-info-modal__card-grid {
+	display: grid;
+	gap: .9rem;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.taka-info-modal__card {
+	background: rgba(255, 255, 255, .62);
+	border: 1px solid rgba(17, 17, 17, .08);
+	border-radius: 1rem;
+	display: grid;
+	gap: .85rem;
+	grid-template-columns: minmax(88px, 130px) minmax(0, 1fr);
+	padding: .95rem;
+}
+
+.taka-info-modal__card-logo {
+	align-items: center;
+	background: #fff;
+	border-radius: .85rem;
+	display: flex;
+	justify-content: center;
+	min-height: 96px;
+	padding: .7rem;
+}
+
+.taka-info-modal__card-logo img {
+	display: block;
+	height: auto;
+	max-height: 118px;
+	max-width: 100%;
+	object-fit: contain;
+	width: auto;
+}
+
+.taka-info-modal__card h5 {
+	font-size: 1.05rem;
+	line-height: 1.2;
+	margin: 0 0 .25rem;
+}
+
+.taka-info-modal__card p {
+	color: #111;
+	font-size: .95rem;
+	line-height: 1.55;
+	margin: .35rem 0 0;
+}
+
+.taka-info-modal__card-legal {
+	opacity: .76;
+}
+
+.taka-info-modal__card-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .35rem .7rem;
+	list-style: none;
+	margin: .65rem 0 0;
+	padding: 0;
+}
+
+.taka-info-modal__card-links a {
+	color: #BC002D;
+	font-weight: 750;
+	text-decoration-thickness: .08em;
+	text-underline-offset: .16em;
+}
+
+@media (max-width: 720px) {
+	.taka-info-modal__card-grid,
+	.taka-info-modal__card {
+		grid-template-columns: 1fr;
+	}
+
+	.taka-info-modal__card-logo {
+		min-height: 82px;
+	}
+}
+
+.taka-info-modal__card--no-logo {
+	grid-template-columns: 1fr;
+}

@@ -153,6 +153,7 @@ class TAKA_Platform_Data {
 				'social_links' => array( 'instagram' => (string) get_post_meta( $post->ID, '_taka_instagram', true ), 'facebook' => (string) get_post_meta( $post->ID, '_taka_facebook', true ), 'youtube' => (string) get_post_meta( $post->ID, '_taka_youtube', true ) ),
 				'social' => array( 'instagram' => (string) get_post_meta( $post->ID, '_taka_instagram', true ), 'facebook' => (string) get_post_meta( $post->ID, '_taka_facebook', true ), 'youtube' => (string) get_post_meta( $post->ID, '_taka_youtube', true ) ),
 				'description' => $post->post_content,
+				'co_organizers' => self::normalize_co_organizers( get_post_meta( $post->ID, '_taka_platform_co_organizers', true ) ),
 				'active' => '' === (string) get_post_meta( $post->ID, '_taka_active', true ) || '1' === (string) get_post_meta( $post->ID, '_taka_active', true ),
 			);
 			$items[ $id ] = $item;
@@ -257,7 +258,7 @@ class TAKA_Platform_Data {
 	/** Normalize config organizers. */
 	private static function normalize_config_organizers( $organizers ) {
 		$items = array();
-		foreach ( $organizers as $id => $item ) { $item['id'] = (string) $id; $item['config_id'] = (string) $id; $item['logo_url'] = $item['logo'] ?? ''; $item['logo_id'] = 0; $item['social_links'] = $item['social'] ?? array(); $item['description'] = $item['description'] ?? ''; $item['active'] = $item['active'] ?? true; $items[ (string) $id ] = $item; }
+		foreach ( $organizers as $id => $item ) { $item['id'] = (string) $id; $item['config_id'] = (string) $id; $item['logo_url'] = $item['logo'] ?? ''; $item['logo_id'] = 0; $item['social_links'] = $item['social'] ?? array(); $item['description'] = $item['description'] ?? ''; $item['co_organizers'] = self::normalize_co_organizers( $item['co_organizers'] ?? array() ); $item['active'] = $item['active'] ?? true; $items[ (string) $id ] = $item; }
 		return $items;
 	}
 
@@ -475,6 +476,10 @@ class TAKA_Platform_Data {
 			$rows[] = array( 'label' => taka_tour_translate( 'event.organizer', 'Veranstalter', $lang ), 'value' => $organizer['name'] ?? '' );
 			$rows[] = array( 'label' => taka_tour_translate( 'event.website', 'Website', $lang ), 'value' => $organizer['website'] ?? '', 'url' => $organizer['website'] ?? '' );
 			$rows[] = array( 'label' => taka_tour_translate( 'event.contact', 'Kontakt', $lang ), 'value' => self::list_to_string( $organizer['emails'] ?? array() ) );
+			$co_contacts = self::co_organizer_contact_summary( $organizer['co_organizers'] ?? array() );
+			if ( '' !== $co_contacts ) {
+				$rows[] = array( 'label' => taka_tour_translate( 'event.co_organizers', 'Co-organizers', $lang ), 'value' => $co_contacts );
+			}
 		}
 
 		return self::clean_info_rows( $rows );
@@ -512,6 +517,8 @@ class TAKA_Platform_Data {
 				'label' => taka_tour_translate( 'drawer.organizer_info', 'Organizer', $lang ),
 				'title' => taka_tour_translate( 'drawer.organizer_info', 'Organizer info', $lang ),
 				'image' => $organizer['logo'] ?? ( $organizer['logo_url'] ?? '' ),
+				'cards_title' => taka_tour_translate( 'event.co_organizers', 'Co-organizers', $lang ),
+				'cards' => self::co_organizer_cards( $organizer['co_organizers'] ?? array(), $lang ),
 				'rows'  => self::clean_info_rows( array(
 					array( 'label' => taka_tour_translate( 'event.organizer', 'Organizer', $lang ), 'value' => $organizer['name'] ?? '' ),
 					array( 'label' => taka_tour_translate( 'event.legal_name', 'Legal name', $lang ), 'value' => $organizer['legal_name'] ?? '' ),
@@ -564,7 +571,87 @@ class TAKA_Platform_Data {
 			}
 		}
 
-		return array_filter( $drawers, static function ( $drawer ) { return ! empty( $drawer['rows'] ); } );
+		return array_filter( $drawers, static function ( $drawer ) { return ! empty( $drawer['rows'] ) || ! empty( $drawer['cards'] ); } );
+	}
+
+	/** Normalize repeatable co-organizer entries from WordPress meta or config. */
+	private static function normalize_co_organizers( $items ) {
+		if ( ! is_array( $items ) ) {
+			return array();
+		}
+
+		$normalized = array();
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+
+			$name = trim( (string) ( $item['name'] ?? '' ) );
+			if ( '' === $name ) {
+				continue;
+			}
+
+			$logo_id = absint( $item['logo_id'] ?? 0 );
+			$social  = is_array( $item['social_links'] ?? null ) ? $item['social_links'] : ( is_array( $item['social'] ?? null ) ? $item['social'] : array() );
+			$normalized[] = array(
+				'name' => $name,
+				'legal_name' => trim( (string) ( $item['legal_name'] ?? '' ) ),
+				'website' => trim( (string) ( $item['website'] ?? '' ) ),
+				'logo_id' => $logo_id,
+				'logo_url' => self::resolve_attachment_url( $logo_id, 'large', (string) ( $item['logo_url'] ?? ( $item['logo'] ?? '' ) ) ),
+				'email' => trim( (string) ( $item['email'] ?? '' ) ),
+				'description' => trim( (string) ( $item['description'] ?? '' ) ),
+				'social_links' => array(
+					'instagram' => trim( (string) ( $social['instagram'] ?? '' ) ),
+					'facebook' => trim( (string) ( $social['facebook'] ?? '' ) ),
+					'youtube' => trim( (string) ( $social['youtube'] ?? '' ) ),
+				),
+				'sort_order' => (int) ( $item['sort_order'] ?? 0 ),
+				'active' => ! array_key_exists( 'active', $item ) || (bool) $item['active'],
+			);
+		}
+
+		usort( $normalized, static function ( $a, $b ) { return ( (int) ( $a['sort_order'] ?? 0 ) <=> (int) ( $b['sort_order'] ?? 0 ) ) ?: strcmp( (string) ( $a['name'] ?? '' ), (string) ( $b['name'] ?? '' ) ); } );
+		return $normalized;
+	}
+
+	/** Build compact frontend cards for active co-organizers. */
+	private static function co_organizer_cards( $co_organizers, $lang ) {
+		$cards = array();
+		foreach ( self::normalize_co_organizers( $co_organizers ) as $co_organizer ) {
+			if ( empty( $co_organizer['active'] ) ) {
+				continue;
+			}
+			$cards[] = array(
+				'image' => $co_organizer['logo_url'] ?? '',
+				'name' => $co_organizer['name'] ?? '',
+				'legal_name' => $co_organizer['legal_name'] ?? '',
+				'website' => $co_organizer['website'] ?? '',
+				'email' => $co_organizer['email'] ?? '',
+				'description' => $co_organizer['description'] ?? '',
+				'social_links' => $co_organizer['social_links'] ?? array(),
+				'website_label' => taka_tour_translate( 'event.website', 'Website', $lang ),
+				'email_label' => taka_tour_translate( 'event.email', 'Email', $lang ),
+			);
+		}
+
+		return $cards;
+	}
+
+	/** Summarize co-organizer contact data for practical information. */
+	private static function co_organizer_contact_summary( $co_organizers ) {
+		$parts = array();
+		foreach ( self::normalize_co_organizers( $co_organizers ) as $co_organizer ) {
+			if ( empty( $co_organizer['active'] ) ) {
+				continue;
+			}
+			$bits = array_filter( array( $co_organizer['name'] ?? '', $co_organizer['email'] ?? '', $co_organizer['website'] ?? '' ) );
+			if ( ! empty( $bits ) ) {
+				$parts[] = implode( ' | ', $bits );
+			}
+		}
+
+		return implode( ', ', $parts );
 	}
 
 	/** Convert nested contact/email arrays into readable text without PHP notices. */

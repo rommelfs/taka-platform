@@ -175,7 +175,11 @@
     "previous_seminar": "Aiempi seminaari",
     "event_photo": "Tapahtumakuva",
     "previous_seminar_photo_alt": "%s aiemman seminaarin kuva",
-    "organizer_event_photo_alt": "%s tapahtumakuva"
+    "organizer_event_photo_alt": "%s tapahtumakuva",
+    "co_organizers": "Yhteisjärjestäjät",
+    "add_co_organizer": "Lisää yhteisjärjestäjä",
+    "remove_co_organizer": "Poista yhteisjärjestäjä",
+    "logo": "Logo"
   },
   "country": {
     "france": "Ranska"
