@@ -1,0 +1,738 @@
+.taka-tour-page {
+	width: 100vw;
+	margin-left: calc(50% - 50vw);
+	background: #F7F3EC;
+	color: #111111;
+	font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.taka-tour-page * {
+	box-sizing: border-box;
+}
+
+.taka-hero,
+.taka-section {
+	padding: clamp(3.5rem, 8vw, 8rem) clamp(1rem, 5vw, 5rem);
+}
+
+.taka-hero {
+	position: relative;
+	display: flex;
+	align-items: center;
+	min-height: 82vh;
+	background-color: #111111;
+	background-image: var(--taka-hero-image);
+	background-position: center;
+	background-size: cover;
+	overflow: hidden;
+}
+
+.taka-hero::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	background: linear-gradient(90deg, rgba(17, 17, 17, .92), rgba(17, 17, 17, .68), rgba(17, 17, 17, .25));
+}
+
+.taka-hero-content {
+	position: relative;
+	z-index: 2;
+	max-width: 58rem;
+}
+
+.taka-kicker {
+	margin: 0 0 1rem;
+	color: #BC002D;
+	font-size: .78rem;
+	font-weight: 800;
+	letter-spacing: .16em;
+	text-transform: uppercase;
+}
+
+.taka-hero .taka-kicker {
+	color: #C7A35C;
+}
+
+.taka-hero h1,
+.taka-section h2,
+.taka-seminar-card h3 {
+	margin: 0 0 1rem;
+	font-family: "Cormorant Garamond", Georgia, serif;
+	line-height: .95;
+}
+
+.taka-hero h1 {
+	color: #ffffff;
+	font-size: clamp(3rem, 9vw, 7.5rem);
+}
+
+.taka-section h2 {
+	font-size: clamp(2.2rem, 5vw, 4.8rem);
+}
+
+.taka-hero p,
+.taka-section p {
+	max-width: 68ch;
+	font-size: clamp(1rem, 1.5vw, 1.2rem);
+}
+
+.taka-hero p {
+	color: rgba(255, 255, 255, .85);
+}
+
+.taka-button,
+.taka-tabs button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 2.85rem;
+	padding: .8rem 1.15rem;
+	border: 1px solid #BC002D;
+	border-radius: 2px;
+	background: #BC002D;
+	color: #ffffff !important;
+	font-weight: 800;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.taka-button-secondary,
+.taka-tabs button:not(.is-active) {
+	background: transparent;
+	color: #BC002D !important;
+}
+
+.taka-tour-stations {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .6rem;
+	margin: 1.5rem 0 0;
+}
+
+.taka-tour-station-link {
+	display: inline-flex;
+	align-items: center;
+	min-height: 2.35rem;
+	padding: .45rem .75rem;
+	border: 1px solid rgba(199, 163, 92, .55);
+	background: rgba(17, 17, 17, .38);
+	color: #ffffff !important;
+	font-size: .9rem;
+	font-weight: 800;
+	text-decoration: none;
+}
+
+.taka-tour-station-link:hover {
+	border-color: #C7A35C;
+	background: rgba(188, 0, 45, .35);
+}
+
+.taka-card-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .75rem;
+	margin-top: 1.25rem;
+}
+
+.taka-tour-overview {
+	padding-bottom: clamp(1rem, 3vw, 2rem);
+}
+
+.taka-seminars {
+	padding-top: 0;
+}
+
+.taka-card-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+.taka-seminar-card {
+	display: flex;
+	flex-direction: column;
+	padding: clamp(1.2rem, 2vw, 1.75rem);
+	background: rgba(255, 255, 255, .82);
+	border: 1px solid rgba(17, 17, 17, .1);
+	box-shadow: 0 18px 55px rgba(17, 17, 17, .055);
+}
+
+.taka-card-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .5rem;
+	color: #6F6F6F;
+	font-size: .9rem;
+}
+
+.taka-seminar-card h3 {
+	margin-top: 1rem;
+	font-size: 2.2rem;
+}
+
+.taka-subtitle {
+	color: #BC002D;
+	font-weight: 800;
+}
+
+.taka-details {
+	display: grid;
+	gap: .5rem;
+	margin: auto 0 0;
+}
+
+.taka-details div {
+	display: flex;
+	justify-content: space-between;
+	gap: 1rem;
+	padding-top: .5rem;
+	border-top: 1px solid rgba(17, 17, 17, .1);
+}
+
+.taka-details dt {
+	color: #6F6F6F;
+}
+
+.taka-details dd {
+	margin: 0;
+	font-weight: 800;
+	text-align: right;
+}
+
+.taka-ticket-status {
+	margin-top: 1.25rem;
+	color: #6F6F6F;
+	font-weight: 800;
+}
+
+.taka-seminar-pretix {
+	display: block;
+	margin-top: 2rem;
+	padding: 1.25rem;
+	background: #ffffff;
+	border-top: 6px solid #BC002D;
+}
+
+.taka-ticket-direct-link {
+	display: inline-block;
+	margin-top: .75rem;
+	color: #BC002D;
+	font-weight: 800;
+}
+
+.taka-widget-label {
+	font-weight: 800;
+	color: #111111;
+}
+
+.taka-pretix-widget {
+	padding: .75rem;
+	background: #ffffff;
+	border: 1px solid rgba(17, 17, 17, .08);
+}
+
+.taka-pretix-widget pretix-widget {
+	display: block;
+	max-width: 100%;
+}
+
+.pretix-widget button,
+.pretix-widget .btn {
+	border-radius: 2px !important;
+	background: #BC002D !important;
+	font-family: Inter, system-ui, sans-serif !important;
+}
+
+.taka-editorial-gallery {
+	background: #111111;
+	color: #F7F3EC;
+}
+
+.taka-editorial-gallery__intro {
+	max-width: 64rem;
+	margin-bottom: clamp(2rem, 4vw, 3.5rem);
+}
+
+.taka-editorial-gallery h2 {
+	color: #F7F3EC;
+}
+
+.taka-editorial-gallery__intro p:not(.taka-kicker) {
+	color: rgba(247, 243, 236, .82);
+}
+
+.taka-editorial-gallery__grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+.taka-editorial-card {
+	position: relative;
+	overflow: hidden;
+	aspect-ratio: 4 / 3;
+	min-height: 0;
+	background: #111111;
+	border: 1px solid rgba(199, 163, 92, .35);
+}
+
+
+.taka-editorial-card__image {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+	transition: transform .55s ease;
+}
+
+.taka-editorial-card:hover .taka-editorial-card__image {
+	transform: scale(1.025);
+}
+
+.taka-editorial-card__caption {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	padding: 1.1rem 1.25rem;
+	background: linear-gradient(180deg, rgba(17, 17, 17, 0), rgba(17, 17, 17, .86) 24%, rgba(17, 17, 17, .96));
+	color: #F7F3EC;
+}
+
+.taka-editorial-card__caption h3 {
+	margin: 0 0 .25rem;
+	font-family: "Cormorant Garamond", Georgia, serif;
+	font-size: clamp(1.6rem, 3vw, 2.4rem);
+}
+
+.taka-editorial-card__caption p {
+	margin: 0;
+	color: rgba(247, 243, 236, .85);
+}
+
+.taka-sensei,
+.taka-training,
+.taka-community {
+	display: block;
+}
+
+.taka-sensei > div,
+.taka-training > p,
+.taka-training > h2,
+.taka-community > div {
+	max-width: 920px;
+}
+
+.taka-sponsor,
+.taka-host,
+.taka-place {
+	background: #ffffff;
+}
+
+.taka-host-section,
+.taka-sponsor-section {
+	text-align: center;
+}
+
+.taka-centered-section-inner {
+	max-width: 52rem;
+	margin-right: auto;
+	margin-left: auto;
+}
+
+.taka-centered-section-inner p {
+	margin-right: auto;
+	margin-left: auto;
+}
+
+.taka-text-link {
+	color: #BC002D;
+	font-weight: 800;
+}
+
+.taka-logo-card {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	max-width: 520px;
+	margin-right: auto;
+	margin-left: auto;
+	padding: 1.5rem;
+	background: #F7F3EC;
+	border: 1px solid rgba(17, 17, 17, .1);
+}
+
+.taka-logo-card img {
+	max-width: 16rem;
+	height: auto;
+}
+
+.taka-tabs {
+	padding: 1rem;
+	background: #ffffff;
+	border: 1px solid rgba(17, 17, 17, .12);
+}
+
+.taka-tab-buttons {
+	display: flex;
+	gap: .5rem;
+	margin-bottom: 1rem;
+}
+
+.taka-tab-panel {
+	display: none;
+}
+
+.taka-tab-panel.is-active {
+	display: block;
+}
+
+.taka-footer {
+	padding: 2rem 5vw;
+	background: #111111;
+	color: #F7F3EC;
+	text-align: center;
+}
+
+@media (max-width: 1100px) {
+	.taka-card-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 900px) {
+	.taka-card-grid,
+	.taka-editorial-gallery__grid {
+		grid-template-columns: 1fr;
+	}
+
+	.taka-editorial-card--wide {
+		grid-row: auto;
+	}
+
+	.taka-hero h1 {
+		font-size: clamp(2.8rem, 16vw, 4.5rem);
+	}
+
+	.taka-details div {
+		display: block;
+	}
+
+	.taka-details dd {
+		text-align: left;
+	}
+}
+
+
+.taka-language-menu {
+	position: relative;
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .35rem;
+	align-items: center;
+	margin-bottom: 1.5rem;
+	padding: .35rem;
+	border: 1px solid rgba(247, 243, 236, .18);
+	border-radius: 999px;
+	background: rgba(17, 17, 17, .42);
+	backdrop-filter: blur(10px);
+}
+
+.taka-language-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 40px;
+	min-height: 40px;
+	padding: 0 .45rem;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	background: transparent;
+	color: #F7F3EC !important;
+	font-size: 1.05rem;
+	line-height: 1;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.taka-language-icon:hover,
+.taka-language-icon.is-active {
+	border-color: rgba(188, 0, 45, .72);
+	background: rgba(247, 243, 236, .12);
+}
+
+.taka-language-dropdown {
+	position: relative;
+}
+
+.taka-language-dropdown-menu {
+	position: absolute;
+	top: calc(100% + .4rem);
+	left: 50%;
+	z-index: 5;
+	display: none;
+	min-width: 11rem;
+	padding: .45rem;
+	background: #F7F3EC;
+	border: 1px solid rgba(17, 17, 17, .12);
+	box-shadow: 0 18px 42px rgba(17, 17, 17, .18);
+	transform: translateX(-50%);
+}
+
+.taka-language-dropdown.is-open .taka-language-dropdown-menu {
+	display: grid;
+	gap: .15rem;
+}
+
+.taka-language-dropdown-item {
+	display: block;
+	padding: .65rem .75rem;
+	color: #111111;
+	font-size: .95rem;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.taka-language-dropdown-item:hover,
+.taka-language-dropdown-item.is-active {
+	background: rgba(188, 0, 45, .08);
+	color: #BC002D;
+}
+
+.taka-sensei-section {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(18rem, .72fr);
+	gap: clamp(2rem, 5vw, 5rem);
+	align-items: center;
+}
+
+.taka-sensei-portrait {
+	margin: 0;
+}
+
+.taka-sensei-portrait {
+	padding: .75rem;
+	background: #F7F3EC;
+	border-left: 6px solid #BC002D;
+}
+
+.taka-sensei-portrait img {
+	display: block;
+	width: 100%;
+	aspect-ratio: 4 / 3;
+	object-fit: cover;
+	object-position: center;
+}
+
+
+
+
+
+@media (max-width: 900px) {
+	.taka-language-menu {
+		max-width: 100%;
+		overflow-x: auto;
+		border-radius: 24px;
+	}
+
+	.taka-sensei-section {
+		grid-template-columns: 1fr;
+	}
+
+}
+
+/* v1.1.1 editable hero/layout controls */
+.taka-hero {
+	justify-content: flex-start;
+	background-image: var(--taka-hero-image, none);
+}
+
+.taka-hero::before {
+	background: linear-gradient(90deg, rgba(17,17,17,var(--taka-hero-overlay-alpha, .78)), rgba(17,17,17,calc(var(--taka-hero-overlay-alpha, .78) * .72)), rgba(17,17,17,.2));
+}
+
+.taka-hero--text-center { justify-content: center; text-align: center; }
+.taka-hero--text-right { justify-content: flex-end; text-align: right; }
+.taka-hero--vertical-top { align-items: flex-start; }
+.taka-hero--vertical-center { align-items: center; }
+.taka-hero--vertical-bottom { align-items: flex-end; }
+
+.taka-hero-content {
+	max-width: var(--taka-hero-content-max-width, 620px);
+}
+
+.taka-hero-content--boxed {
+	padding: clamp(1.25rem, 3vw, 2.5rem);
+	background: rgba(17,17,17,var(--taka-hero-box-opacity, .72));
+	border: 1px solid rgba(247,243,236,.14);
+	box-shadow: 0 24px 80px rgba(0,0,0,.24);
+	backdrop-filter: blur(8px);
+}
+
+.taka-hero--text-center .taka-card-actions,
+.taka-hero--text-center .taka-tour-stations { justify-content: center; }
+.taka-hero--text-right .taka-card-actions,
+.taka-hero--text-right .taka-tour-stations { justify-content: flex-end; }
+
+.taka-hero .taka-language-menu {
+	position: absolute;
+	top: clamp(-3.25rem, -4vw, -1.75rem);
+	right: 0;
+	margin-bottom: 0;
+	padding: .22rem .28rem;
+	gap: .18rem;
+}
+
+.taka-hero .taka-language-icon,
+.taka-hero .taka-language-dropdown-trigger {
+	min-width: 32px;
+	min-height: 32px;
+	padding: 0 .25rem;
+	font-size: .95rem;
+}
+
+.taka-language-dropdown-trigger::after {
+	font-size: .55rem;
+	margin-left: .12rem;
+}
+
+.taka-content-section {
+	background: #F7F3EC;
+}
+
+.taka-content-section:nth-of-type(even) {
+	background: #ffffff;
+}
+
+.taka-content-section__inner {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(280px, 42%);
+	gap: clamp(1.5rem, 5vw, 4rem);
+	align-items: center;
+	max-width: 1180px;
+	margin: 0 auto;
+}
+
+.taka-content-section--text_only .taka-content-section__inner {
+	display: block;
+	max-width: 920px;
+}
+
+.taka-content-section--image_left .taka-content-section__media {
+	order: -1;
+}
+
+.taka-content-section--background {
+	position: relative;
+	background-color: #111111;
+	background-image: linear-gradient(90deg, rgba(17,17,17,.86), rgba(17,17,17,.58)), var(--taka-section-bg);
+	background-position: center;
+	background-size: cover;
+	color: #ffffff;
+}
+
+.taka-content-section__media {
+	margin: 0;
+}
+
+.taka-content-section__media img,
+.taka-location-card img {
+	width: 100%;
+	aspect-ratio: 4 / 3;
+	object-fit: cover;
+	object-position: center;
+}
+
+.taka-location-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1rem;
+}
+
+.taka-location-card {
+	padding: 1.25rem;
+	background: #ffffff;
+	border: 1px solid rgba(17,17,17,.1);
+}
+
+.taka-location-card h3 {
+	margin-top: 0;
+	font-family: "Cormorant Garamond", Georgia, serif;
+	font-size: 2rem;
+}
+
+@media (max-width: 900px) {
+	.taka-hero .taka-language-menu {
+		position: relative;
+		top: auto;
+		right: auto;
+		margin-bottom: 1rem;
+	}
+	.taka-content-section__inner,
+	.taka-location-grid {
+		grid-template-columns: 1fr;
+	}
+	.taka-content-section--image_left .taka-content-section__media {
+		order: 0;
+	}
+}
+
+/* v1.3.0 organizer dashboard */
+.taka-organizer-dashboard {
+	max-width: 1180px;
+	margin: 0 auto;
+	padding: clamp(2rem, 5vw, 4rem);
+	background: #F7F3EC;
+	color: #111111;
+	font-family: Inter, system-ui, sans-serif;
+}
+
+.taka-dashboard-table-wrap {
+	overflow-x: auto;
+	background: #ffffff;
+	border: 1px solid rgba(17,17,17,.12);
+}
+
+.taka-dashboard-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.taka-dashboard-table th,
+.taka-dashboard-table td {
+	padding: .75rem;
+	border-bottom: 1px solid rgba(17,17,17,.08);
+	text-align: left;
+	vertical-align: top;
+}
+
+.taka-dashboard-form {
+	display: grid;
+	gap: 1rem;
+	max-width: 860px;
+	padding: 1.25rem;
+	background: #ffffff;
+	border: 1px solid rgba(17,17,17,.12);
+}
+
+.taka-dashboard-form input,
+.taka-dashboard-form textarea,
+.taka-dashboard-form select {
+	width: 100%;
+	max-width: 100%;
+}
+
+.taka-dashboard-message {
+	margin: 0 0 1rem;
+	padding: .8rem 1rem;
+	background: #ffffff;
+	border-left: 4px solid #BC002D;
+}
+
+.taka-dashboard-notice {
+	padding: .8rem 1rem;
+	background: rgba(199,163,92,.16);
+}
