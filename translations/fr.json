@@ -84,6 +84,10 @@
       "kicker": "Lieu Konz",
       "headline": "Informations pratiques",
       "text": "Les détails de voyage, horaires et informations locales suivront dans les descriptions des séminaires."
+    },
+    "student": {
+      "kicker": "Invité spécial",
+      "subtitle": "Élève de Sensei"
     }
   },
   "footer": {
@@ -216,5 +220,20 @@
     "refund": "Remboursement",
     "days_before_event": "jours avant l’événement",
     "booking_process": "Processus de réservation"
+  },
+  "content_sections": {
+    "content_sections": "Sections de contenu",
+    "add_section": "Ajouter une section",
+    "edit_section": "Modifier la section",
+    "enabled": "Activé",
+    "layout": "Mise en page",
+    "sort_order": "Ordre de tri",
+    "kicker": "Accroche",
+    "subtitle": "Sous-titre",
+    "button_label": "Libellé du bouton",
+    "button_url": "URL du bouton",
+    "gallery": "Galerie",
+    "main_image": "Image principale",
+    "secondary_image": "Image secondaire"
   }
 }

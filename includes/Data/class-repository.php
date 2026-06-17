@@ -425,7 +425,7 @@ class TAKA_Platform_Data {
 		return $merged;
 	}
 
-	/** Save-clean defaults for editable content sections. */
+	/** Save-clean defaults for editable homepage content sections. */
 	public static function default_content_sections() {
 		$images         = self::images();
 		$host_organizer = self::get_organizer( 'kleiner-wald' );
@@ -433,27 +433,89 @@ class TAKA_Platform_Data {
 		$host_logo      = $host_organizer['logo'] ?? ( $images['kleiner_wald_logo'] ?? '' );
 
 		return array(
-			'sensei'   => array( 'key' => 'sensei', 'visible' => '1', 'kicker' => taka_tour_translate( 'sections.sensei.kicker', 'Sensei' ), 'title' => taka_tour_translate( 'sections.sensei.headline', 'Takafumi Nakayama' ), 'text' => taka_tour_translate( 'sections.sensei.text', 'Präzision, Ruhe und Bewegungsqualität aus der okinawanischen Tradition.' ), 'image_id' => 0, 'image_url' => $images['taka_portrait'] ?? '', 'layout' => 'image_right', 'sort_order' => 10, 'link_url' => '', 'link_label' => '' ),
-			'training' => array( 'key' => 'training', 'visible' => '1', 'kicker' => taka_tour_translate( 'sections.training.kicker', 'Training' ), 'title' => taka_tour_translate( 'sections.training.headline', 'Karate-Do, Kobujutsu und Soft Blocking' ), 'text' => taka_tour_translate( 'sections.training.text', 'Die Seminare verbinden Grundlagen, Partnerarbeit, Timing, Distanz und Körperstruktur.' ), 'image_id' => 0, 'image_url' => '', 'layout' => 'text_only', 'sort_order' => 20, 'link_url' => '', 'link_label' => '' ),
-			'community'=> array( 'key' => 'community', 'visible' => '1', 'kicker' => taka_tour_translate( 'sections.community.kicker', 'Community' ), 'title' => taka_tour_translate( 'sections.community.headline', 'Gemeinsam trainieren' ), 'text' => taka_tour_translate( 'sections.community.text', 'Ein europäisches Treffen für ernsthaftes Training und respektvollen Austausch.' ), 'image_id' => 0, 'image_url' => '', 'layout' => 'text_only', 'sort_order' => 30, 'link_url' => '', 'link_label' => '' ),
-			'host'     => array( 'key' => 'host', 'visible' => '1', 'kicker' => taka_tour_translate( 'sections.host.kicker', 'Gastgeber' ), 'title' => taka_tour_translate( 'sections.host.headline', '5 Jahre Kleiner Wald Dojo' ), 'text' => '', 'image_id' => 0, 'image_url' => $host_logo, 'layout' => 'image_right', 'sort_order' => 40, 'link_url' => $host_organizer['website'] ?? '', 'link_label' => $host_organizer['name'] ?? '' ),
-			'sponsor'  => array( 'key' => 'sponsor', 'visible' => '1', 'kicker' => taka_tour_translate( 'sections.sponsor.kicker', 'Sponsor' ), 'title' => taka_tour_translate( 'sections.sponsor.headline', 'kanso' ), 'text' => taka_tour_translate( 'sections.sponsor.text', 'Zentrum für Körper, Geist und Seele in Konz.' ), 'image_id' => 0, 'image_url' => $images['sponsor_logo'] ?? '', 'layout' => 'text_only', 'sort_order' => 50, 'link_url' => $sponsor_venue['website'] ?? 'https://kan.so', 'link_label' => taka_tour_translate( 'sections.sponsor.link_text', 'kan.so' ) ),
+			'sensei'   => self::normalize_content_section( array( 'key' => 'sensei', 'visible' => '1', 'sort_order' => 10, 'kicker' => taka_tour_translate( 'sections.sensei.kicker', 'Sensei' ), 'title' => taka_tour_translate( 'sections.sensei.headline', 'Takafumi Nakayama' ), 'subtitle' => '', 'body' => taka_tour_translate( 'sections.sensei.text', 'Präzision, Ruhe und Bewegungsqualität aus der okinawanischen Tradition.' ), 'image_id' => 0, 'image_url' => $images['taka_portrait'] ?? '', 'secondary_image_id' => 0, 'secondary_image_url' => '', 'gallery_image_ids' => array(), 'gallery_image_urls' => array(), 'layout' => 'image_right', 'background_style' => 'paper', 'button_url' => '', 'button_label' => '', 'css_class' => '' ) ),
+			'student'  => self::normalize_content_section( array( 'key' => 'student', 'visible' => '0', 'sort_order' => 15, 'kicker' => taka_tour_translate( 'sections.student.kicker', 'Special guest' ), 'title' => '', 'subtitle' => taka_tour_translate( 'sections.student.subtitle', 'Student of Sensei' ), 'body' => '', 'image_id' => 0, 'image_url' => '', 'secondary_image_id' => 0, 'secondary_image_url' => '', 'gallery_image_ids' => array(), 'gallery_image_urls' => array(), 'layout' => 'feature_card', 'background_style' => 'paper', 'button_url' => '', 'button_label' => '', 'css_class' => '' ) ),
+			'training' => self::normalize_content_section( array( 'key' => 'training', 'visible' => '1', 'sort_order' => 20, 'kicker' => taka_tour_translate( 'sections.training.kicker', 'Training' ), 'title' => taka_tour_translate( 'sections.training.headline', 'Karate-Do, Kobujutsu und Soft Blocking' ), 'subtitle' => '', 'body' => taka_tour_translate( 'sections.training.text', 'Die Seminare verbinden Grundlagen, Partnerarbeit, Timing, Distanz und Körperstruktur.' ), 'image_id' => 0, 'image_url' => '', 'secondary_image_id' => 0, 'secondary_image_url' => '', 'gallery_image_ids' => array(), 'gallery_image_urls' => array(), 'layout' => 'text_only', 'background_style' => 'plain', 'button_url' => '', 'button_label' => '', 'css_class' => '' ) ),
+			'community'=> self::normalize_content_section( array( 'key' => 'community', 'visible' => '1', 'sort_order' => 30, 'kicker' => taka_tour_translate( 'sections.community.kicker', 'Community' ), 'title' => taka_tour_translate( 'sections.community.headline', 'Gemeinsam trainieren' ), 'subtitle' => '', 'body' => taka_tour_translate( 'sections.community.text', 'Ein europäisches Treffen für ernsthaftes Training und respektvollen Austausch.' ), 'image_id' => 0, 'image_url' => $images['community_group'] ?? '', 'secondary_image_id' => 0, 'secondary_image_url' => '', 'gallery_image_ids' => array(), 'gallery_image_urls' => array(), 'layout' => 'full_background', 'background_style' => 'wash', 'button_url' => '', 'button_label' => '', 'css_class' => '' ) ),
+			'host'     => self::normalize_content_section( array( 'key' => 'host', 'visible' => '1', 'sort_order' => 40, 'kicker' => taka_tour_translate( 'sections.host.kicker', 'Host' ), 'title' => taka_tour_translate( 'sections.host.headline', '5 Jahre Kleiner Wald Dojo' ), 'subtitle' => '', 'body' => '', 'image_id' => 0, 'image_url' => $host_logo, 'secondary_image_id' => 0, 'secondary_image_url' => '', 'gallery_image_ids' => array(), 'gallery_image_urls' => array(), 'layout' => 'image_right', 'background_style' => 'paper', 'button_url' => $host_organizer['website'] ?? '', 'button_label' => $host_organizer['name'] ?? '' ) ),
+			'sponsor'  => self::normalize_content_section( array( 'key' => 'sponsor', 'visible' => '1', 'sort_order' => 50, 'kicker' => taka_tour_translate( 'sections.sponsor.kicker', 'Sponsor' ), 'title' => taka_tour_translate( 'sections.sponsor.headline', 'kanso' ), 'subtitle' => '', 'body' => taka_tour_translate( 'sections.sponsor.text', 'Zentrum für Körper, Geist und Seele in Konz.' ), 'image_id' => 0, 'image_url' => $images['sponsor_logo'] ?? '', 'secondary_image_id' => 0, 'secondary_image_url' => '', 'gallery_image_ids' => array(), 'gallery_image_urls' => array(), 'layout' => 'feature_card', 'background_style' => 'plain', 'button_url' => $sponsor_venue['website'] ?? 'https://kan.so', 'button_label' => taka_tour_translate( 'sections.sponsor.link_text', 'kan.so' ) ) ),
 		);
 	}
 
-	/** Get editable frontend content sections. */
+	/** Get editable frontend content sections, including user-added sections. */
 	public static function get_content_sections() {
+		$config   = self::load_config();
 		$stored   = function_exists( 'get_option' ) ? get_option( self::SECTIONS_OPTION, array() ) : array();
 		$stored   = is_array( $stored ) ? $stored : array();
 		$sections = array();
 		foreach ( self::default_content_sections() as $key => $default ) {
-			$item           = array_merge( $default, is_array( $stored[ $key ] ?? null ) ? $stored[ $key ] : array() );
-			$item['key']    = $key;
-			$item['image']  = self::resolve_attachment_url( absint( $item['image_id'] ?? 0 ), 'large', (string) ( $item['image_url'] ?? '' ) );
-			$sections[$key] = $item;
+			$sections[ $key ] = $default;
 		}
-		uasort( $sections, static function ( $a, $b ) { return (int) ( $a['sort_order'] ?? 0 ) <=> (int) ( $b['sort_order'] ?? 0 ); } );
+		foreach ( (array) ( $config['content_sections'] ?? array() ) as $section ) {
+			if ( ! is_array( $section ) ) { continue; }
+			$key = sanitize_key( $section['key'] ?? '' );
+			if ( '' === $key ) { continue; }
+			$sections[ $key ] = array_merge( $sections[ $key ] ?? array(), self::normalize_content_section( $section ) );
+		}
+		foreach ( $stored as $key => $section ) {
+			if ( ! is_array( $section ) ) { continue; }
+			$key = sanitize_key( $section['key'] ?? $key );
+			if ( '' === $key ) { continue; }
+			if ( ! empty( $section['delete'] ) ) { unset( $sections[ $key ] ); continue; }
+			$sections[ $key ] = array_merge( $sections[ $key ] ?? array(), self::normalize_content_section( $section ) );
+			$sections[ $key ]['key'] = $key;
+		}
+		foreach ( $sections as $key => $section ) {
+			$section = self::normalize_content_section( $section );
+			$section['key']             = $key;
+			$section['image']           = self::resolve_attachment_url( absint( $section['image_id'] ?? 0 ), 'large', (string) ( $section['image_url'] ?? '' ) );
+			$section['secondary_image'] = self::resolve_attachment_url( absint( $section['secondary_image_id'] ?? 0 ), 'large', (string) ( $section['secondary_image_url'] ?? '' ) );
+			$section['gallery_images']  = array_values( array_filter( array_merge( self::attachment_urls( $section['gallery_image_ids'] ?? array(), 'large' ), (array) ( $section['gallery_image_urls'] ?? array() ) ) ) );
+			$sections[ $key ] = $section;
+		}
+		uasort( $sections, static function ( $a, $b ) {
+			$sort = (int) ( $a['sort_order'] ?? 0 ) <=> (int) ( $b['sort_order'] ?? 0 );
+			return 0 !== $sort ? $sort : strcasecmp( (string) ( $a['title'] ?? '' ), (string) ( $b['title'] ?? '' ) );
+		} );
 		return $sections;
+	}
+
+	/** Normalize one content-section record. */
+	public static function normalize_content_section( $section ) {
+		$section = is_array( $section ) ? $section : array();
+		$key = sanitize_key( $section['key'] ?? '' );
+		$layout = sanitize_key( $section['layout'] ?? 'text_only' );
+		$allowed_layouts = array( 'text_only', 'image_left', 'image_right', 'image_above', 'full_background', 'two_column', 'gallery_grid', 'feature_card', 'background' );
+		if ( 'background' === $layout ) { $layout = 'full_background'; }
+		if ( ! in_array( $layout, $allowed_layouts, true ) ) { $layout = 'text_only'; }
+		$gallery_ids = $section['gallery_image_ids'] ?? array();
+		if ( is_string( $gallery_ids ) ) { $gallery_ids = self::csv_to_ints( $gallery_ids ); }
+		$gallery_urls = $section['gallery_image_urls'] ?? ( $section['gallery'] ?? array() );
+		if ( is_string( $gallery_urls ) ) { $gallery_urls = self::lines_to_array( $gallery_urls ); }
+		return array(
+			'key'                 => $key,
+			'visible'             => ! empty( $section['visible'] ?? $section['enabled'] ?? '1' ) ? '1' : '0',
+			'enabled'             => ! empty( $section['visible'] ?? $section['enabled'] ?? '1' ),
+			'sort_order'          => (int) ( $section['sort_order'] ?? 0 ),
+			'kicker'              => (string) ( $section['kicker'] ?? '' ),
+			'title'               => (string) ( $section['title'] ?? '' ),
+			'subtitle'            => (string) ( $section['subtitle'] ?? '' ),
+			'text'                => (string) ( $section['text'] ?? ( $section['body'] ?? '' ) ),
+			'body'                => (string) ( $section['body'] ?? ( $section['text'] ?? '' ) ),
+			'image_id'            => absint( $section['image_id'] ?? 0 ),
+			'image_url'           => (string) ( $section['image_url'] ?? ( $section['image'] ?? '' ) ),
+			'secondary_image_id'  => absint( $section['secondary_image_id'] ?? 0 ),
+			'secondary_image_url' => (string) ( $section['secondary_image_url'] ?? '' ),
+			'gallery_image_ids'   => array_values( array_filter( array_map( 'absint', (array) $gallery_ids ) ) ),
+			'gallery_image_urls'  => array_values( array_filter( array_map( 'esc_url_raw', (array) $gallery_urls ) ) ),
+			'layout'              => $layout,
+			'background_style'    => sanitize_key( $section['background_style'] ?? 'plain' ),
+			'button_url'          => (string) ( $section['button_url'] ?? ( $section['link_url'] ?? '' ) ),
+			'button_label'        => (string) ( $section['button_label'] ?? ( $section['link_label'] ?? '' ) ),
+			'link_url'            => (string) ( $section['button_url'] ?? ( $section['link_url'] ?? '' ) ),
+			'link_label'          => (string) ( $section['button_label'] ?? ( $section['link_label'] ?? '' ) ),
+			'css_class'           => sanitize_html_class( $section['css_class'] ?? '' ),
+		);
 	}
 
 	/** Venues that have enough public information for the practical-info section. */
@@ -771,7 +833,7 @@ class TAKA_Platform_Data {
 	}
 
 	/** Export current WordPress data into config-compatible array. */
-	public static function export_config_from_wp() { return array( 'organizers' => self::export_organizers(), 'venues' => self::export_venues(), 'events' => self::load_events_from_wp() ); }
+	public static function export_config_from_wp() { return array( 'organizers' => self::export_organizers(), 'venues' => self::export_venues(), 'events' => self::load_events_from_wp(), 'content_sections' => array_values( self::get_content_sections() ) ); }
 	private static function export_organizers() { $items = self::load_organizers_from_wp(); $out = array(); foreach ( $items as $key => $item ) { if ( (string) $key !== (string) ( $item['id'] ?? '' ) ) { continue; } $out[ $item['config_id'] ?: $item['id'] ] = $item; } return $out; }
 	private static function export_venues() { $items = self::load_venues_from_wp(); $out = array(); foreach ( $items as $key => $item ) { if ( (string) $key !== (string) ( $item['id'] ?? '' ) ) { continue; } $out[ $item['config_id'] ?: $item['id'] ] = $item; } return $out; }
 

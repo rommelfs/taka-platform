@@ -84,6 +84,10 @@
       "kicker": "Paikka Konz",
       "headline": "Käytännön tiedot",
       "text": "Matkaohjeet, aikataulut ja paikalliset tiedot lisätään seminaarikuvauksiin."
+    },
+    "student": {
+      "kicker": "Erityisvieras",
+      "subtitle": "Sensein oppilas"
     }
   },
   "footer": {
@@ -216,5 +220,20 @@
     "refund": "Hyvitys",
     "days_before_event": "päivää ennen tapahtumaa",
     "booking_process": "Varausprosessi"
+  },
+  "content_sections": {
+    "content_sections": "Sisältöosiot",
+    "add_section": "Lisää osio",
+    "edit_section": "Muokkaa osiota",
+    "enabled": "Käytössä",
+    "layout": "Asettelu",
+    "sort_order": "Järjestys",
+    "kicker": "Kicker",
+    "subtitle": "Alaotsikko",
+    "button_label": "Painikkeen teksti",
+    "button_url": "Painikkeen URL",
+    "gallery": "Galleria",
+    "main_image": "Pääkuva",
+    "secondary_image": "Toinen kuva"
   }
 }

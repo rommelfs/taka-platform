@@ -84,6 +84,10 @@
       "kicker": "Konz location",
       "headline": "Practical information",
       "text": "Travel details, times and local information will follow in the seminar descriptions."
+    },
+    "student": {
+      "kicker": "Special guest",
+      "subtitle": "Student of Sensei"
     }
   },
   "footer": {
@@ -216,5 +220,20 @@
     "refund": "Refund",
     "days_before_event": "days before event",
     "booking_process": "Booking process"
+  },
+  "content_sections": {
+    "content_sections": "Content Sections",
+    "add_section": "Add section",
+    "edit_section": "Edit section",
+    "enabled": "Enabled",
+    "layout": "Layout",
+    "sort_order": "Sort order",
+    "kicker": "Kicker",
+    "subtitle": "Subtitle",
+    "button_label": "Button label",
+    "button_url": "Button URL",
+    "gallery": "Gallery",
+    "main_image": "Main image",
+    "secondary_image": "Secondary image"
   }
 }

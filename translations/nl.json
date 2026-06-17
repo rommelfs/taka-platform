@@ -84,6 +84,10 @@
       "kicker": "Locatie Konz",
       "headline": "Praktische informatie",
       "text": "Details over reis, tijden en lokale informatie volgen in de seminarbeschrijvingen."
+    },
+    "student": {
+      "kicker": "Speciale gast",
+      "subtitle": "Student van Sensei"
     }
   },
   "footer": {
@@ -216,5 +220,20 @@
     "refund": "Terugbetaling",
     "days_before_event": "dagen vóór het evenement",
     "booking_process": "Boekingsproces"
+  },
+  "content_sections": {
+    "content_sections": "Contentsecties",
+    "add_section": "Sectie toevoegen",
+    "edit_section": "Sectie bewerken",
+    "enabled": "Ingeschakeld",
+    "layout": "Lay-out",
+    "sort_order": "Sorteervolgorde",
+    "kicker": "Kicker",
+    "subtitle": "Ondertitel",
+    "button_label": "Knoplabel",
+    "button_url": "Knop-URL",
+    "gallery": "Galerij",
+    "main_image": "Hoofdafbeelding",
+    "secondary_image": "Tweede afbeelding"
   }
 }

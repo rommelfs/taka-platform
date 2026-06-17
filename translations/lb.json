@@ -84,6 +84,10 @@
       "kicker": "Plaz Konz",
       "headline": "Praktesch Informatiounen",
       "text": "Detailer zu Urees, Zäiten a lokalen Informatioune kommen an de Seminarbeschreiwungen no."
+    },
+    "student": {
+      "kicker": "Spezielle Gaascht",
+      "subtitle": "Schüler vum Sensei"
     }
   },
   "footer": {
@@ -216,5 +220,20 @@
     "refund": "Remboursement",
     "days_before_event": "Deeg virum Event",
     "booking_process": "Buchungsprozess"
+  },
+  "content_sections": {
+    "content_sections": "Inhaltssektiounen",
+    "add_section": "Sektioun dobäisetzen",
+    "edit_section": "Sektioun änneren",
+    "enabled": "Aktivéiert",
+    "layout": "Layout",
+    "sort_order": "Sortéierung",
+    "kicker": "Kicker",
+    "subtitle": "Ënnertitel",
+    "button_label": "Button-Text",
+    "button_url": "Button-URL",
+    "gallery": "Galerie",
+    "main_image": "Haaptbild",
+    "secondary_image": "Zweet Bild"
   }
 }

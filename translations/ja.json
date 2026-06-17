@@ -84,6 +84,10 @@
       "kicker": "会場：Konz",
       "headline": "実用情報",
       "text": "アクセス、時間、地域情報の詳細は各セミナー説明に追記されます。"
+    },
+    "student": {
+      "kicker": "特別ゲスト",
+      "subtitle": "先生の生徒"
     }
   },
   "footer": {
@@ -216,5 +220,20 @@
     "refund": "返金",
     "days_before_event": "開催日前",
     "booking_process": "予約の流れ"
+  },
+  "content_sections": {
+    "content_sections": "コンテンツセクション",
+    "add_section": "セクションを追加",
+    "edit_section": "セクションを編集",
+    "enabled": "有効",
+    "layout": "レイアウト",
+    "sort_order": "並び順",
+    "kicker": "キッカー",
+    "subtitle": "サブタイトル",
+    "button_label": "ボタンラベル",
+    "button_url": "ボタンURL",
+    "gallery": "ギャラリー",
+    "main_image": "メイン画像",
+    "secondary_image": "セカンダリ画像"
   }
 }

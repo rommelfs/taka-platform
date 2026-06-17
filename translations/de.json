@@ -84,6 +84,10 @@
       "kicker": "Ort Konz",
       "headline": "Praktische Infos",
       "text": "Details zu Anreise, Zeiten und lokalen Informationen folgen in den Seminarbeschreibungen."
+    },
+    "student": {
+      "kicker": "Special Guest",
+      "subtitle": "Schüler von Sensei"
     }
   },
   "footer": {
@@ -216,5 +220,20 @@
     "refund": "Rückerstattung",
     "days_before_event": "Tage vor der Veranstaltung",
     "booking_process": "Buchungsablauf"
+  },
+  "content_sections": {
+    "content_sections": "Content Sections",
+    "add_section": "Abschnitt hinzufügen",
+    "edit_section": "Abschnitt bearbeiten",
+    "enabled": "Aktiviert",
+    "layout": "Layout",
+    "sort_order": "Sortierung",
+    "kicker": "Kicker",
+    "subtitle": "Untertitel",
+    "button_label": "Button-Text",
+    "button_url": "Button-URL",
+    "gallery": "Galerie",
+    "main_image": "Hauptbild",
+    "secondary_image": "Zweites Bild"
   }
 }

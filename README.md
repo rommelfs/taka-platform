@@ -58,7 +58,7 @@ The WordPress admin menu is branded **TAKA Platform** and includes:
 - Import / Export
 - Settings
 
-The dashboard explains the long form: **TAKA – Ticketing, Attendance, Knowledge & Administration**. Settings expose editable hero copy, hero image/layout controls, overlay strength and readable text-box options. Content Sections expose editable Sensei, Training, Community, Host and Sponsor blocks with visibility, image, layout and sort controls.
+The dashboard explains the long form: **TAKA – Ticketing, Attendance, Knowledge & Administration**. Settings expose editable hero copy, hero image/layout controls, overlay strength and readable text-box options. Content Sections expose fully configurable homepage editorial blocks with add/delete controls, visibility, sort order, subtitles, buttons, layout/background styles, main/secondary images and galleries.
 
 ## Organizer access control
 
@@ -68,7 +68,7 @@ Version 1.2.0 adds the `taka_organizer` role. Administrators can assign users to
 
 Events support tour/event concepts such as title, subtitle, description, organizer, venues, dates, times, doors-open, timezone, format, audience, level, ticket provider, ticket URL, action/group/gallery media, languages, notes, parking and sort order.
 
-Organizers support legal names, websites, logos, contact data, social links and repeatable co-organizers with their own logo, website, email, description and active/sort controls. Events can also use global or event-specific booking information for groups, multi-event discounts, payment and cancellation notes. Venues support addresses, websites, parking/accessibility notes, geo data and venue/parking images.
+Organizers support legal names, websites, logos, contact data, social links and repeatable co-organizers with their own logo, website, email, description and active/sort controls. Events can also use global or event-specific booking information for groups, multi-event discounts, payment and cancellation notes. Homepage content sections can be exported as portable config data and used as fallback/demo editorial content. Venues support addresses, websites, parking/accessibility notes, geo data and venue/parking images.
 
 ## Import / Export
 
@@ -134,6 +134,10 @@ Assets are split into platform files such as `assets/css/frontend.css`, `assets/
 Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `taka_organizer`, `taka_venue`) continue to work. Existing constants such as `TAKA_TOUR_VERSION` map to the new platform constants. Existing class names such as `Taka_Tour_Data` are aliased to the new `TAKA_Platform_*` classes.
 
 ## Changelog
+
+### v1.3.7
+
+- Added dynamic homepage content sections with configurable layouts, images, ordering and visibility; removed redundant static practical information section.
 
 ### v1.3.6
 

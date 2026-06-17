@@ -13,6 +13,5 @@ $sections = TAKA_Platform_Data::get_content_sections();
 	<?php foreach ( $sections as $section ) : ?>
 		<?php echo taka_tour_render_template( 'partials/content-section.php', array( 'section' => $section ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 	<?php endforeach; ?>
-	<?php echo taka_tour_render_template( 'partials/venues.php' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 	<footer class="taka-footer"><?php echo esc_html( taka_tour_translate( 'footer.text', 'TAKA European Tour 2026' ) ); ?></footer>
 </div>
