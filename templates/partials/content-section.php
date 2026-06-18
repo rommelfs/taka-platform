@@ -22,8 +22,17 @@ $has_content = '' !== trim( (string) ( $section['kicker'] ?? '' ) . ( $section['
 if ( ! $has_content ) {
 	return;
 }
-$style = 'full_background' === $layout && '' !== $image ? ' style="--taka-section-bg:url(\'' . esc_url( $image ) . '\');"' : '';
+$fit = in_array( (string) ( $section['image_fit'] ?? 'contain' ), array( 'cover', 'contain', 'auto' ), true ) ? (string) $section['image_fit'] : 'contain';
+$position = in_array( (string) ( $section['image_position'] ?? 'center center' ), array( 'center center', 'center top', 'center bottom', 'left center', 'right center' ), true ) ? (string) $section['image_position'] : 'center center';
+$style_parts = array( '--taka-section-image-fit:' . $fit, '--taka-section-image-position:' . $position );
+if ( 'full_background' === $layout && '' !== $image ) {
+	$style_parts[] = '--taka-section-bg:url(\'' . esc_url( $image ) . '\')';
+}
+$style = ' style="' . esc_attr( implode( ';', $style_parts ) ) . '"';
 ?>
+<?php if ( function_exists( 'current_user_can' ) && current_user_can( 'manage_options' ) ) : ?>
+	<!-- TAKA section image source: key=<?php echo esc_html( $key ); ?> attachment_id=<?php echo esc_html( (string) absint( $section['image_id'] ?? 0 ) ); ?> url=<?php echo esc_url( $image ); ?> fit=<?php echo esc_html( $fit ); ?> position=<?php echo esc_html( $position ); ?> -->
+<?php endif; ?>
 <section class="taka-section taka-content-section taka-content-section--<?php echo esc_attr( $key ); ?> taka-content-section--<?php echo esc_attr( $layout ); ?> taka-content-section--bg-<?php echo esc_attr( $bg ); ?> <?php echo esc_attr( $custom ); ?>"<?php echo $style; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 	<div class="taka-content-section__inner">
 		<div class="taka-content-section__text">

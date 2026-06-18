@@ -234,6 +234,8 @@
     "button_url": "Button-URL",
     "gallery": "Galerie",
     "main_image": "Haaptbild",
-    "secondary_image": "Zweet Bild"
+    "secondary_image": "Zweet Bild",
+    "image_fit": "Bild Upassung",
+    "image_position": "Bildfokus / Positioun"
   }
 }

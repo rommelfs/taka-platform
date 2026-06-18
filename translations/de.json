@@ -234,6 +234,8 @@
     "button_url": "Button-URL",
     "gallery": "Galerie",
     "main_image": "Hauptbild",
-    "secondary_image": "Zweites Bild"
+    "secondary_image": "Zweites Bild",
+    "image_fit": "Bildanpassung",
+    "image_position": "Bildfokus / Position"
   }
 }

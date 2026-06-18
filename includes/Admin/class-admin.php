@@ -544,6 +544,8 @@ class TAKA_Platform_Admin {
 			'feature_card' => __( 'Feature card', 'taka-platform' ),
 		);
 		$backgrounds = array( 'plain' => __( 'Plain', 'taka-platform' ), 'paper' => __( 'Paper', 'taka-platform' ), 'wash' => __( 'Washi', 'taka-platform' ), 'ink' => __( 'Ink', 'taka-platform' ) );
+		$fits = array( 'contain' => __( 'Contain', 'taka-platform' ), 'cover' => __( 'Cover', 'taka-platform' ), 'auto' => __( 'Auto', 'taka-platform' ) );
+		$positions = array( 'center center' => __( 'Center', 'taka-platform' ), 'center top' => __( 'Top center', 'taka-platform' ), 'center bottom' => __( 'Bottom center', 'taka-platform' ), 'left center' => __( 'Left center', 'taka-platform' ), 'right center' => __( 'Right center', 'taka-platform' ) );
 		$new_key = 'new_' . time();
 		?>
 		<div class="wrap">
@@ -553,11 +555,11 @@ class TAKA_Platform_Admin {
 				<input type="hidden" name="action" value="taka_platform_save_sections">
 				<?php wp_nonce_field( TAKA_Platform_Data::SECTIONS_OPTION, self::NONCE ); ?>
 				<?php foreach ( $sections as $key => $section ) : ?>
-					<?php self::render_content_section_editor( $key, $section, $layouts, $backgrounds, false ); ?>
+					<?php self::render_content_section_editor( $key, $section, $layouts, $backgrounds, $fits, $positions, false ); ?>
 				<?php endforeach; ?>
 				<h2><?php echo esc_html__( 'Add section', 'taka-platform' ); ?></h2>
 				<p><?php echo esc_html__( 'Fill the fields below and save to add another homepage section. Leave the key empty to skip.', 'taka-platform' ); ?></p>
-				<?php self::render_content_section_editor( $new_key, array( 'key' => '', 'visible' => '0', 'layout' => 'image_right', 'background_style' => 'paper', 'sort_order' => 90 ), $layouts, $backgrounds, true ); ?>
+				<?php self::render_content_section_editor( $new_key, array( 'key' => '', 'visible' => '0', 'layout' => 'image_right', 'background_style' => 'paper', 'image_fit' => 'contain', 'image_position' => 'center center', 'sort_order' => 90 ), $layouts, $backgrounds, $fits, $positions, true ); ?>
 				<?php submit_button( __( 'Save content sections', 'taka-platform' ) ); ?>
 			</form>
 		</div>
@@ -565,7 +567,7 @@ class TAKA_Platform_Admin {
 	}
 
 	/** Render one content-section editor block. */
-	private static function render_content_section_editor( $key, $section, $layouts, $backgrounds, $is_new = false ) {
+	private static function render_content_section_editor( $key, $section, $layouts, $backgrounds, $fits, $positions, $is_new = false ) {
 		$key = sanitize_key( $key );
 		$label = $is_new ? __( 'New section', 'taka-platform' ) : ( ( $section['title'] ?? '' ) ?: $key );
 		?>
@@ -584,6 +586,8 @@ class TAKA_Platform_Admin {
 				<?php self::settings_media_row( 'sections[' . $key . '][gallery_image_ids]', 'sections[' . $key . '][gallery_image_urls]', 'taka_section_' . $key . '_gallery', __( 'Gallery', 'taka-platform' ), $section['gallery_image_ids'] ?? array(), implode( "\n", (array) ( $section['gallery_image_urls'] ?? array() ) ), true ); ?>
 				<?php self::settings_select_row( 'sections[' . $key . '][layout]', __( 'Layout', 'taka-platform' ), $section['layout'] ?? 'text_only', $layouts ); ?>
 				<?php self::settings_select_row( 'sections[' . $key . '][background_style]', __( 'Background style', 'taka-platform' ), $section['background_style'] ?? 'plain', $backgrounds ); ?>
+				<?php self::settings_select_row( 'sections[' . $key . '][image_fit]', __( 'Image fit', 'taka-platform' ), $section['image_fit'] ?? 'contain', $fits ); ?>
+				<?php self::settings_select_row( 'sections[' . $key . '][image_position]', __( 'Image focus / position', 'taka-platform' ), $section['image_position'] ?? 'center center', $positions ); ?>
 				<?php self::settings_text_row( 'sections[' . $key . '][button_label]', __( 'Button label', 'taka-platform' ), $section['button_label'] ?? ( $section['link_label'] ?? '' ) ); ?>
 				<?php self::settings_text_row( 'sections[' . $key . '][button_url]', __( 'Button URL', 'taka-platform' ), $section['button_url'] ?? ( $section['link_url'] ?? '' ) ); ?>
 				<?php self::settings_text_row( 'sections[' . $key . '][css_class]', __( 'CSS modifier/class', 'taka-platform' ), $section['css_class'] ?? '' ); ?>
@@ -647,6 +651,10 @@ class TAKA_Platform_Admin {
 		$allowed_backgrounds = array( 'plain', 'paper', 'wash', 'ink' );
 		$background = sanitize_key( $item['background_style'] ?? 'plain' );
 		if ( ! in_array( $background, $allowed_backgrounds, true ) ) { $background = 'plain'; }
+		$image_fit = sanitize_key( $item['image_fit'] ?? 'contain' );
+		if ( ! in_array( $image_fit, array( 'cover', 'contain', 'auto' ), true ) ) { $image_fit = 'contain'; }
+		$image_position = strtolower( trim( (string) ( $item['image_position'] ?? 'center center' ) ) );
+		if ( ! in_array( $image_position, array( 'center center', 'center top', 'center bottom', 'left center', 'right center' ), true ) ) { $image_position = 'center center'; }
 		return array(
 			'visible'             => ! empty( $item['visible'] ) ? '1' : '0',
 			'sort_order'          => (int) ( $item['sort_order'] ?? 0 ),
@@ -663,6 +671,8 @@ class TAKA_Platform_Admin {
 			'gallery_image_urls'  => implode( "\n", array_map( 'esc_url_raw', self::lines_to_array( $item['gallery_image_urls'] ?? '' ) ) ),
 			'layout'              => $layout,
 			'background_style'    => $background,
+			'image_fit'           => $image_fit,
+			'image_position'      => $image_position,
 			'button_url'          => esc_url_raw( $item['button_url'] ?? ( $item['link_url'] ?? '' ) ),
 			'button_label'        => sanitize_text_field( $item['button_label'] ?? ( $item['link_label'] ?? '' ) ),
 			'css_class'           => sanitize_html_class( $item['css_class'] ?? '' ),

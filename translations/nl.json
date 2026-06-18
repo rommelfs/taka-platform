@@ -234,6 +234,8 @@
     "button_url": "Knop-URL",
     "gallery": "Galerij",
     "main_image": "Hoofdafbeelding",
-    "secondary_image": "Tweede afbeelding"
+    "secondary_image": "Tweede afbeelding",
+    "image_fit": "Afbeeldingspassing",
+    "image_position": "Beeldfocus / positie"
   }
 }

@@ -58,7 +58,7 @@ The WordPress admin menu is branded **TAKA Platform** and includes:
 - Import / Export
 - Settings
 
-The dashboard explains the long form: **TAKA – Ticketing, Attendance, Knowledge & Administration**. Settings expose editable hero copy, hero image/layout controls, overlay strength and readable text-box options. Content Sections expose fully configurable homepage editorial blocks with add/delete controls, visibility, sort order, subtitles, buttons, layout/background styles, main/secondary images and galleries.
+The dashboard explains the long form: **TAKA – Ticketing, Attendance, Knowledge & Administration**. Settings expose editable hero copy, hero image/layout controls, overlay strength and readable text-box options. Content Sections expose fully configurable homepage editorial blocks with add/delete controls, visibility, sort order, subtitles, buttons, layout/background styles, main/secondary images, galleries, image fit and image focus controls.
 
 ## Organizer access control
 
@@ -134,6 +134,10 @@ Assets are split into platform files such as `assets/css/frontend.css`, `assets/
 Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `taka_organizer`, `taka_venue`) continue to work. Existing constants such as `TAKA_TOUR_VERSION` map to the new platform constants. Existing class names such as `Taka_Tour_Data` are aliased to the new `TAKA_Platform_*` classes.
 
 ## Changelog
+
+### v1.3.8
+
+- Fixed dynamic content section image source priority and improved image fitting to avoid cropping portraits and people photos.
 
 ### v1.3.7
 

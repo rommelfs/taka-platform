@@ -234,6 +234,8 @@
     "button_url": "URL du bouton",
     "gallery": "Galerie",
     "main_image": "Image principale",
-    "secondary_image": "Image secondaire"
+    "secondary_image": "Image secondaire",
+    "image_fit": "Ajustement de l’image",
+    "image_position": "Focus / position de l’image"
   }
 }

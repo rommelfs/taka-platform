@@ -234,6 +234,8 @@
     "button_url": "ボタンURL",
     "gallery": "ギャラリー",
     "main_image": "メイン画像",
-    "secondary_image": "セカンダリ画像"
+    "secondary_image": "セカンダリ画像",
+    "image_fit": "画像フィット",
+    "image_position": "画像フォーカス / 位置"
   }
 }

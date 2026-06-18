@@ -234,6 +234,8 @@
     "button_url": "Painikkeen URL",
     "gallery": "Galleria",
     "main_image": "Pääkuva",
-    "secondary_image": "Toinen kuva"
+    "secondary_image": "Toinen kuva",
+    "image_fit": "Kuvan sovitus",
+    "image_position": "Kuvan kohdistus / sijainti"
   }
 }
