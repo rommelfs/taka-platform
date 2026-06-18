@@ -1,0 +1,257 @@
+{
+  "language": {
+    "code": "lb",
+    "name": "Lëtzebuergesch",
+    "switcher_label": "Sprooch auswielen"
+  },
+  "hero": {
+    "kicker": "TAKA European Tour 2026",
+    "headline": "Harmony in Motion",
+    "intro": "Eng europäesch Seminarrees mam Takafumi Nakayama Sensei – vu Helsinki iwwer Berlin, Holland, Belsch a Lëtzebuerg bis an d’Regioun Trier/Konz.",
+    "primary_button": "Seminairen ukucken",
+    "secondary_button": "Tickets",
+    "stations_label": "Tourstatiounen"
+  },
+  "tour": {
+    "kicker": "European Tour",
+    "headline": "Seminairen an Europa"
+  },
+  "seminar": {
+    "format_label": "Format",
+    "host_label": "Gaaschtgeber",
+    "ticketshop_soon": "Ticketshop kënnt geschwënn",
+    "ticketshop_direct": "Ticketshop direkt opmaachen",
+    "ticketshop_open_pretix": "Ticketshop direkt opmaachen"
+  },
+  "gallery": {
+    "kicker": "Training a Beweegung",
+    "headline": "Kobudo, Soft Blocking a gemeinsam léieren",
+    "intro": "Echt Andréck vu fréiere Seminairen: Bo-Aarbecht, Partnertraining, gemeinsamt Üben an eng international Karate-Gemeinschaft.",
+    "cards": {
+      "community": {
+        "title": "Community",
+        "text": "Eng international Karate-Famill."
+      },
+      "kobudo": {
+        "title": "Kobudo",
+        "text": "Bo-Aarbecht, Distanz an Timing."
+      },
+      "softblock": {
+        "title": "Soft Blocking",
+        "text": "Mëll Struktur amplaz rauer Kraaft."
+      },
+      "together": {
+        "title": "Zesumme üben",
+        "text": "Léieren duerch Kucken, Austausch a Widderhuelung."
+      },
+      "kids": {
+        "title": "Kannerseminar",
+        "text": "Kannerseminar Trier"
+      },
+      "group": {
+        "title": "Gruppefoto",
+        "text": "Gemeinschaft iwwer Dojo- a Landesgrenzen eraus."
+      }
+    }
+  },
+  "sections": {
+    "sensei": {
+      "kicker": "Sensei",
+      "headline": "Takafumi Nakayama",
+      "text": "Präzisioun, Rou a Beweegungsqualitéit aus der okinawanescher Traditioun."
+    },
+    "training": {
+      "kicker": "Training",
+      "headline": "Karate-Do, Kobujutsu a Soft Blocking",
+      "text": "D’Seminairë verbannen Basis, Partneraarbecht, Timing, Distanz a Kierperstruktur."
+    },
+    "community": {
+      "kicker": "Community",
+      "headline": "Zesummen trainéieren",
+      "text": "Eng europäesch Begéinung fir eescht Training a respektvollen Austausch."
+    },
+    "host": {
+      "kicker": "Gaaschtgeber",
+      "headline": "5 Joer Kleiner Wald Dojo"
+    },
+    "sponsor": {
+      "kicker": "Sponsor",
+      "headline": "kanso",
+      "text": "Zentrum fir Kierper, Geescht a Séil zu Konz.",
+      "link_text": "kan.so"
+    },
+    "place": {
+      "kicker": "Plaz Konz",
+      "headline": "Praktesch Informatiounen",
+      "text": "Detailer zu Urees, Zäiten a lokalen Informatioune kommen an de Seminarbeschreiwungen no."
+    },
+    "student": {
+      "kicker": "Spezielle Gaascht",
+      "subtitle": "Schüler vum Sensei"
+    }
+  },
+  "footer": {
+    "text": "TAKA European Tour 2026"
+  },
+  "seminars": {
+    "helsinki": {
+      "subtitle": "Helsinki Seminar",
+      "description": "Zwee Deeg Seminar zu Helsinki.",
+      "type": "2-Deeg-Seminar"
+    },
+    "berlin": {
+      "subtitle": "Berlin Seminar",
+      "description": "Zwee Deeg Seminar zu Berlin.",
+      "type": "2-Deeg-Seminar"
+    },
+    "netherlands": {
+      "subtitle": "Netherlands Seminar",
+      "description": "Zwee Deeg Seminar an Holland.",
+      "type": "2-Deeg-Seminar"
+    },
+    "belgium": {
+      "subtitle": "Belgium Seminar",
+      "description": "Seminar geplangt vun 10:00 bis 13:00 Auer.",
+      "type": "Hallefdaagsseminar"
+    },
+    "illange": {
+      "subtitle": "Illange Seminar",
+      "description": "Seminarstatioun a Frankräich.",
+      "type": "Seminar"
+    },
+    "hosingen": {
+      "subtitle": "Hosingen Seminar",
+      "description": "Seminarstatioun zu Lëtzebuerg.",
+      "type": "Seminar"
+    },
+    "trier-kinderseminar": {
+      "subtitle": "Kannerseminar",
+      "description": "Kannerseminar zu Trier am Kader vun der TAKA European Tour.",
+      "type": "Kannerseminar",
+      "audience": "Kanner a Jugendlecher",
+      "level": "All Niveauen"
+    },
+    "konz": {
+      "subtitle": "Konz Seminar",
+      "description": "Zwee Deeg Seminar zu Konz mam Takafumi Nakayama Sensei.",
+      "type": "2-Deeg-Seminar",
+      "audience": "Erwuessener a Jugendlecher",
+      "level": "All Stilrichtungen an Niveauen",
+      "parking": "Detailer iwwer d’Parking-Situatioun kommen no."
+    },
+    "saarwellingen": {
+      "subtitle": "Saarwellingen Seminar",
+      "description": "Ofschlossseminar vun de regionale Tourstatiounen.",
+      "type": "Seminar"
+    }
+  },
+  "event": {
+    "date": "Datum",
+    "time": "Zäit",
+    "doors_open": "Dieren op",
+    "start": "Ufank",
+    "end": "Enn",
+    "venue": "Plaz",
+    "address": "Adress",
+    "parking": "Parking",
+    "organizer": "Organisateur",
+    "audience": "Zilgrupp",
+    "level": "Niveau",
+    "ticketshop_direct": "Ticketshop direkt opmaachen",
+    "ticketshop_soon": "Ticketshop kënnt geschwënn",
+    "details_follow": "Detailer kommen no",
+    "practical_information": "Praktesch Informatiounen",
+    "accessibility": "Accessibilitéit",
+    "notes": "Hiweiser",
+    "title": "Titel",
+    "subtitle": "Ënnertitel",
+    "description": "Beschreiwung",
+    "ticket_status": "Ticketstatus",
+    "ticket_provider": "Ticketubidder",
+    "ticket_url": "Ticket-URL",
+    "legal_name": "Juristeschen Numm",
+    "website": "Websäit",
+    "email": "E-Mail",
+    "contact": "Kontakt",
+    "city": "Stad",
+    "country": "Land",
+    "google_maps": "A Google Maps opmaachen",
+    "previous_seminar": "Fréiere Seminar",
+    "event_photo": "Eventfoto",
+    "previous_seminar_photo_alt": "%s Foto vun engem fréiere Seminar",
+    "organizer_event_photo_alt": "%s Eventfoto",
+    "co_organizers": "Matorganisateuren",
+    "add_co_organizer": "Matorganisateur derbäisetzen",
+    "remove_co_organizer": "Matorganisateur ewechhuelen",
+    "logo": "Logo"
+  },
+  "country": {
+    "france": "Frankräich"
+  },
+  "dashboard": {
+    "organizer_dashboard": "Organisateur-Dashboard",
+    "my_events": "Meng Evenementer",
+    "create_event": "Evenement uleeën",
+    "edit_event": "Evenement änneren",
+    "duplicate": "Duplizéieren",
+    "preview": "Virschau",
+    "save": "Späicheren",
+    "cancel": "Ofbriechen",
+    "no_organizer_assigned": "Dengem Benotzerkont ass keen Organisateur zougewisen. Kontaktéier w.e.g. en Administrateur.",
+    "login_required": "Mell dech w.e.g. un, fir deng Evenementer ze verwalten.",
+    "event_saved": "Evenement gespäichert.",
+    "validation_error": "Kontrolléier w.e.g. deng Donnéeën an deng Rechter.",
+    "view_frontend_section": "Frontend-Sektioun kucken"
+  },
+  "drawer": {
+    "event_details": "Detailer",
+    "organizer_info": "Organisateur",
+    "venue_info": "Uert & Info",
+    "practical_information": "Praktesch Informatiounen"
+  },
+  "booking": {
+    "before_you_book": "Gutt ze wëssen ier Dir bucht",
+    "groups_clubs": "Gruppen & Veräiner",
+    "multiple_seminars": "Méi Seminairen",
+    "payment": "Bezuelung",
+    "cancellation": "Annulatioun",
+    "contact_organizer": "Organisateur kontaktéieren",
+    "contact_before_booking": "Kontaktéiert eis virun der Buchung",
+    "refund": "Remboursement",
+    "days_before_event": "Deeg virum Event",
+    "booking_process": "Buchungsprozess"
+  },
+  "content_sections": {
+    "content_sections": "Inhaltssektiounen",
+    "add_section": "Sektioun dobäisetzen",
+    "edit_section": "Sektioun änneren",
+    "enabled": "Aktivéiert",
+    "layout": "Layout",
+    "sort_order": "Sortéierung",
+    "kicker": "Kicker",
+    "subtitle": "Ënnertitel",
+    "button_label": "Button-Text",
+    "button_url": "Button-URL",
+    "gallery": "Galerie",
+    "main_image": "Haaptbild",
+    "secondary_image": "Zweet Bild",
+    "image_fit": "Bild Upassung",
+    "image_position": "Bildfokus / Positioun"
+  },
+  "translations": {
+    "translations": "Translations",
+    "canonical_key_count": "Canonical key count",
+    "missing_keys": "Missing keys",
+    "extra_keys": "Extra keys",
+    "complete": "Complete",
+    "generate_missing_translations": "Generate missing translations",
+    "export_audit": "Export audit JSON",
+    "fallback_used": "Fallback used"
+  },
+  "tickets": {
+    "kicker": "Ticketen",
+    "heading": "Seminar buchen",
+    "intro": "",
+    "select_event": "Veranstaltung wielen"
+  }
+}

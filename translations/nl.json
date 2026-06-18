@@ -1,0 +1,257 @@
+{
+  "language": {
+    "code": "nl",
+    "name": "Nederlands",
+    "switcher_label": "Taal kiezen"
+  },
+  "hero": {
+    "kicker": "TAKA European Tour 2026",
+    "headline": "Harmony in Motion",
+    "intro": "Een Europese seminarreis met Takafumi Nakayama Sensei – van Helsinki via Berlijn, Nederland, België en Luxemburg naar de regio Trier/Konz.",
+    "primary_button": "Seminars bekijken",
+    "secondary_button": "Tickets",
+    "stations_label": "Tourstops"
+  },
+  "tour": {
+    "kicker": "European Tour",
+    "headline": "Seminars in Europa"
+  },
+  "seminar": {
+    "format_label": "Format",
+    "host_label": "Gastheer",
+    "ticketshop_soon": "Ticketshop volgt",
+    "ticketshop_direct": "Ticketshop direct openen",
+    "ticketshop_open_pretix": "Ticketshop direct openen"
+  },
+  "gallery": {
+    "kicker": "Training in beweging",
+    "headline": "Kobudo, Soft Blocking en samen leren",
+    "intro": "Echte indrukken van eerdere seminars: bo-werk, partnertraining, samen oefenen en internationale karategemeenschap.",
+    "cards": {
+      "community": {
+        "title": "Community",
+        "text": "Internationale karatefamilie."
+      },
+      "kobudo": {
+        "title": "Kobudo",
+        "text": "Bo-werk, afstand en timing."
+      },
+      "softblock": {
+        "title": "Soft Blocking",
+        "text": "Zachte structuur in plaats van brute kracht."
+      },
+      "together": {
+        "title": "Samen oefenen",
+        "text": "Leren door observeren, uitwisseling en herhaling."
+      },
+      "kids": {
+        "title": "Kinderseminar",
+        "text": "Kinderseminar Trier"
+      },
+      "group": {
+        "title": "Groepsfoto",
+        "text": "Gemeenschap over dojo- en landsgrenzen heen."
+      }
+    }
+  },
+  "sections": {
+    "sensei": {
+      "kicker": "Sensei",
+      "headline": "Takafumi Nakayama",
+      "text": "Precisie, rust en bewegingskwaliteit vanuit de Okinawaanse traditie."
+    },
+    "training": {
+      "kicker": "Training",
+      "headline": "Karate-Do, Kobujutsu en Soft Blocking",
+      "text": "De seminars verbinden basis, partnerwerk, timing, afstand en lichaamsstructuur."
+    },
+    "community": {
+      "kicker": "Community",
+      "headline": "Samen trainen",
+      "text": "Een Europese ontmoeting voor serieus trainen en respectvolle uitwisseling."
+    },
+    "host": {
+      "kicker": "Gastheer",
+      "headline": "5 jaar Kleiner Wald Dojo"
+    },
+    "sponsor": {
+      "kicker": "Sponsor",
+      "headline": "kanso",
+      "text": "Centrum voor lichaam, geest en ziel in Konz.",
+      "link_text": "kan.so"
+    },
+    "place": {
+      "kicker": "Locatie Konz",
+      "headline": "Praktische informatie",
+      "text": "Details over reis, tijden en lokale informatie volgen in de seminarbeschrijvingen."
+    },
+    "student": {
+      "kicker": "Speciale gast",
+      "subtitle": "Student van Sensei"
+    }
+  },
+  "footer": {
+    "text": "TAKA European Tour 2026"
+  },
+  "seminars": {
+    "helsinki": {
+      "subtitle": "Helsinki seminar",
+      "description": "Twee dagen seminar in Helsinki.",
+      "type": "2-daags seminar"
+    },
+    "berlin": {
+      "subtitle": "Berlin seminar",
+      "description": "Twee dagen seminar in Berlijn.",
+      "type": "2-daags seminar"
+    },
+    "netherlands": {
+      "subtitle": "Netherlands seminar",
+      "description": "Twee dagen seminar in Nederland.",
+      "type": "2-daags seminar"
+    },
+    "belgium": {
+      "subtitle": "Belgium seminar",
+      "description": "Seminar gepland van 10:00 tot 13:00 uur.",
+      "type": "Halve-dag seminar"
+    },
+    "illange": {
+      "subtitle": "Illange seminar",
+      "description": "Seminarstop in Frankrijk.",
+      "type": "Seminar"
+    },
+    "hosingen": {
+      "subtitle": "Hosingen seminar",
+      "description": "Seminarstop in Luxemburg.",
+      "type": "Seminar"
+    },
+    "trier-kinderseminar": {
+      "subtitle": "Kinderseminar",
+      "description": "Kinderseminar in Trier binnen de TAKA European Tour.",
+      "type": "Kinderseminar",
+      "audience": "Kinderen en jongeren",
+      "level": "Alle niveaus"
+    },
+    "konz": {
+      "subtitle": "Konz seminar",
+      "description": "Twee dagen seminar in Konz met Takafumi Nakayama Sensei.",
+      "type": "2-daags seminar",
+      "audience": "Volwassenen en jongeren",
+      "level": "Alle stijlen en niveaus",
+      "parking": "Parkeerinformatie volgt."
+    },
+    "saarwellingen": {
+      "subtitle": "Saarwellingen seminar",
+      "description": "Afsluitend seminar van de regionale tourstops.",
+      "type": "Seminar"
+    }
+  },
+  "event": {
+    "date": "Datum",
+    "time": "Tijd",
+    "doors_open": "Deuren open",
+    "start": "Begin",
+    "end": "Einde",
+    "venue": "Locatie",
+    "address": "Adres",
+    "parking": "Parkeren",
+    "organizer": "Organisator",
+    "audience": "Doelgroep",
+    "level": "Niveau",
+    "ticketshop_direct": "Ticketshop openen",
+    "ticketshop_soon": "Ticketshop volgt",
+    "details_follow": "Details volgen",
+    "practical_information": "Praktische informatie",
+    "accessibility": "Toegankelijkheid",
+    "notes": "Opmerkingen",
+    "title": "Titel",
+    "subtitle": "Ondertitel",
+    "description": "Beschrijving",
+    "ticket_status": "Ticketstatus",
+    "ticket_provider": "Ticketaanbieder",
+    "ticket_url": "Ticket-URL",
+    "legal_name": "Juridische naam",
+    "website": "Website",
+    "email": "E-mail",
+    "contact": "Contact",
+    "city": "Stad",
+    "country": "Land",
+    "google_maps": "Openen in Google Maps",
+    "previous_seminar": "Eerder seminar",
+    "event_photo": "Evenementfoto",
+    "previous_seminar_photo_alt": "%s foto van een eerder seminar",
+    "organizer_event_photo_alt": "%s evenementfoto",
+    "co_organizers": "Medeorganisatoren",
+    "add_co_organizer": "Medeorganisator toevoegen",
+    "remove_co_organizer": "Medeorganisator verwijderen",
+    "logo": "Logo"
+  },
+  "country": {
+    "france": "Frankrijk"
+  },
+  "dashboard": {
+    "organizer_dashboard": "Organisator-dashboard",
+    "my_events": "Mijn events",
+    "create_event": "Event aanmaken",
+    "edit_event": "Event bewerken",
+    "duplicate": "Dupliceren",
+    "preview": "Voorbeeld",
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "no_organizer_assigned": "Er is geen organisatorprofiel aan je account gekoppeld. Neem contact op met een beheerder.",
+    "login_required": "Log in om je events te beheren.",
+    "event_saved": "Event opgeslagen.",
+    "validation_error": "Controleer je invoer en rechten.",
+    "view_frontend_section": "Frontend-sectie bekijken"
+  },
+  "drawer": {
+    "event_details": "Details",
+    "organizer_info": "Organisator",
+    "venue_info": "Locatie & info",
+    "practical_information": "Praktische informatie"
+  },
+  "booking": {
+    "before_you_book": "Goed om te weten voor je boekt",
+    "groups_clubs": "Groepen & clubs",
+    "multiple_seminars": "Meerdere seminars",
+    "payment": "Betaling",
+    "cancellation": "Annulering",
+    "contact_organizer": "Neem contact op met de organisator",
+    "contact_before_booking": "Neem contact op vóór het boeken",
+    "refund": "Terugbetaling",
+    "days_before_event": "dagen vóór het evenement",
+    "booking_process": "Boekingsproces"
+  },
+  "content_sections": {
+    "content_sections": "Contentsecties",
+    "add_section": "Sectie toevoegen",
+    "edit_section": "Sectie bewerken",
+    "enabled": "Ingeschakeld",
+    "layout": "Lay-out",
+    "sort_order": "Sorteervolgorde",
+    "kicker": "Kicker",
+    "subtitle": "Ondertitel",
+    "button_label": "Knoplabel",
+    "button_url": "Knop-URL",
+    "gallery": "Galerij",
+    "main_image": "Hoofdafbeelding",
+    "secondary_image": "Tweede afbeelding",
+    "image_fit": "Afbeeldingspassing",
+    "image_position": "Beeldfocus / positie"
+  },
+  "translations": {
+    "translations": "Translations",
+    "canonical_key_count": "Canonical key count",
+    "missing_keys": "Missing keys",
+    "extra_keys": "Extra keys",
+    "complete": "Complete",
+    "generate_missing_translations": "Generate missing translations",
+    "export_audit": "Export audit JSON",
+    "fallback_used": "Fallback used"
+  },
+  "tickets": {
+    "kicker": "Tickets",
+    "heading": "Boek je seminar",
+    "intro": "",
+    "select_event": "Evenement kiezen"
+  }
+}
