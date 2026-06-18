@@ -1,0 +1,257 @@
+{
+  "language": {
+    "code": "fr",
+    "name": "Français",
+    "switcher_label": "Choisir la langue"
+  },
+  "hero": {
+    "kicker": "TAKA European Tour 2026",
+    "headline": "Harmony in Motion",
+    "intro": "Un voyage de séminaires européen avec Takafumi Nakayama Sensei – de Helsinki à Berlin, aux Pays-Bas, en Belgique et au Luxembourg jusqu’à la région Trier/Konz.",
+    "primary_button": "Voir les séminaires",
+    "secondary_button": "Tickets",
+    "stations_label": "Étapes de la tournée"
+  },
+  "tour": {
+    "kicker": "European Tour",
+    "headline": "Séminaires en Europe"
+  },
+  "seminar": {
+    "format_label": "Format",
+    "host_label": "Hôte",
+    "ticketshop_soon": "Billetterie à venir",
+    "ticketshop_direct": "Ouvrir la billetterie",
+    "ticketshop_open_pretix": "Ouvrir la billetterie"
+  },
+  "gallery": {
+    "kicker": "Entraînement en mouvement",
+    "headline": "Kobudo, Soft Blocking et apprentissage partagé",
+    "intro": "Impressions réelles de séminaires passés : travail au bo, entraînement à deux, pratique commune et communauté internationale de karaté.",
+    "cards": {
+      "community": {
+        "title": "Communauté",
+        "text": "Une famille internationale de karaté."
+      },
+      "kobudo": {
+        "title": "Kobudo",
+        "text": "Travail au bo, distance et timing."
+      },
+      "softblock": {
+        "title": "Soft Blocking",
+        "text": "Une structure souple plutôt que la force brute."
+      },
+      "together": {
+        "title": "Pratiquer ensemble",
+        "text": "Apprendre par l’observation, l’échange et la répétition."
+      },
+      "kids": {
+        "title": "Séminaire enfants",
+        "text": "Séminaire enfants Trier"
+      },
+      "group": {
+        "title": "Photo de groupe",
+        "text": "Une communauté au-delà des dojos et des frontières."
+      }
+    }
+  },
+  "sections": {
+    "sensei": {
+      "kicker": "Sensei",
+      "headline": "Takafumi Nakayama",
+      "text": "Précision, calme et qualité du mouvement issus de la tradition d’Okinawa."
+    },
+    "training": {
+      "kicker": "Training",
+      "headline": "Karate-Do, Kobujutsu et Soft Blocking",
+      "text": "Les séminaires relient bases, travail à deux, timing, distance et structure corporelle."
+    },
+    "community": {
+      "kicker": "Community",
+      "headline": "S’entraîner ensemble",
+      "text": "Une rencontre européenne pour une pratique sérieuse et un échange respectueux."
+    },
+    "host": {
+      "kicker": "Hôte",
+      "headline": "5 ans du Kleiner Wald Dojo"
+    },
+    "sponsor": {
+      "kicker": "Sponsor",
+      "headline": "kanso",
+      "text": "Centre pour le corps, l’esprit et l’âme à Konz.",
+      "link_text": "kan.so"
+    },
+    "place": {
+      "kicker": "Lieu Konz",
+      "headline": "Informations pratiques",
+      "text": "Les détails de voyage, horaires et informations locales suivront dans les descriptions des séminaires."
+    },
+    "student": {
+      "kicker": "Invité spécial",
+      "subtitle": "Élève de Sensei"
+    }
+  },
+  "footer": {
+    "text": "TAKA European Tour 2026"
+  },
+  "seminars": {
+    "helsinki": {
+      "subtitle": "Séminaire Helsinki",
+      "description": "Deux jours de séminaire à Helsinki.",
+      "type": "Séminaire de 2 jours"
+    },
+    "berlin": {
+      "subtitle": "Séminaire Berlin",
+      "description": "Deux jours de séminaire à Berlin.",
+      "type": "Séminaire de 2 jours"
+    },
+    "netherlands": {
+      "subtitle": "Séminaire Netherlands",
+      "description": "Deux jours de séminaire aux Pays-Bas.",
+      "type": "Séminaire de 2 jours"
+    },
+    "belgium": {
+      "subtitle": "Séminaire Belgium",
+      "description": "Séminaire prévu de 10h00 à 13h00.",
+      "type": "Demi-journée"
+    },
+    "illange": {
+      "subtitle": "Séminaire Illange",
+      "description": "Étape de séminaire en France.",
+      "type": "Séminaire"
+    },
+    "hosingen": {
+      "subtitle": "Séminaire Hosingen",
+      "description": "Étape de séminaire au Luxembourg.",
+      "type": "Séminaire"
+    },
+    "trier-kinderseminar": {
+      "subtitle": "Séminaire enfants",
+      "description": "Séminaire enfants à Trier dans le cadre du TAKA European Tour.",
+      "type": "Séminaire enfants",
+      "audience": "Enfants et jeunes",
+      "level": "Tous niveaux"
+    },
+    "konz": {
+      "subtitle": "Séminaire Konz",
+      "description": "Deux jours de séminaire à Konz avec Takafumi Nakayama Sensei.",
+      "type": "Séminaire de 2 jours",
+      "audience": "Adultes et jeunes",
+      "level": "Tous styles et tous niveaux",
+      "parking": "Les informations de stationnement suivront."
+    },
+    "saarwellingen": {
+      "subtitle": "Séminaire Saarwellingen",
+      "description": "Séminaire final des étapes régionales.",
+      "type": "Séminaire"
+    }
+  },
+  "event": {
+    "date": "Date",
+    "time": "Horaire",
+    "doors_open": "Ouverture des portes",
+    "start": "Début",
+    "end": "Fin",
+    "venue": "Lieu",
+    "address": "Adresse",
+    "parking": "Parking",
+    "organizer": "Organisateur",
+    "audience": "Public",
+    "level": "Niveau",
+    "ticketshop_direct": "Ouvrir la billetterie",
+    "ticketshop_soon": "Billetterie à venir",
+    "details_follow": "Détails à venir",
+    "practical_information": "Informations pratiques",
+    "accessibility": "Accessibilité",
+    "notes": "Remarques",
+    "title": "Titre",
+    "subtitle": "Sous-titre",
+    "description": "Description",
+    "ticket_status": "Statut billetterie",
+    "ticket_provider": "Prestataire billetterie",
+    "ticket_url": "URL billetterie",
+    "legal_name": "Nom légal",
+    "website": "Site web",
+    "email": "E-mail",
+    "contact": "Contact",
+    "city": "Ville",
+    "country": "Pays",
+    "google_maps": "Ouvrir dans Google Maps",
+    "previous_seminar": "Séminaire précédent",
+    "event_photo": "Photo de l’événement",
+    "previous_seminar_photo_alt": "Photo d’un séminaire précédent de %s",
+    "organizer_event_photo_alt": "Photo d’événement de %s",
+    "co_organizers": "Co-organisateurs",
+    "add_co_organizer": "Ajouter un co-organisateur",
+    "remove_co_organizer": "Supprimer le co-organisateur",
+    "logo": "Logo"
+  },
+  "country": {
+    "france": "France"
+  },
+  "dashboard": {
+    "organizer_dashboard": "Tableau de bord organisateur",
+    "my_events": "Mes événements",
+    "create_event": "Créer un événement",
+    "edit_event": "Modifier l’événement",
+    "duplicate": "Dupliquer",
+    "preview": "Aperçu",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "no_organizer_assigned": "Aucun profil organisateur n’est associé à votre compte. Veuillez contacter un administrateur.",
+    "login_required": "Veuillez vous connecter pour gérer vos événements.",
+    "event_saved": "Événement enregistré.",
+    "validation_error": "Veuillez vérifier vos données et vos droits.",
+    "view_frontend_section": "Voir la section publique"
+  },
+  "drawer": {
+    "event_details": "Détails",
+    "organizer_info": "Organisateur",
+    "venue_info": "Lieu & infos",
+    "practical_information": "Informations pratiques"
+  },
+  "booking": {
+    "before_you_book": "À savoir avant de réserver",
+    "groups_clubs": "Groupes & clubs",
+    "multiple_seminars": "Plusieurs séminaires",
+    "payment": "Paiement",
+    "cancellation": "Annulation",
+    "contact_organizer": "Contacter l’organisateur",
+    "contact_before_booking": "Contactez-nous avant de réserver",
+    "refund": "Remboursement",
+    "days_before_event": "jours avant l’événement",
+    "booking_process": "Processus de réservation"
+  },
+  "content_sections": {
+    "content_sections": "Sections de contenu",
+    "add_section": "Ajouter une section",
+    "edit_section": "Modifier la section",
+    "enabled": "Activé",
+    "layout": "Mise en page",
+    "sort_order": "Ordre de tri",
+    "kicker": "Accroche",
+    "subtitle": "Sous-titre",
+    "button_label": "Libellé du bouton",
+    "button_url": "URL du bouton",
+    "gallery": "Galerie",
+    "main_image": "Image principale",
+    "secondary_image": "Image secondaire",
+    "image_fit": "Ajustement de l’image",
+    "image_position": "Focus / position de l’image"
+  },
+  "translations": {
+    "translations": "Translations",
+    "canonical_key_count": "Canonical key count",
+    "missing_keys": "Missing keys",
+    "extra_keys": "Extra keys",
+    "complete": "Complete",
+    "generate_missing_translations": "Generate missing translations",
+    "export_audit": "Export audit JSON",
+    "fallback_used": "Fallback used"
+  },
+  "tickets": {
+    "kicker": "Billets",
+    "heading": "Réserver votre séminaire",
+    "intro": "",
+    "select_event": "Choisir un événement"
+  }
+}

@@ -1,0 +1,257 @@
+{
+  "language": {
+    "code": "ja",
+    "name": "日本語",
+    "switcher_label": "言語を選択"
+  },
+  "hero": {
+    "kicker": "TAKA European Tour 2026",
+    "headline": "Harmony in Motion",
+    "intro": "中山隆文先生と巡るヨーロッパ・セミナーツアー。ヘルシンキからベルリン、オランダ、ベルギー、ルクセンブルクを経て、トリーア／コンツ地域へ。",
+    "primary_button": "セミナーを見る",
+    "secondary_button": "チケット",
+    "stations_label": "ツアー開催地"
+  },
+  "tour": {
+    "kicker": "European Tour",
+    "headline": "ヨーロッパのセミナー"
+  },
+  "seminar": {
+    "format_label": "形式",
+    "host_label": "ホスト",
+    "ticketshop_soon": "チケット販売は準備中",
+    "ticketshop_direct": "チケットショップを開く",
+    "ticketshop_open_pretix": "チケットショップを開く"
+  },
+  "gallery": {
+    "kicker": "動きの中の稽古",
+    "headline": "古武道、Soft Blocking、ともに学ぶ時間",
+    "intro": "過去のセミナーからの実際の様子：棒の稽古、相対練習、共に反復する学び、国際的な空手コミュニティ。",
+    "cards": {
+      "community": {
+        "title": "コミュニティ",
+        "text": "国際的な空手ファミリー。"
+      },
+      "kobudo": {
+        "title": "古武道",
+        "text": "棒の扱い、間合い、タイミング。"
+      },
+      "softblock": {
+        "title": "Soft Blocking",
+        "text": "力に頼らない、しなやかな構造。"
+      },
+      "together": {
+        "title": "ともに稽古",
+        "text": "観察、交流、反復を通じて学ぶ。"
+      },
+      "kids": {
+        "title": "子どもセミナー",
+        "text": "Trier 子どもセミナー"
+      },
+      "group": {
+        "title": "集合写真",
+        "text": "道場と国境を越えたつながり。"
+      }
+    }
+  },
+  "sections": {
+    "sensei": {
+      "kicker": "Sensei",
+      "headline": "中山隆文先生",
+      "text": "沖縄の伝統に根ざした精度、静けさ、そして動きの質。"
+    },
+    "training": {
+      "kicker": "Training",
+      "headline": "空手道・古武術・Soft Blocking",
+      "text": "基本、相対練習、間合い、タイミング、身体構造をつなげて学びます。"
+    },
+    "community": {
+      "kicker": "Community",
+      "headline": "ともに稽古する",
+      "text": "真摯な稽古と敬意ある交流のためのヨーロッパの集い。"
+    },
+    "host": {
+      "kicker": "ホスト",
+      "headline": "Kleiner Wald Dojo 5周年"
+    },
+    "sponsor": {
+      "kicker": "Sponsor",
+      "headline": "kanso",
+      "text": "コンツにある身体・心・魂のためのセンター。",
+      "link_text": "kan.so"
+    },
+    "place": {
+      "kicker": "会場：Konz",
+      "headline": "実用情報",
+      "text": "アクセス、時間、地域情報の詳細は各セミナー説明に追記されます。"
+    },
+    "student": {
+      "kicker": "特別ゲスト",
+      "subtitle": "先生の生徒"
+    }
+  },
+  "footer": {
+    "text": "TAKA European Tour 2026"
+  },
+  "seminars": {
+    "helsinki": {
+      "subtitle": "ヘルシンキ・セミナー",
+      "description": "ヘルシンキでの2日間セミナー。",
+      "type": "2日間セミナー"
+    },
+    "berlin": {
+      "subtitle": "ベルリン・セミナー",
+      "description": "ベルリンでの2日間セミナー。",
+      "type": "2日間セミナー"
+    },
+    "netherlands": {
+      "subtitle": "オランダ・セミナー",
+      "description": "オランダでの2日間セミナー。",
+      "type": "2日間セミナー"
+    },
+    "belgium": {
+      "subtitle": "ベルギー・セミナー",
+      "description": "10:00〜13:00に予定されているセミナー。",
+      "type": "半日セミナー"
+    },
+    "illange": {
+      "subtitle": "Illange セミナー",
+      "description": "フランスでのセミナー開催地。",
+      "type": "セミナー"
+    },
+    "hosingen": {
+      "subtitle": "Hosingen セミナー",
+      "description": "ルクセンブルクでのセミナー開催地。",
+      "type": "セミナー"
+    },
+    "trier-kinderseminar": {
+      "subtitle": "子どもセミナー",
+      "description": "TAKA European Tour の一環として Trier で行う子どもセミナー。",
+      "type": "子どもセミナー",
+      "audience": "子ども・青少年",
+      "level": "全レベル"
+    },
+    "konz": {
+      "subtitle": "Konz セミナー",
+      "description": "Takafumi Nakayama Sensei と学ぶ Konz での2日間セミナー。",
+      "type": "2日間セミナー",
+      "audience": "大人・青少年",
+      "level": "すべての流派・レベル",
+      "parking": "駐車場の詳細は後日お知らせします。"
+    },
+    "saarwellingen": {
+      "subtitle": "Saarwellingen セミナー",
+      "description": "地域ツアーの締めくくりとなるセミナー。",
+      "type": "セミナー"
+    }
+  },
+  "event": {
+    "date": "日付",
+    "time": "時間",
+    "doors_open": "開場",
+    "start": "開始",
+    "end": "終了",
+    "venue": "会場",
+    "address": "住所",
+    "parking": "駐車場",
+    "organizer": "主催",
+    "audience": "対象",
+    "level": "レベル",
+    "ticketshop_direct": "チケットショップを開く",
+    "ticketshop_soon": "チケットショップ準備中",
+    "details_follow": "詳細は後日",
+    "practical_information": "実用情報",
+    "accessibility": "アクセシビリティ",
+    "notes": "備考",
+    "title": "タイトル",
+    "subtitle": "サブタイトル",
+    "description": "説明",
+    "ticket_status": "チケット状況",
+    "ticket_provider": "チケット提供元",
+    "ticket_url": "チケットURL",
+    "legal_name": "正式名称",
+    "website": "ウェブサイト",
+    "email": "メール",
+    "contact": "連絡先",
+    "city": "都市",
+    "country": "国",
+    "google_maps": "Google Mapsで開く",
+    "previous_seminar": "過去のセミナー",
+    "event_photo": "イベント写真",
+    "previous_seminar_photo_alt": "%s 過去のセミナー写真",
+    "organizer_event_photo_alt": "%s イベント写真",
+    "co_organizers": "共催者",
+    "add_co_organizer": "共催者を追加",
+    "remove_co_organizer": "共催者を削除",
+    "logo": "ロゴ"
+  },
+  "country": {
+    "france": "フランス"
+  },
+  "dashboard": {
+    "organizer_dashboard": "主催者ダッシュボード",
+    "my_events": "自分のイベント",
+    "create_event": "イベントを作成",
+    "edit_event": "イベントを編集",
+    "duplicate": "複製",
+    "preview": "プレビュー",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "no_organizer_assigned": "このユーザーアカウントには主催者プロフィールが割り当てられていません。管理者に連絡してください。",
+    "login_required": "イベントを管理するにはログインしてください。",
+    "event_saved": "イベントを保存しました。",
+    "validation_error": "入力内容と権限を確認してください。",
+    "view_frontend_section": "フロントエンドのセクションを見る"
+  },
+  "drawer": {
+    "event_details": "詳細",
+    "organizer_info": "主催者",
+    "venue_info": "会場・案内",
+    "practical_information": "実用情報"
+  },
+  "booking": {
+    "before_you_book": "予約前にご確認ください",
+    "groups_clubs": "団体・クラブ",
+    "multiple_seminars": "複数セミナー",
+    "payment": "お支払い",
+    "cancellation": "キャンセル",
+    "contact_organizer": "主催者に連絡",
+    "contact_before_booking": "予約前にお問い合わせください",
+    "refund": "返金",
+    "days_before_event": "開催日前",
+    "booking_process": "予約の流れ"
+  },
+  "content_sections": {
+    "content_sections": "コンテンツセクション",
+    "add_section": "セクションを追加",
+    "edit_section": "セクションを編集",
+    "enabled": "有効",
+    "layout": "レイアウト",
+    "sort_order": "並び順",
+    "kicker": "キッカー",
+    "subtitle": "サブタイトル",
+    "button_label": "ボタンラベル",
+    "button_url": "ボタンURL",
+    "gallery": "ギャラリー",
+    "main_image": "メイン画像",
+    "secondary_image": "セカンダリ画像",
+    "image_fit": "画像フィット",
+    "image_position": "画像フォーカス / 位置"
+  },
+  "translations": {
+    "translations": "Translations",
+    "canonical_key_count": "Canonical key count",
+    "missing_keys": "Missing keys",
+    "extra_keys": "Extra keys",
+    "complete": "Complete",
+    "generate_missing_translations": "Generate missing translations",
+    "export_audit": "Export audit JSON",
+    "fallback_used": "Fallback used"
+  },
+  "tickets": {
+    "kicker": "チケット",
+    "heading": "セミナーを予約",
+    "intro": "",
+    "select_event": "イベントを選択"
+  }
+}
