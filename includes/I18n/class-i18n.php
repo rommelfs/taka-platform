@@ -24,6 +24,16 @@ class TAKA_Platform_I18n {
 		if ( isset( $_GET['taka_lang'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$lang = sanitize_key( wp_unslash( $_GET['taka_lang'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			if ( in_array( $lang, $this->get_all_languages(), true ) ) {
+				if ( ! headers_sent() ) {
+					setcookie( 'taka_lang', $lang, time() + ( defined( 'MONTH_IN_SECONDS' ) ? MONTH_IN_SECONDS : 30 * ( defined( 'DAY_IN_SECONDS' ) ? DAY_IN_SECONDS : 86400 ) ), ( defined( 'COOKIEPATH' ) && COOKIEPATH ? COOKIEPATH : '/' ), ( defined( 'COOKIE_DOMAIN' ) ? COOKIE_DOMAIN : '' ), is_ssl(), true );
+				}
+				return $lang;
+			}
+		}
+
+		if ( isset( $_COOKIE['taka_lang'] ) ) {
+			$lang = sanitize_key( wp_unslash( $_COOKIE['taka_lang'] ) );
+			if ( in_array( $lang, $this->get_all_languages(), true ) ) {
 				return $lang;
 			}
 		}
@@ -112,10 +122,19 @@ class TAKA_Platform_I18n {
 		$report = array();
 		foreach ( $this->get_all_languages() as $lang ) {
 			$flat = $this->flatten_keys( $this->load_language( $lang ) );
+			$fallback_used = array();
+			if ( 'en' !== $lang ) {
+				foreach ( $base as $key => $value ) {
+					if ( array_key_exists( $key, $flat ) && (string) $flat[ $key ] === (string) $value ) {
+						$fallback_used[] = $key;
+					}
+				}
+			}
 			$report[ $lang ] = array(
 				'count' => count( $flat ),
 				'missing' => array_values( array_diff( array_keys( $base ), array_keys( $flat ) ) ),
 				'extra' => array_values( array_diff( array_keys( $flat ), array_keys( $base ) ) ),
+				'fallback_used' => $fallback_used,
 			);
 		}
 		return array( 'base_count' => count( $base ), 'languages' => $report );

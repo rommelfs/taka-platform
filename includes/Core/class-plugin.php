@@ -18,10 +18,21 @@ class TAKA_Platform_Plugin {
 
 	private function __construct() {
 		$this->renderer = new TAKA_Platform_Renderer();
+		add_action( 'init', array( $this, 'persist_requested_language' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'register_assets' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_shortcode_assets' ), 20 );
 		add_action( 'wp_head', array( $this, 'print_hreflang_links' ) );
 		$this->register_shortcodes();
+	}
+
+	public function persist_requested_language() {
+		if ( empty( $_GET['taka_lang'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return;
+		}
+		$lang = sanitize_key( wp_unslash( $_GET['taka_lang'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( in_array( $lang, TAKA_Platform_I18n::instance()->get_all_languages(), true ) && ! headers_sent() ) {
+			setcookie( 'taka_lang', $lang, time() + ( defined( 'MONTH_IN_SECONDS' ) ? MONTH_IN_SECONDS : 30 * ( defined( 'DAY_IN_SECONDS' ) ? DAY_IN_SECONDS : 86400 ) ), ( defined( 'COOKIEPATH' ) && COOKIEPATH ? COOKIEPATH : '/' ), ( defined( 'COOKIE_DOMAIN' ) ? COOKIE_DOMAIN : '' ), is_ssl(), true );
+		}
 	}
 
 

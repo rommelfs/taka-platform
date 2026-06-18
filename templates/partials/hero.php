@@ -34,15 +34,12 @@ if ( '' !== $hero_image ) {
 		<nav class="taka-tour-stations" aria-label="<?php echo esc_attr( taka_tour_translate( 'hero.stations_label', 'Tourstationen' ) ); ?>">
 			<?php foreach ( $hero_events as $event ) : ?>
 				<?php $label = 'trier-kinderseminar' === ( $event['slug'] ?? '' ) ? ( $event['city'] ?? $event['title'] ?? '' ) : ( $event['title'] ?? '' ); ?>
-				<a class="taka-tour-station-link" href="#seminar-<?php echo esc_attr( $event['slug'] ?? '' ); ?>"><?php echo esc_html( $label ); ?></a>
+				<a class="taka-tour-station-link" href="#tickets" data-taka-ticket-tab="<?php echo esc_attr( $event['slug'] ?? $event['id'] ?? '' ); ?>"><?php echo esc_html( $label ); ?></a>
 			<?php endforeach; ?>
 		</nav>
 		<div class="taka-card-actions">
 			<?php if ( '' !== trim( (string) ( $hero['primary_button_label'] ?? '' ) ) ) : ?>
 				<a class="taka-button" href="<?php echo esc_url( $hero['primary_button_target'] ?? '#tour' ); ?>"><?php echo esc_html( $hero['primary_button_label'] ); ?></a>
-			<?php endif; ?>
-			<?php if ( '' !== trim( (string) ( $hero['secondary_button_label'] ?? '' ) ) ) : ?>
-				<a class="taka-button taka-button-secondary" href="<?php echo esc_url( $hero['secondary_button_target'] ?? '#seminar-konz' ); ?>"><?php echo esc_html( $hero['secondary_button_label'] ); ?></a>
 			<?php endif; ?>
 		</div>
 	</div>

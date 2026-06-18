@@ -839,3 +839,38 @@
 		max-height: none;
 	}
 }
+
+/* v1.4.2 ticket action cleanup */
+.taka-ticket-event-panel__description {
+	font-size: .96rem;
+	line-height: 1.55;
+	margin: -.15rem 0 .1rem;
+}
+
+.taka-ticket-meta-link {
+	appearance: none;
+	background: transparent;
+	border: 0;
+	border-bottom: 1px solid rgba(188,0,45,.38);
+	color: inherit;
+	cursor: pointer;
+	font: inherit;
+	font-weight: 850;
+	padding: 0 0 .08rem;
+	text-align: left;
+}
+
+.taka-ticket-meta-link span[aria-hidden="true"] {
+	color: #BC002D;
+	display: inline;
+	font-size: .82em;
+	margin-left: .3rem;
+	opacity: .85;
+}
+
+.taka-ticket-meta-link:hover,
+.taka-ticket-meta-link:focus-visible {
+	border-color: #BC002D;
+	color: #BC002D;
+	outline: none;
+}

@@ -136,6 +136,10 @@ Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `tak
 
 ## Changelog
 
+### v1.4.2
+
+- Fixed multilingual rendering and language picker behavior, restored translation completeness workflow, cleaned ticket info actions and connected hero navigation to ticket tabs.
+
 ### v1.4.1
 
 - Polished tabbed ticket layout, replaced redundant seminar overview by the ticket selector and improved event summary panel spacing.

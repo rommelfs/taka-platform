@@ -310,7 +310,7 @@ class TAKA_Platform_Data {
 			'intro' => '',
 			'group_booking' => $is_de ? 'Gruppen sind herzlich willkommen. Wenn Sie mehrere Teilnehmer anmelden oder als Verein/Dojo eine gemeinsame Teilnahme organisieren möchten, wenden Sie sich bitte an den jeweiligen Veranstalter.' : 'Groups are very welcome. If you would like to register several participants or organize a club delegation, please contact the local organizer.',
 			'multi_event_discount' => $is_de ? 'Sie möchten mehrere Seminare der European Tour besuchen? Bitte kontaktieren Sie uns vor der Buchung. Wir erstellen gerne ein individuelles Angebot.' : 'Planning to attend multiple seminars during the European Tour? Please contact us before booking. We will gladly prepare an individual offer.',
-			'contact_email' => 'contact@kleiner-wald.de',
+			'contact_email' => '',
 			'booking_process' => '',
 			'payment_methods' => $is_de ? 'Nach Ihrer Buchung verschicken wir eine Rechnung. Die Zahlung ist per Überweisung, PayPal oder nach Absprache bar möglich. Nur vorab bezahlte Rechnungen berechtigen zur Teilnahme am Seminar.' : 'After your booking, we will send you an invoice. Payment is possible by bank transfer, PayPal or cash if agreed with the organizer. Only paid invoices confirm participation in the seminar.',
 			'cancellation_policy' => $is_de ? "bis 40 Tage vor dem Seminar: kostenloser Rücktritt\n39–30 Tage vor dem Seminar: 75% Rückerstattung\n29–14 Tage vor dem Seminar: 40% Rückerstattung\nweniger als 14 Tage vor dem Seminar: leider keine Rückerstattung" : "until 40 days before the seminar: free cancellation\n39–30 days before the seminar: 75% refund\n29–14 days before the seminar: 40% refund\nless than 14 days before the seminar: unfortunately no refund",
@@ -343,6 +343,9 @@ class TAKA_Platform_Data {
 
 		if ( empty( $booking['contact_email'] ) && is_array( $organizer ) && ! empty( $organizer['emails'][0] ) ) {
 			$booking['contact_email'] = (string) $organizer['emails'][0];
+		}
+		if ( empty( $booking['contact_email'] ) ) {
+			$booking['contact_email'] = 'contact@kleiner-wald.de';
 		}
 
 		$sections = array(
@@ -410,12 +413,25 @@ class TAKA_Platform_Data {
 		$stored = function_exists( 'get_option' ) ? get_option( self::TICKETS_OPTION, array() ) : array();
 		$settings = array_merge( self::default_ticket_section_settings( $lang ), is_array( $stored ) ? $stored : array() );
 		if ( $resolve_translations ) {
-			foreach ( array( 'kicker', 'heading', 'intro' ) as $field ) {
-				$settings[ $field ] = taka_platform_get_translated_value( $settings[ $field ] ?? '', $lang, 'en' );
-			}
+			$settings['kicker'] = self::translated_setting_value( $settings['kicker'] ?? '', 'tickets.kicker', 'Tickets', $lang );
+			$settings['heading'] = self::translated_setting_value( $settings['heading'] ?? '', 'tickets.heading', 'Book your seminar', $lang );
+			$settings['intro'] = self::translated_setting_value( $settings['intro'] ?? '', 'tickets.intro', '', $lang );
 		}
 		$settings['show_seminar_overview'] = ! empty( $settings['show_seminar_overview'] ) ? '1' : '0';
 		return $settings;
+	}
+
+	/** Resolve dynamic option values while translating unchanged default strings. */
+	private static function translated_setting_value( $value, $key, $fallback, $lang ) {
+		if ( is_array( $value ) ) {
+			return taka_platform_get_translated_value( $value, $lang, 'en' );
+		}
+		$scalar = (string) $value;
+		$english = taka_tour_translate( $key, $fallback, 'en' );
+		if ( '' === trim( $scalar ) || $scalar === $english || $scalar === $fallback ) {
+			return taka_tour_translate( $key, $fallback, $lang );
+		}
+		return $scalar;
 	}
 
 	/** Default editable hero settings with translation/config fallbacks. */
@@ -436,8 +452,8 @@ class TAKA_Platform_Data {
 			'title'                  => taka_tour_translate( 'hero.headline', 'Harmony in Motion' ),
 			'description'            => taka_tour_translate( 'hero.intro', 'Eine europäische Seminarreise mit Takafumi Nakayama Sensei – von Helsinki über Berlin, die Niederlande, Belgien und Luxemburg bis in die Region Trier/Konz.' ),
 			'primary_button_label'   => taka_tour_translate( 'hero.primary_button', 'Seminare ansehen' ),
-			'primary_button_target'  => '#tour',
-			'secondary_button_label' => taka_tour_translate( 'hero.secondary_button', 'Tickets' ),
+			'primary_button_target'  => '#tickets',
+			'secondary_button_label' => '',
 			'secondary_button_target'=> $ticket_target,
 			'image_id'               => 0,
 			'image_url'              => $images['hero_image'] ?? '',
@@ -455,6 +471,15 @@ class TAKA_Platform_Data {
 		$settings = function_exists( 'get_option' ) ? get_option( self::HERO_OPTION, array() ) : array();
 		$settings = is_array( $settings ) ? $settings : array();
 		$merged   = array_merge( self::default_hero_settings(), $settings );
+		$lang = taka_tour_current_language();
+		foreach ( array( 'kicker', 'title', 'description', 'primary_button_label', 'secondary_button_label' ) as $field ) {
+			$merged[ $field ] = taka_platform_get_translated_value( $merged[ $field ] ?? '', $lang, 'en' );
+		}
+		$merged['kicker'] = self::translated_setting_value( $merged['kicker'] ?? '', 'hero.kicker', 'TAKA European Tour 2026', $lang );
+		$merged['title'] = self::translated_setting_value( $merged['title'] ?? '', 'hero.headline', 'Harmony in Motion', $lang );
+		$merged['description'] = self::translated_setting_value( $merged['description'] ?? '', 'hero.intro', '', $lang );
+		$merged['primary_button_label'] = self::translated_setting_value( $merged['primary_button_label'] ?? '', 'hero.primary_button', 'View seminars', $lang );
+		$merged['primary_button_target'] = '#tickets';
 		$merged['image'] = self::resolve_attachment_url( absint( $merged['image_id'] ?? 0 ), 'large', (string) ( $merged['image_url'] ?? '' ) );
 		return $merged;
 	}

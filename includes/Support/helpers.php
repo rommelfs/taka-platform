@@ -60,6 +60,18 @@ function taka_tour_translate( $key, $fallback, $lang = null ) {
 }
 
 /**
+ * Generic platform translation helper.
+ *
+ * @param string $key      Translation key.
+ * @param string $fallback Fallback text.
+ * @param string|null $lang Optional language code.
+ * @return string
+ */
+function taka_platform_translate( $key, $fallback = '', $lang = null ) {
+	return taka_tour_translate( $key, $fallback, $lang );
+}
+
+/**
  * Return the active TAKA Platform language.
  *
  * @return string
@@ -76,7 +88,8 @@ function taka_tour_current_language() {
  * @param string $fallback_language Fallback language.
  * @return string
  */
-function taka_platform_get_translated_value( $value, $language, $fallback_language = 'en' ) {
+function taka_platform_get_translated_value( $value, $language = null, $fallback_language = 'en' ) {
+	$language = $language ?: taka_tour_current_language();
 	if ( is_array( $value ) ) {
 		foreach ( array( $language, $fallback_language, 'de', 'en' ) as $lang ) {
 			if ( isset( $value[ $lang ] ) && '' !== trim( (string) $value[ $lang ] ) ) {

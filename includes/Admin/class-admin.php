@@ -481,16 +481,17 @@ class TAKA_Platform_Admin {
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline-block;margin-right:8px;">
 				<input type="hidden" name="action" value="taka_platform_sync_translations">
 				<?php wp_nonce_field( 'taka_platform_sync_translations', self::NONCE ); ?>
-				<?php submit_button( __( 'Regenerate / sync missing keys', 'taka-platform' ), 'secondary', 'submit', false ); ?>
+				<?php submit_button( __( 'Sync missing keys', 'taka-platform' ), 'secondary', 'sync_static_keys', false ); ?>
+				<?php submit_button( __( 'Generate fallback translations', 'taka-platform' ), 'secondary', 'generate_fallbacks', false ); ?>
 			</form>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline-block;">
 				<input type="hidden" name="action" value="taka_platform_export_translation_audit">
 				<?php wp_nonce_field( 'taka_platform_export_translation_audit', self::NONCE ); ?>
 				<?php submit_button( __( 'Export audit JSON', 'taka-platform' ), 'secondary', 'submit', false ); ?>
 			</form>
-			<table class="widefat striped" style="margin-top:16px;"><thead><tr><th><?php echo esc_html__( 'Language', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Keys', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Missing keys', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Extra keys', 'taka-platform' ); ?></th></tr></thead><tbody>
+			<table class="widefat striped" style="margin-top:16px;"><thead><tr><th><?php echo esc_html__( 'Language', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Keys', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Missing keys', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Extra keys', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Fallback-used keys', 'taka-platform' ); ?></th></tr></thead><tbody>
 			<?php foreach ( $audit['languages'] as $lang => $row ) : ?>
-				<tr><td><strong><?php echo esc_html( strtoupper( $lang ) ); ?></strong></td><td><?php echo esc_html( (string) $row['count'] ); ?></td><td><?php echo empty( $row['missing'] ) ? esc_html__( 'Complete', 'taka-platform' ) : '<code>' . esc_html( implode( ', ', $row['missing'] ) ) . '</code>'; ?></td><td><?php echo empty( $row['extra'] ) ? '—' : '<code>' . esc_html( implode( ', ', $row['extra'] ) ) . '</code>'; ?></td></tr>
+				<tr><td><strong><?php echo esc_html( strtoupper( $lang ) ); ?></strong></td><td><?php echo esc_html( (string) $row['count'] ); ?></td><td><?php echo empty( $row['missing'] ) ? esc_html__( 'Complete', 'taka-platform' ) : '<code>' . esc_html( implode( ', ', $row['missing'] ) ) . '</code>'; ?></td><td><?php echo empty( $row['extra'] ) ? '—' : '<code>' . esc_html( implode( ', ', $row['extra'] ) ) . '</code>'; ?></td><td><?php echo empty( $row['fallback_used'] ) ? '—' : esc_html( (string) count( $row['fallback_used'] ) ); ?></td></tr>
 			<?php endforeach; ?>
 			</tbody></table>
 			<h2><?php echo esc_html__( 'Dynamic content translation workflow', 'taka-platform' ); ?></h2>
