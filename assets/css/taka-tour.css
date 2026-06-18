@@ -82,7 +82,7 @@
 }
 
 .taka-button,
-.taka-tabs button {
+.taka-tab-buttons > button {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -98,7 +98,7 @@
 }
 
 .taka-button-secondary,
-.taka-tabs button:not(.is-active) {
+.taka-tab-buttons > button:not(.is-active) {
 	background: transparent;
 	color: #BC002D !important;
 }
@@ -237,11 +237,12 @@
 	max-width: 100%;
 }
 
-.pretix-widget button,
-.pretix-widget .btn {
-	border-radius: 2px !important;
-	background: #BC002D !important;
-	font-family: Inter, system-ui, sans-serif !important;
+.taka-pretix-widget .pretix-widget button,
+.taka-pretix-widget .pretix-widget .btn {
+	background: revert !important;
+	border-radius: revert !important;
+	color: revert !important;
+	font-family: revert !important;
 }
 
 .taka-editorial-gallery {

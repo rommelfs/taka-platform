@@ -1131,3 +1131,84 @@
 		min-height: 0;
 	}
 }
+
+/* v1.4.6 Pretix isolation and stable info trigger borders */
+.taka-ticket-tabs .taka-pretix-widget button,
+.taka-ticket-tabs .taka-pretix-widget input,
+.taka-ticket-tabs .taka-pretix-widget label,
+.taka-ticket-tabs .taka-pretix-widget select,
+.taka-ticket-tabs .taka-pretix-widget textarea,
+.taka-ticket-tabs .taka-pretix-widget .btn {
+	background: revert !important;
+	border: revert !important;
+	border-radius: revert !important;
+	box-shadow: revert !important;
+	color: revert !important;
+	font: revert !important;
+	letter-spacing: normal !important;
+	line-height: revert !important;
+	padding: revert !important;
+	text-transform: none !important;
+	transform: none !important;
+}
+
+.taka-pretix-widget-wrap,
+.taka-pretix-widget-wrap pretix-widget {
+	display: block;
+	max-width: 100%;
+}
+
+.taka-ticket-tabs .taka-pretix-widget .taka-widget-label,
+.taka-ticket-tabs .taka-pretix-widget .taka-ticket-direct-link {
+	font-family: Inter, system-ui, sans-serif;
+}
+
+.taka-ticket-meta-link,
+.taka-ticket-meta-link:hover,
+.taka-ticket-meta-link:active,
+.taka-ticket-meta-link:focus,
+.taka-ticket-meta-link:focus-visible {
+	appearance: none;
+	background: transparent !important;
+	border: 0 !important;
+	border-radius: 2px;
+	box-shadow: none !important;
+	margin: 0;
+	min-height: 0;
+	padding: 0 !important;
+	transform: none !important;
+}
+
+.taka-ticket-meta-link {
+	align-items: center;
+	color: inherit;
+	cursor: pointer;
+	display: inline-flex;
+	font: inherit;
+	font-weight: 850;
+	gap: .35em;
+	line-height: inherit;
+	text-align: left;
+	text-decoration-line: underline;
+	text-decoration-color: rgba(188,0,45,.48);
+	text-decoration-style: dotted;
+	text-decoration-thickness: 1px;
+	text-underline-offset: .18em;
+}
+
+.taka-ticket-meta-link:hover,
+.taka-ticket-meta-link:active {
+	color: #BC002D;
+	text-decoration-color: #BC002D;
+	text-decoration-style: solid;
+}
+
+.taka-ticket-meta-link:focus {
+	outline: none;
+}
+
+.taka-ticket-meta-link:focus-visible {
+	color: #BC002D;
+	outline: 2px solid #BC002D;
+	outline-offset: 3px;
+}

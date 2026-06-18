@@ -136,6 +136,10 @@ Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `tak
 
 ## Changelog
 
+### v1.4.6
+
+- Fixed Pretix widget CSS isolation and removed unstable button borders from clickable organizer and venue info triggers.
+
 ### v1.4.5
 
 - Polished ticket panel image placeholders, metadata grid sizing, clickable info styling and Pretix widget readability.
