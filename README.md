@@ -90,6 +90,10 @@ The Import / Export screen supports:
 
 Imports are idempotent through stable `_taka_config_id` identifiers. Export provides a PHP config representation and JSON.
 
+## Translation Packages
+
+TAKA Translation Packages (TTP) provide a provider-independent JSON workflow for dynamic multilingual content. Editors can export untranslated or changed content, translate it with ChatGPT, Claude, Gemini, DeepL or human translators, then import the completed JSON without an API requirement. See [docs/translations.md](docs/translations.md).
+
 ## Media handling
 
 Media access is centralized in the data layer. Frontend image resolution priority is:
@@ -149,6 +153,10 @@ The script checks PHP syntax for all `*.php` files with `php -l` and scans the r
 Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `taka_organizer`, `taka_venue`) continue to work. Existing constants such as `TAKA_TOUR_VERSION` map to the new platform constants. Existing class names such as `Taka_Tour_Data` are aliased to the new `TAKA_Platform_*` classes.
 
 ## Changelog
+
+### v2.0.0
+
+- Added provider-independent TAKA Translation Packages for exporting, translating and importing dynamic multilingual content.
 
 ### v1.5.5
 

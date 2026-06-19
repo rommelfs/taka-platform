@@ -36,6 +36,9 @@ class TAKA_Platform_Admin {
 		add_action( 'admin_post_taka_platform_save_ticket_section', array( __CLASS__, 'handle_save_ticket_section' ) );
 		add_action( 'admin_post_taka_platform_sync_translations', array( __CLASS__, 'handle_sync_translations' ) );
 		add_action( 'admin_post_taka_platform_export_translation_audit', array( __CLASS__, 'handle_export_translation_audit' ) );
+		add_action( 'admin_post_taka_platform_export_translation_package', array( __CLASS__, 'handle_export_translation_package' ) );
+		add_action( 'admin_post_taka_platform_import_translation_package', array( __CLASS__, 'handle_import_translation_package' ) );
+		add_action( 'admin_post_taka_platform_save_translation_glossary', array( __CLASS__, 'handle_save_translation_glossary' ) );
 	}
 
 
@@ -479,10 +482,20 @@ class TAKA_Platform_Admin {
 	public static function render_translations() {
 		if ( ! current_user_can( 'manage_options' ) ) { return; }
 		$audit = TAKA_Platform_I18n::instance()->audit();
+		$status = TAKA_Platform_Translation_Packages::status();
+		$langs = TAKA_Platform_Translation_Packages::language_labels();
+		$result = get_transient( 'taka_platform_translation_import_result' );
+		if ( false !== $result ) { delete_transient( 'taka_platform_translation_import_result' ); }
+		$default_targets = array_values( array_diff( array_keys( $langs ), array( 'de' ) ) );
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html__( 'TAKA Platform Translations', 'taka-platform' ); ?></h1>
-			<p><?php echo esc_html__( 'English is the canonical source. Missing static keys fall back to English and can be synced into language files.', 'taka-platform' ); ?></p>
+			<p><?php echo esc_html__( 'TAKA Translation Packages export dynamic content as provider-independent JSON for ChatGPT, Claude, Gemini, DeepL, human translators and future API providers.', 'taka-platform' ); ?></p>
+			<?php if ( is_array( $result ) ) : ?>
+				<div class="notice notice-info"><p><strong><?php echo esc_html__( 'Import summary', 'taka-platform' ); ?>:</strong> <?php echo esc_html( sprintf( 'Imported translations: %d. Skipped existing translations: %d. Skipped changed source texts: %d. Errors: %d. Warnings: %d.', (int) ( $result['imported'] ?? 0 ), (int) ( $result['skipped_existing'] ?? 0 ), (int) ( $result['skipped_changed_source'] ?? 0 ), count( $result['errors'] ?? array() ), count( $result['warnings'] ?? array() ) ) ); ?></p>
+				<?php foreach ( array_merge( $result['errors'] ?? array(), $result['warnings'] ?? array() ) as $message ) : ?><p><?php echo esc_html( $message ); ?></p><?php endforeach; ?></div>
+			<?php endif; ?>
+			<h2><?php echo esc_html__( 'Translation Overview', 'taka-platform' ); ?></h2>
 			<p><strong><?php echo esc_html__( 'Canonical key count', 'taka-platform' ); ?>:</strong> <?php echo esc_html( (string) ( $audit['base_count'] ?? 0 ) ); ?></p>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline-block;margin-right:8px;">
 				<input type="hidden" name="action" value="taka_platform_sync_translations">
@@ -495,6 +508,56 @@ class TAKA_Platform_Admin {
 				<?php wp_nonce_field( 'taka_platform_export_translation_audit', self::NONCE ); ?>
 				<?php submit_button( __( 'Export audit JSON', 'taka-platform' ), 'secondary', 'submit', false ); ?>
 			</form>
+			<h2><?php echo esc_html__( 'Translation Status', 'taka-platform' ); ?></h2>
+			<p><strong><?php echo esc_html__( 'Dynamic translatable items', 'taka-platform' ); ?>:</strong> <?php echo esc_html( (string) ( $status['total_items'] ?? 0 ) ); ?></p>
+			<table class="widefat striped" style="max-width:720px;"><thead><tr><th><?php echo esc_html__( 'Language', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Translated', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Missing', 'taka-platform' ); ?></th></tr></thead><tbody>
+				<?php foreach ( $status['languages'] as $lang => $row ) : ?>
+					<tr><td><strong><?php echo esc_html( strtoupper( $lang ) ); ?></strong></td><td><?php echo esc_html( (string) $row['translated'] ); ?></td><td><?php echo esc_html( (string) $row['missing'] ); ?></td></tr>
+				<?php endforeach; ?>
+			</tbody></table>
+			<h2><?php echo esc_html__( 'Export Translation Package', 'taka-platform' ); ?></h2>
+			<textarea class="large-text code" rows="9" readonly><?php echo esc_textarea( TAKA_Platform_Translation_Packages::translator_prompt() ); ?></textarea>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="taka_platform_export_translation_package">
+				<?php wp_nonce_field( 'taka_platform_export_translation_package', self::NONCE ); ?>
+				<table class="form-table" role="presentation"><tbody>
+					<?php self::settings_select_row( 'source_language', __( 'Source language', 'taka-platform' ), 'de', $langs ); ?>
+					<tr><th scope="row"><?php echo esc_html__( 'Target languages', 'taka-platform' ); ?></th><td><?php foreach ( $langs as $lang => $label ) : if ( 'de' === $lang ) { continue; } ?><label style="display:inline-block;margin-right:12px;"><input type="checkbox" name="target_languages[]" value="<?php echo esc_attr( $lang ); ?>" <?php checked( in_array( $lang, $default_targets, true ) ); ?>> <?php echo esc_html( $label ); ?></label><?php endforeach; ?></td></tr>
+					<tr><th scope="row"><?php echo esc_html__( 'Source behavior', 'taka-platform' ); ?></th><td><label><input type="checkbox" name="use_object_source_languages" value="1" checked> <?php echo esc_html__( 'Use per-object source languages', 'taka-platform' ); ?></label><p class="description"><?php echo esc_html__( 'Disable to override all source languages with the selected source language.', 'taka-platform' ); ?></p></td></tr>
+					<tr><th scope="row"><?php echo esc_html__( 'Package options', 'taka-platform' ); ?></th><td>
+						<p><label><input type="checkbox" name="only_missing_translations" value="1" checked> <?php echo esc_html__( 'Only missing translations', 'taka-platform' ); ?></label></p>
+						<p><label><input type="checkbox" name="only_changed_source_texts" value="1" checked> <?php echo esc_html__( 'Only changed source texts', 'taka-platform' ); ?></label></p>
+						<p><label><input type="checkbox" name="include_existing_translations" value="1"> <?php echo esc_html__( 'Include existing translations', 'taka-platform' ); ?></label></p>
+						<p><label><input type="checkbox" name="include_context" value="1" checked> <?php echo esc_html__( 'Include context', 'taka-platform' ); ?></label></p>
+						<p><label><input type="checkbox" name="include_glossary" value="1" checked> <?php echo esc_html__( 'Include glossary', 'taka-platform' ); ?></label></p>
+						<p><label><input type="checkbox" name="include_html" value="1" checked> <?php echo esc_html__( 'Include HTML', 'taka-platform' ); ?></label></p>
+					</td></tr>
+				</tbody></table>
+				<?php submit_button( __( 'Export Translation Package', 'taka-platform' ) ); ?>
+			</form>
+			<h2><?php echo esc_html__( 'Import Translation Package', 'taka-platform' ); ?></h2>
+			<form method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="taka_platform_import_translation_package">
+				<?php wp_nonce_field( 'taka_platform_import_translation_package', self::NONCE ); ?>
+				<table class="form-table" role="presentation"><tbody>
+					<tr><th scope="row"><?php echo esc_html__( 'JSON file', 'taka-platform' ); ?></th><td><input type="file" name="translation_package_file" accept="application/json,.json"></td></tr>
+					<tr><th scope="row"><?php echo esc_html__( 'Paste JSON', 'taka-platform' ); ?></th><td><textarea class="large-text code" rows="10" name="translation_package_json"></textarea></td></tr>
+					<tr><th scope="row"><?php echo esc_html__( 'Import options', 'taka-platform' ); ?></th><td><p><label><input type="checkbox" name="overwrite_existing" value="1"> <?php echo esc_html__( 'Overwrite existing translations', 'taka-platform' ); ?></label></p><p><label><input type="checkbox" name="allow_changed_source" value="1"> <?php echo esc_html__( 'Import even if source text changed', 'taka-platform' ); ?></label></p></td></tr>
+				</tbody></table>
+				<?php submit_button( __( 'Import Translation Package', 'taka-platform' ) ); ?>
+			</form>
+			<h2><?php echo esc_html__( 'Translation Glossary', 'taka-platform' ); ?></h2>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="taka_platform_save_translation_glossary">
+				<?php wp_nonce_field( 'taka_platform_save_translation_glossary', self::NONCE ); ?>
+				<table class="widefat striped"><thead><tr><th><?php echo esc_html__( 'Term', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Note', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Translate', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Preferred translations', 'taka-platform' ); ?></th></tr></thead><tbody>
+					<?php foreach ( array_merge( TAKA_Platform_Translation_Packages::get_glossary(), array( array() ) ) as $index => $entry ) : ?>
+						<tr><td><input class="regular-text" type="text" name="glossary[<?php echo esc_attr( (string) $index ); ?>][term]" value="<?php echo esc_attr( $entry['term'] ?? '' ); ?>"></td><td><textarea name="glossary[<?php echo esc_attr( (string) $index ); ?>][note]" rows="2"><?php echo esc_textarea( $entry['note'] ?? '' ); ?></textarea></td><td><label><input type="checkbox" name="glossary[<?php echo esc_attr( (string) $index ); ?>][translate]" value="1" <?php checked( ! empty( $entry['translate'] ) ); ?>> <?php echo esc_html__( 'Yes', 'taka-platform' ); ?></label></td><td><textarea name="glossary[<?php echo esc_attr( (string) $index ); ?>][preferred_translations]" rows="2"><?php echo esc_textarea( implode( "\n", (array) ( $entry['preferred_translations'] ?? array() ) ) ); ?></textarea></td></tr>
+					<?php endforeach; ?>
+				</tbody></table>
+				<?php submit_button( __( 'Save glossary', 'taka-platform' ) ); ?>
+			</form>
+			<h2><?php echo esc_html__( 'Static Translation Audit', 'taka-platform' ); ?></h2>
 			<table class="widefat striped" style="margin-top:16px;"><thead><tr><th><?php echo esc_html__( 'Language', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Keys', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Missing keys', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Extra keys', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Fallback-used keys', 'taka-platform' ); ?></th></tr></thead><tbody>
 			<?php foreach ( $audit['languages'] as $lang => $row ) : ?>
 				<tr><td><strong><?php echo esc_html( strtoupper( $lang ) ); ?></strong></td><td><?php echo esc_html( (string) $row['count'] ); ?></td><td><?php echo empty( $row['missing'] ) ? esc_html__( 'Complete', 'taka-platform' ) : '<code>' . esc_html( implode( ', ', $row['missing'] ) ) . '</code>'; ?></td><td><?php echo empty( $row['extra'] ) ? '—' : '<code>' . esc_html( implode( ', ', $row['extra'] ) ) . '</code>'; ?></td><td><?php echo empty( $row['fallback_used'] ) ? '—' : esc_html( (string) count( $row['fallback_used'] ) ); ?></td></tr>
@@ -514,6 +577,57 @@ class TAKA_Platform_Admin {
 		header( 'Content-Type: application/json; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename="taka-platform-translation-audit.json"' );
 		echo wp_json_encode( $audit, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE );
+		exit;
+	}
+
+	/** Export a provider-independent TAKA Translation Package JSON file. */
+	public static function handle_export_translation_package() {
+		if ( ! current_user_can( 'manage_options' ) ) { wp_die( esc_html__( 'Insufficient permissions.', 'taka-platform' ) ); }
+		check_admin_referer( 'taka_platform_export_translation_package', self::NONCE );
+		$source_language = TAKA_Platform_Translation_Packages::sanitize_language( wp_unslash( $_POST['source_language'] ?? 'de' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$targets = isset( $_POST['target_languages'] ) && is_array( $_POST['target_languages'] ) ? array_map( 'sanitize_key', wp_unslash( $_POST['target_languages'] ) ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$package = TAKA_Platform_Translation_Packages::build_package( array(
+			'source_language' => $source_language,
+			'target_languages' => $targets,
+			'use_object_source_languages' => ! empty( $_POST['use_object_source_languages'] ),
+			'only_missing_translations' => ! empty( $_POST['only_missing_translations'] ),
+			'only_changed_source_texts' => ! empty( $_POST['only_changed_source_texts'] ),
+			'include_existing_translations' => ! empty( $_POST['include_existing_translations'] ),
+			'include_context' => ! empty( $_POST['include_context'] ),
+			'include_glossary' => ! empty( $_POST['include_glossary'] ),
+			'include_html' => ! empty( $_POST['include_html'] ),
+		) );
+		header( 'Content-Type: application/json; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="' . TAKA_Platform_Translation_Packages::filename( $source_language, $targets ) . '"' );
+		echo wp_json_encode( $package, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+		exit;
+	}
+
+	/** Import a provider-independent TAKA Translation Package. */
+	public static function handle_import_translation_package() {
+		if ( ! current_user_can( 'manage_options' ) ) { wp_die( esc_html__( 'Insufficient permissions.', 'taka-platform' ) ); }
+		check_admin_referer( 'taka_platform_import_translation_package', self::NONCE );
+		$json = '';
+		if ( ! empty( $_FILES['translation_package_file']['tmp_name'] ) && is_uploaded_file( $_FILES['translation_package_file']['tmp_name'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$json = file_get_contents( $_FILES['translation_package_file']['tmp_name'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		}
+		if ( '' === trim( (string) $json ) && isset( $_POST['translation_package_json'] ) ) {
+			$json = wp_unslash( $_POST['translation_package_json'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		}
+		$package = TAKA_Platform_Translation_Packages::decode_json( $json );
+		$result = is_array( $package ) ? TAKA_Platform_Translation_Packages::import_package( $package, array( 'overwrite_existing' => ! empty( $_POST['overwrite_existing'] ), 'allow_changed_source' => ! empty( $_POST['allow_changed_source'] ) ) ) : array( 'imported' => 0, 'skipped_existing' => 0, 'skipped_changed_source' => 0, 'errors' => array( 'Invalid JSON package.' ), 'warnings' => array() );
+		set_transient( 'taka_platform_translation_import_result', $result, 60 );
+		wp_safe_redirect( admin_url( 'admin.php?page=taka-platform-translations' ) );
+		exit;
+	}
+
+	/** Save editable translation glossary entries. */
+	public static function handle_save_translation_glossary() {
+		if ( ! current_user_can( 'manage_options' ) ) { wp_die( esc_html__( 'Insufficient permissions.', 'taka-platform' ) ); }
+		check_admin_referer( 'taka_platform_save_translation_glossary', self::NONCE );
+		$posted = isset( $_POST['glossary'] ) && is_array( $_POST['glossary'] ) ? wp_unslash( $_POST['glossary'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		update_option( TAKA_Platform_Translation_Packages::GLOSSARY_OPTION, TAKA_Platform_Translation_Packages::sanitize_glossary( $posted ), false );
+		wp_safe_redirect( add_query_arg( 'glossary_saved', '1', admin_url( 'admin.php?page=taka-platform-translations' ) ) );
 		exit;
 	}
 
@@ -579,6 +693,7 @@ class TAKA_Platform_Admin {
 		$positions = array( 'left' => __( 'Left', 'taka-platform' ), 'center' => __( 'Center', 'taka-platform' ), 'right' => __( 'Right', 'taka-platform' ) );
 		$verticals = array( 'top' => __( 'Top', 'taka-platform' ), 'center' => __( 'Center', 'taka-platform' ), 'bottom' => __( 'Bottom', 'taka-platform' ) );
 		$location_modes = array( 'list' => __( 'List', 'taka-platform' ), 'flags' => __( 'Flags', 'taka-platform' ), 'route_map' => __( 'Map view', 'taka-platform' ), 'route_map_with_list' => __( 'Map with list', 'taka-platform' ) );
+		$language_options = TAKA_Platform_Translation_Packages::language_labels();
 		?>
 			<div class="wrap">
 				<h1><?php echo esc_html__( 'TAKA Platform Settings', 'taka-platform' ); ?></h1>
@@ -598,6 +713,7 @@ class TAKA_Platform_Admin {
 				<?php wp_nonce_field( TAKA_Platform_Data::HERO_OPTION, self::NONCE ); ?>
 				<table class="form-table" role="presentation"><tbody>
 					<?php self::settings_text_row( 'hero[kicker]', __( 'Hero kicker', 'taka-platform' ), $hero['kicker'] ?? '' ); ?>
+					<?php self::settings_select_row( 'hero[source_language]', __( 'Source language', 'taka-platform' ), $hero['source_language'] ?? 'de', $language_options ); ?>
 					<?php self::settings_text_row( 'hero[title]', __( 'Hero title', 'taka-platform' ), $hero['title'] ?? '' ); ?>
 					<?php self::settings_textarea_row( 'hero[description]', __( 'Hero subtitle / description', 'taka-platform' ), $hero['description'] ?? '' ); ?>
 					<?php self::settings_text_row( 'hero[primary_button_label]', __( 'Primary button label', 'taka-platform' ), $hero['primary_button_label'] ?? '' ); ?>
@@ -620,6 +736,7 @@ class TAKA_Platform_Admin {
 				<input type="hidden" name="action" value="taka_platform_save_ticket_section">
 				<?php wp_nonce_field( TAKA_Platform_Data::TICKETS_OPTION, self::NONCE ); ?>
 				<table class="form-table" role="presentation"><tbody>
+					<?php self::settings_select_row( 'tickets[source_language]', __( 'Source language', 'taka-platform' ), $tickets['source_language'] ?? 'de', $language_options ); ?>
 					<?php self::settings_multilingual_text_row( 'tickets[kicker]', __( 'Ticket section kicker', 'taka-platform' ), $tickets['kicker'] ?? '' ); ?>
 					<?php self::settings_multilingual_text_row( 'tickets[heading]', __( 'Ticket section heading', 'taka-platform' ), $tickets['heading'] ?? '' ); ?>
 					<?php self::settings_multilingual_textarea_row( 'tickets[intro]', __( 'Ticket section intro text', 'taka-platform' ), $tickets['intro'] ?? '' ); ?>
@@ -633,6 +750,7 @@ class TAKA_Platform_Admin {
 				<?php wp_nonce_field( TAKA_Platform_Data::BOOKING_OPTION, self::NONCE ); ?>
 				<table class="form-table" role="presentation"><tbody>
 					<tr><th scope="row"><?php echo esc_html__( 'Section enabled', 'taka-platform' ); ?></th><td><label><input type="checkbox" name="booking_info[enabled]" value="1" <?php checked( (string) ( $booking['enabled'] ?? '1' ), '1' ); ?>> <?php echo esc_html__( 'Show Before you book section near tickets', 'taka-platform' ); ?></label></td></tr>
+					<?php self::settings_select_row( 'booking_info[source_language]', __( 'Source language', 'taka-platform' ), $booking['source_language'] ?? 'de', $language_options ); ?>
 					<?php self::settings_multilingual_text_row( 'booking_info[title]', __( 'Title', 'taka-platform' ), $booking['title'] ?? '' ); ?>
 					<?php self::settings_multilingual_textarea_row( 'booking_info[intro]', __( 'Intro text', 'taka-platform' ), $booking['intro'] ?? '' ); ?>
 					<?php self::settings_multilingual_textarea_row( 'booking_info[group_booking]', __( 'Group booking text', 'taka-platform' ), $booking['group_booking'] ?? '' ); ?>
@@ -698,6 +816,7 @@ class TAKA_Platform_Admin {
 			<table class="form-table" role="presentation"><tbody>
 				<?php self::settings_text_row( 'sections[' . $key . '][key]', __( 'Internal key / slug', 'taka-platform' ), $section['key'] ?? $key ); ?>
 				<tr><th scope="row"><?php echo esc_html__( 'Enabled', 'taka-platform' ); ?></th><td><label><input type="checkbox" name="sections[<?php echo esc_attr( $key ); ?>][visible]" value="1" <?php checked( (string) ( $section['visible'] ?? '1' ), '1' ); ?>> <?php echo esc_html__( 'Show section', 'taka-platform' ); ?></label><?php if ( ! $is_new ) : ?><br><label><input type="checkbox" name="sections[<?php echo esc_attr( $key ); ?>][delete]" value="1"> <?php echo esc_html__( 'Delete section', 'taka-platform' ); ?></label><?php endif; ?></td></tr>
+				<?php self::settings_select_row( 'sections[' . $key . '][source_language]', __( 'Source language', 'taka-platform' ), $section['source_language'] ?? 'de', TAKA_Platform_Translation_Packages::language_labels() ); ?>
 				<?php self::settings_text_row( 'sections[' . $key . '][sort_order]', __( 'Sort order', 'taka-platform' ), $section['sort_order'] ?? 0 ); ?>
 				<tr class="taka-content-section-translations-row"><th scope="row"><?php echo esc_html__( 'Translations', 'taka-platform' ); ?></th><td><?php self::render_content_section_translation_tabs( $key, $translations ); ?></td></tr>
 				<?php self::settings_media_row( 'sections[' . $key . '][image_id]', 'sections[' . $key . '][image_url]', 'taka_section_' . $key . '_image', __( 'Main image', 'taka-platform' ), absint( $section['image_id'] ?? 0 ), (string) ( $section['image_url'] ?? '' ) ); ?>
@@ -765,6 +884,7 @@ class TAKA_Platform_Admin {
 		$posted = isset( $_POST['hero'] ) && is_array( $_POST['hero'] ) ? wp_unslash( $_POST['hero'] ) : array();
 		$clean  = array(
 			'kicker'                 => sanitize_text_field( $posted['kicker'] ?? '' ),
+			'source_language'        => TAKA_Platform_Translation_Packages::sanitize_language( $posted['source_language'] ?? 'de' ),
 			'title'                  => sanitize_text_field( $posted['title'] ?? '' ),
 			'description'            => sanitize_textarea_field( $posted['description'] ?? '' ),
 			'primary_button_label'   => sanitize_text_field( $posted['primary_button_label'] ?? '' ),
@@ -826,6 +946,7 @@ class TAKA_Platform_Admin {
 		$button_url = self::content_section_admin_translation_value( $translations, 'button_url' );
 		return array(
 			'visible'             => ! empty( $item['visible'] ) ? '1' : '0',
+			'source_language'     => TAKA_Platform_Translation_Packages::sanitize_language( $item['source_language'] ?? 'de' ),
 			'sort_order'          => (int) ( $item['sort_order'] ?? 0 ),
 			'kicker'              => $default['kicker'] ?? '',
 			'title'               => $default['title'] ?? '',
@@ -871,6 +992,7 @@ class TAKA_Platform_Admin {
 		check_admin_referer( TAKA_Platform_Data::TICKETS_OPTION, self::NONCE );
 		$posted = isset( $_POST['tickets'] ) && is_array( $_POST['tickets'] ) ? wp_unslash( $_POST['tickets'] ) : array();
 		$clean = array(
+			'source_language' => TAKA_Platform_Translation_Packages::sanitize_language( $posted['source_language'] ?? 'de' ),
 			'kicker' => self::sanitize_dynamic_text( $posted['kicker'] ?? '', false ),
 			'heading' => self::sanitize_dynamic_text( $posted['heading'] ?? '', false ),
 			'intro' => self::sanitize_dynamic_text( $posted['intro'] ?? '', true ),
@@ -1391,6 +1513,7 @@ class TAKA_Platform_Admin {
 		return array(
 			'override' => ! empty( $posted['override'] ) ? '1' : '0',
 			'enabled' => ! empty( $posted['enabled'] ) ? '1' : '0',
+			'source_language' => TAKA_Platform_Translation_Packages::sanitize_language( $posted['source_language'] ?? 'de' ),
 			'title' => self::sanitize_dynamic_text( $posted['title'] ?? '', false ),
 			'intro' => self::sanitize_dynamic_text( $posted['intro'] ?? '', true ),
 			'group_booking' => self::sanitize_dynamic_text( $posted['group_booking'] ?? '', true ),

@@ -371,6 +371,7 @@ class TAKA_Platform_Data {
 		$is_de = 'de' === $lang;
 		return array(
 			'enabled' => '1',
+			'source_language' => self::platform_fallback_language(),
 			'title' => taka_tour_translate( 'booking.before_you_book', $is_de ? 'Gut zu wissen vor der Buchung' : 'Before you book', $lang ),
 			'intro' => '',
 			'group_booking' => $is_de ? 'Gruppen sind herzlich willkommen. Wenn Sie mehrere Teilnehmer anmelden oder als Verein/Dojo eine gemeinsame Teilnahme organisieren möchten, wenden Sie sich bitte an den jeweiligen Veranstalter.' : 'Groups are very welcome. If you would like to register several participants or organize a club delegation, please contact the local organizer.',
@@ -400,10 +401,11 @@ class TAKA_Platform_Data {
 
 		$lang_defaults = self::default_booking_information( $lang );
 		$en_defaults = self::default_booking_information( 'en' );
+		$source_language = $booking['source_language'] ?? self::platform_fallback_language();
 		foreach ( array( 'title', 'intro', 'group_booking', 'multi_event_discount', 'booking_process', 'payment_methods', 'cancellation_policy', 'additional_notes' ) as $field ) {
 			$value = $booking[ $field ] ?? '';
 			if ( is_array( $value ) ) {
-				$booking[ $field ] = taka_platform_get_translated_value( $value, $lang, 'en' );
+				$booking[ $field ] = self::resolve_dynamic_text( $value, $lang, $source_language );
 			} elseif ( '' !== (string) ( $en_defaults[ $field ] ?? '' ) && (string) $value === (string) $en_defaults[ $field ] ) {
 				$booking[ $field ] = (string) ( $lang_defaults[ $field ] ?? $value );
 			} else {
@@ -438,7 +440,7 @@ class TAKA_Platform_Data {
 	/** Normalize booking information arrays. */
 	private static function normalize_booking_information( $booking, $include_defaults = true ) {
 		$booking = is_array( $booking ) ? $booking : array();
-		$defaults = array( 'enabled' => '1', 'override' => '', 'title' => '', 'intro' => '', 'group_booking' => '', 'multi_event_discount' => '', 'contact_email' => '', 'booking_process' => '', 'payment_methods' => '', 'cancellation_policy' => '', 'additional_notes' => '' );
+		$defaults = array( 'enabled' => '1', 'override' => '', 'source_language' => self::platform_fallback_language(), 'title' => '', 'intro' => '', 'group_booking' => '', 'multi_event_discount' => '', 'contact_email' => '', 'booking_process' => '', 'payment_methods' => '', 'cancellation_policy' => '', 'additional_notes' => '' );
 		if ( $include_defaults ) {
 			$booking = array_merge( $defaults, $booking );
 		} else {
@@ -447,6 +449,7 @@ class TAKA_Platform_Data {
 		foreach ( array( 'enabled', 'override' ) as $key ) {
 			if ( isset( $booking[ $key ] ) ) { $booking[ $key ] = ! empty( $booking[ $key ] ) ? '1' : '0'; }
 		}
+		$booking['source_language'] = in_array( $booking['source_language'] ?? '', self::content_section_languages(), true ) ? sanitize_key( $booking['source_language'] ) : self::platform_fallback_language();
 		foreach ( array( 'title', 'intro', 'group_booking', 'multi_event_discount', 'booking_process', 'payment_methods', 'cancellation_policy', 'additional_notes' ) as $key ) {
 			if ( isset( $booking[ $key ] ) ) { $booking[ $key ] = self::normalize_dynamic_text_value( $booking[ $key ] ); }
 		}
@@ -474,6 +477,7 @@ class TAKA_Platform_Data {
 	public static function default_ticket_section_settings( $lang = null ) {
 		$lang = $lang ?: taka_tour_current_language();
 		return array(
+			'source_language' => self::platform_fallback_language(),
 			'kicker' => taka_tour_translate( 'tickets.kicker', 'Tickets', $lang ),
 			'heading' => taka_tour_translate( 'tickets.heading', 'Book your seminar', $lang ),
 			'intro' => taka_tour_translate( 'tickets.intro', '', $lang ),
@@ -486,19 +490,20 @@ class TAKA_Platform_Data {
 		$lang = $lang ?: taka_tour_current_language();
 		$stored = function_exists( 'get_option' ) ? get_option( self::TICKETS_OPTION, array() ) : array();
 		$settings = array_merge( self::default_ticket_section_settings( $lang ), is_array( $stored ) ? $stored : array() );
+		$settings['source_language'] = in_array( $settings['source_language'] ?? '', self::content_section_languages(), true ) ? sanitize_key( $settings['source_language'] ) : self::platform_fallback_language();
 		if ( $resolve_translations ) {
-			$settings['kicker'] = self::translated_setting_value( $settings['kicker'] ?? '', 'tickets.kicker', 'Tickets', $lang );
-			$settings['heading'] = self::translated_setting_value( $settings['heading'] ?? '', 'tickets.heading', 'Book your seminar', $lang );
-			$settings['intro'] = self::translated_setting_value( $settings['intro'] ?? '', 'tickets.intro', '', $lang );
+			$settings['kicker'] = self::translated_setting_value( $settings['kicker'] ?? '', 'tickets.kicker', 'Tickets', $lang, $settings['source_language'] );
+			$settings['heading'] = self::translated_setting_value( $settings['heading'] ?? '', 'tickets.heading', 'Book your seminar', $lang, $settings['source_language'] );
+			$settings['intro'] = self::translated_setting_value( $settings['intro'] ?? '', 'tickets.intro', '', $lang, $settings['source_language'] );
 		}
 		$settings['show_seminar_overview'] = ! empty( $settings['show_seminar_overview'] ) ? '1' : '0';
 		return $settings;
 	}
 
 	/** Resolve dynamic option values while translating unchanged default strings. */
-	private static function translated_setting_value( $value, $key, $fallback, $lang ) {
+	private static function translated_setting_value( $value, $key, $fallback, $lang, $source_language = 'de' ) {
 		if ( is_array( $value ) ) {
-			return taka_platform_get_translated_value( $value, $lang, 'en' );
+			return self::resolve_dynamic_text( $value, $lang, $source_language );
 		}
 		$scalar = (string) $value;
 		$english = taka_tour_translate( $key, $fallback, 'en' );
@@ -523,6 +528,7 @@ class TAKA_Platform_Data {
 
 		return array(
 			'kicker'                 => taka_tour_translate( 'hero.kicker', 'TAKA European Tour 2026' ),
+			'source_language'        => self::platform_fallback_language(),
 			'title'                  => taka_tour_translate( 'hero.headline', 'Harmony in Motion' ),
 			'description'            => taka_tour_translate( 'hero.intro', 'Eine europäische Seminarreise mit Takafumi Nakayama Sensei – von Helsinki über Berlin, die Niederlande, Belgien und Luxemburg bis in die Region Trier/Konz.' ),
 			'primary_button_label'   => taka_tour_translate( 'hero.primary_button', 'Seminare ansehen' ),
@@ -542,18 +548,21 @@ class TAKA_Platform_Data {
 	}
 
 	/** Get editable hero settings. */
-	public static function get_hero_settings() {
+	public static function get_hero_settings( $resolve_translations = true ) {
 		$settings = function_exists( 'get_option' ) ? get_option( self::HERO_OPTION, array() ) : array();
 		$settings = is_array( $settings ) ? $settings : array();
 		$merged   = array_merge( self::default_hero_settings(), $settings );
 		$lang = taka_tour_current_language();
-		foreach ( array( 'kicker', 'title', 'description', 'primary_button_label', 'secondary_button_label' ) as $field ) {
-			$merged[ $field ] = taka_platform_get_translated_value( $merged[ $field ] ?? '', $lang, 'en' );
+		$merged['source_language'] = in_array( $merged['source_language'] ?? '', self::content_section_languages(), true ) ? sanitize_key( $merged['source_language'] ) : self::platform_fallback_language();
+		if ( $resolve_translations ) {
+			foreach ( array( 'kicker', 'title', 'description', 'primary_button_label', 'secondary_button_label' ) as $field ) {
+				$merged[ $field ] = self::resolve_dynamic_text( $merged[ $field ] ?? '', $lang, $merged['source_language'] );
+			}
+			$merged['kicker'] = self::translated_setting_value( $merged['kicker'] ?? '', 'hero.kicker', 'TAKA European Tour 2026', $lang, $merged['source_language'] );
+			$merged['title'] = self::translated_setting_value( $merged['title'] ?? '', 'hero.headline', 'Harmony in Motion', $lang, $merged['source_language'] );
+			$merged['description'] = self::translated_setting_value( $merged['description'] ?? '', 'hero.intro', '', $lang, $merged['source_language'] );
+			$merged['primary_button_label'] = self::translated_setting_value( $merged['primary_button_label'] ?? '', 'hero.primary_button', 'View seminars', $lang, $merged['source_language'] );
 		}
-		$merged['kicker'] = self::translated_setting_value( $merged['kicker'] ?? '', 'hero.kicker', 'TAKA European Tour 2026', $lang );
-		$merged['title'] = self::translated_setting_value( $merged['title'] ?? '', 'hero.headline', 'Harmony in Motion', $lang );
-		$merged['description'] = self::translated_setting_value( $merged['description'] ?? '', 'hero.intro', '', $lang );
-		$merged['primary_button_label'] = self::translated_setting_value( $merged['primary_button_label'] ?? '', 'hero.primary_button', 'View seminars', $lang );
 		$merged['primary_button_target'] = '#tickets';
 		$merged['location_display_mode'] = self::normalize_hero_location_display_mode( $merged['location_display_mode'] ?? 'route_map_with_list' );
 		$merged['image'] = self::resolve_attachment_url( absint( $merged['image_id'] ?? 0 ), 'large', (string) ( $merged['image_url'] ?? '' ) );
@@ -577,6 +586,36 @@ class TAKA_Platform_Data {
 		$languages = self::content_section_languages();
 		$locale = function_exists( 'get_locale' ) ? strtolower( substr( (string) get_locale(), 0, 2 ) ) : '';
 		return in_array( $locale, $languages, true ) ? $locale : 'de';
+	}
+
+	/** Platform fallback language for dynamic translated values. */
+	public static function platform_fallback_language() {
+		return 'de';
+	}
+
+	/** Resolve a scalar or language-keyed dynamic text value. */
+	public static function resolve_dynamic_text( $value, $lang = null, $source_language = null ) {
+		$lang = $lang ?: taka_tour_current_language();
+		$source_language = $source_language ?: self::platform_fallback_language();
+		if ( is_array( $value ) ) {
+			$languages = array_values( array_unique( array_filter( array_merge( array( $lang, $source_language, self::platform_fallback_language(), 'en' ), self::content_section_languages() ) ) ) );
+			foreach ( $languages as $language ) {
+				if ( isset( $value[ $language ] ) && '' !== trim( (string) $value[ $language ] ) ) {
+					return (string) $value[ $language ];
+				}
+			}
+			foreach ( $value as $candidate ) {
+				if ( ! is_array( $candidate ) && '' !== trim( (string) $candidate ) ) { return (string) $candidate; }
+			}
+			return '';
+		}
+		return (string) $value;
+	}
+
+	/** Source language for one content section. */
+	public static function content_section_source_language( $section ) {
+		$lang = sanitize_key( (string) ( is_array( $section ) ? ( $section['source_language'] ?? '' ) : '' ) );
+		return in_array( $lang, self::content_section_languages(), true ) ? $lang : self::platform_fallback_language();
 	}
 
 	/** Save-clean defaults for editable homepage content sections. */
@@ -659,6 +698,7 @@ class TAKA_Platform_Data {
 			'key'                 => $key,
 			'visible'             => ! empty( $section['visible'] ?? $section['enabled'] ?? '1' ) ? '1' : '0',
 			'enabled'             => ! empty( $section['visible'] ?? $section['enabled'] ?? '1' ),
+			'source_language'     => self::content_section_source_language( $section ),
 			'sort_order'          => (int) ( $section['sort_order'] ?? 0 ),
 			'kicker'              => self::normalize_dynamic_text_value( $section['kicker'] ?? '' ),
 			'title'               => self::normalize_dynamic_text_value( $section['title'] ?? '' ),
@@ -756,8 +796,9 @@ class TAKA_Platform_Data {
 
 	/** Resolve per-language section fields for the current frontend language. */
 	private static function resolve_dynamic_section_translations( $section, $lang ) {
+		$source_language = self::content_section_source_language( $section );
 		foreach ( array( 'kicker', 'title', 'subtitle', 'body', 'button_label', 'button_url' ) as $field ) {
-			$section[ $field ] = self::translated_content_section_field( $section['translations'] ?? array(), $field, $lang, $section[ $field ] ?? '' );
+			$section[ $field ] = self::translated_content_section_field( $section['translations'] ?? array(), $field, $lang, $source_language, $section[ $field ] ?? '' );
 		}
 		$section['text'] = $section['body'];
 		$section['link_label'] = $section['button_label'];
@@ -766,14 +807,14 @@ class TAKA_Platform_Data {
 	}
 
 	/** Resolve one structured content-section field with site default, English and first-value fallbacks. */
-	private static function translated_content_section_field( $translations, $field, $lang, $legacy_fallback = '' ) {
+	private static function translated_content_section_field( $translations, $field, $lang, $source_language = 'de', $legacy_fallback = '' ) {
 		$translations = is_array( $translations ) ? $translations : array();
-		$languages = array_values( array_unique( array_filter( array_merge( array( $lang, self::default_content_section_language(), 'en' ), self::content_section_languages() ) ) ) );
+		$languages = array_values( array_unique( array_filter( array_merge( array( $lang, $source_language, self::platform_fallback_language(), 'en' ), self::content_section_languages() ) ) ) );
 		foreach ( $languages as $language ) {
 			$value = $translations[ $language ][ $field ] ?? '';
 			if ( '' !== trim( (string) $value ) ) { return (string) $value; }
 		}
-		return taka_platform_get_translated_value( $legacy_fallback, $lang, self::default_content_section_language() );
+		return self::resolve_dynamic_text( $legacy_fallback, $lang, $source_language );
 	}
 
 	/** Venues that have enough public information for the practical-info section. */
