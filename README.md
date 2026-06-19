@@ -150,6 +150,10 @@ Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `tak
 
 ## Changelog
 
+### v1.5.4
+
+- Redesigned the Hero route map presentation as a polished tour-route card with visible pins, compact stop list and short numeric dates.
+
 ### v1.5.3
 
 - Fixed Hero route map label collisions by separating route pins from evenly spaced clickable labels inside the map panel.
