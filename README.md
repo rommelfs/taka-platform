@@ -150,6 +150,10 @@ Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `tak
 
 ## Changelog
 
+### v1.5.1
+
+- Polished Hero route map labels with contained layout, numeric route dates and screen-reader-only fallback navigation.
+
 ### v1.5.0
 
 - Replaced abstract Hero map with a dynamic tour route map using event data, route pins, flags and ticket-tab navigation.
