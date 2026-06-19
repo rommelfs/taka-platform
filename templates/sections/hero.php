@@ -10,10 +10,10 @@ $hero_image    = $hero['image'] ?? '';
 $hero_events   = TAKA_Platform_Data::events_for_language();
 $text_position = in_array( $hero['text_position'] ?? 'left', array( 'left', 'center', 'right' ), true ) ? $hero['text_position'] : 'left';
 $vertical      = in_array( $hero['vertical_alignment'] ?? 'center', array( 'top', 'center', 'bottom' ), true ) ? $hero['vertical_alignment'] : 'center';
-$location_mode = in_array( $hero['location_display_mode'] ?? 'map_with_list', array( 'list', 'flags', 'map', 'map_with_list' ), true ) ? $hero['location_display_mode'] : 'map_with_list';
-$show_map      = in_array( $location_mode, array( 'map', 'map_with_list' ), true );
-$show_list     = in_array( $location_mode, array( 'list', 'flags', 'map_with_list' ), true );
-$show_flags    = in_array( $location_mode, array( 'flags', 'map_with_list' ), true );
+$location_mode = TAKA_Platform_Data::normalize_hero_location_display_mode( $hero['location_display_mode'] ?? 'route_map_with_list' );
+$show_map      = in_array( $location_mode, array( 'route_map', 'route_map_with_list' ), true );
+$show_list     = in_array( $location_mode, array( 'list', 'flags', 'route_map_with_list' ), true );
+$show_flags    = in_array( $location_mode, array( 'flags', 'route_map_with_list' ), true );
 $box_enabled   = '1' === (string) ( $hero['text_box_enabled'] ?? '1' );
 $overlay       = (float) ( $hero['overlay_strength'] ?? 0.78 );
 $box_opacity   = (float) ( $hero['text_box_opacity'] ?? 0.72 );
@@ -36,7 +36,7 @@ if ( '' !== $hero_image ) {
 			<p><?php echo esc_html( $hero['description'] ); ?></p>
 		<?php endif; ?>
 		<?php if ( $show_map ) : ?>
-			<?php echo taka_tour_render_template( 'partials/hero-map.php', array( 'events' => $hero_events, 'show_list' => 'map_with_list' === $location_mode ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+			<?php echo taka_tour_render_template( 'partials/hero-route-map.php', array( 'events' => $hero_events, 'show_list' => 'route_map_with_list' === $location_mode ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		<?php endif; ?>
 		<?php if ( $show_list && ! $show_map ) : ?>
 			<nav class="taka-tour-stations" aria-label="<?php echo esc_attr( taka_tour_translate( 'hero.stations_label', 'Tourstationen' ) ); ?>">
