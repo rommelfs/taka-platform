@@ -150,6 +150,10 @@ Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `tak
 
 ## Changelog
 
+### v1.5.2
+
+- Improved mobile Hero route map sizing so pins and labels fit inside the viewport without horizontal clipping.
+
 ### v1.5.1
 
 - Polished Hero route map labels with contained layout, numeric route dates and screen-reader-only fallback navigation.
