@@ -191,6 +191,9 @@ class TAKA_Platform_Data {
 				'name' => get_the_title( $post ),
 				'legal_name' => (string) get_post_meta( $post->ID, '_taka_legal_name', true ),
 				'website' => (string) get_post_meta( $post->ID, '_taka_website', true ),
+				'country' => (string) get_post_meta( $post->ID, '_taka_country', true ),
+				'country_code' => (string) get_post_meta( $post->ID, '_taka_country_code', true ),
+				'flag' => (string) get_post_meta( $post->ID, '_taka_flag', true ),
 				'logo_id' => $logo_id,
 				'logo_url' => self::resolve_attachment_url( $logo_id, 'large', (string) get_post_meta( $post->ID, '_taka_logo_url', true ) ),
 				'logo' => self::resolve_attachment_url( $logo_id, 'large', (string) get_post_meta( $post->ID, '_taka_logo_url', true ) ),
@@ -222,6 +225,7 @@ class TAKA_Platform_Data {
 				'config_id' => $config_id,
 				'name' => get_the_title( $post ),
 				'address' => array( 'street' => (string) get_post_meta( $post->ID, '_taka_street', true ), 'postal_code' => (string) get_post_meta( $post->ID, '_taka_postal_code', true ), 'city' => (string) get_post_meta( $post->ID, '_taka_city', true ), 'country' => (string) get_post_meta( $post->ID, '_taka_country', true ), 'country_code' => (string) get_post_meta( $post->ID, '_taka_country_code', true ) ),
+				'flag' => (string) get_post_meta( $post->ID, '_taka_flag', true ),
 				'timezone' => (string) get_post_meta( $post->ID, '_taka_timezone', true ),
 				'website' => (string) get_post_meta( $post->ID, '_taka_website', true ),
 				'parking' => (string) get_post_meta( $post->ID, '_taka_parking', true ),
@@ -310,14 +314,14 @@ class TAKA_Platform_Data {
 	/** Normalize config organizers. */
 	private static function normalize_config_organizers( $organizers ) {
 		$items = array();
-		foreach ( $organizers as $id => $item ) { $item['id'] = (string) $id; $item['config_id'] = (string) $id; $item['logo_url'] = $item['logo'] ?? ''; $item['logo_id'] = 0; $item['social_links'] = $item['social'] ?? array(); $item['description'] = $item['description'] ?? ''; $item['co_organizers'] = self::normalize_co_organizers( $item['co_organizers'] ?? array() ); $item['active'] = $item['active'] ?? true; $items[ (string) $id ] = $item; }
+		foreach ( $organizers as $id => $item ) { $item['id'] = (string) $id; $item['config_id'] = (string) $id; $item['logo_url'] = $item['logo'] ?? ''; $item['logo_id'] = 0; $item['country'] = $item['country'] ?? ''; $item['country_code'] = $item['country_code'] ?? ''; $item['flag'] = $item['flag'] ?? ''; $item['social_links'] = $item['social'] ?? array(); $item['description'] = $item['description'] ?? ''; $item['co_organizers'] = self::normalize_co_organizers( $item['co_organizers'] ?? array() ); $item['active'] = $item['active'] ?? true; $items[ (string) $id ] = $item; }
 		return $items;
 	}
 
 	/** Normalize config venues. */
 	private static function normalize_config_venues( $venues ) {
 		$items = array();
-		foreach ( $venues as $id => $item ) { $item['id'] = (string) $id; $item['config_id'] = (string) $id; $item['image_id'] = $item['image_id'] ?? 0; $item['image_url'] = $item['image_url'] ?? ( $item['image'] ?? '' ); $item['parking_image_id'] = $item['parking_image_id'] ?? 0; $item['parking_image_url'] = $item['parking_image_url'] ?? ''; $item['gallery_image_ids'] = $item['gallery_image_ids'] ?? array(); $items[ (string) $id ] = $item; }
+		foreach ( $venues as $id => $item ) { $item['id'] = (string) $id; $item['config_id'] = (string) $id; $item['flag'] = $item['flag'] ?? ''; $item['image_id'] = $item['image_id'] ?? 0; $item['image_url'] = $item['image_url'] ?? ( $item['image'] ?? '' ); $item['parking_image_id'] = $item['parking_image_id'] ?? 0; $item['parking_image_url'] = $item['parking_image_url'] ?? ''; $item['gallery_image_ids'] = $item['gallery_image_ids'] ?? array(); $items[ (string) $id ] = $item; }
 		return $items;
 	}
 
@@ -787,6 +791,7 @@ class TAKA_Platform_Data {
 			$event['organizer_name'] = $event['hosts'];
 			$event['venue_data'] = is_array( $venue ) ? $venue : null;
 			$event['venue_full'] = is_array( $venue ) ? $venue : null;
+			$event['hero_flag'] = self::resolve_event_flag( $event, $venue, $organizer );
 			$event['venue_name'] = is_array( $venue ) ? ( $venue['name'] ?? '' ) : '';
 			$event['address'] = is_array( $venue ) ? self::format_address( $venue['address'] ?? array() ) : '';
 			$event['parking_display'] = $event['parking'] ?: ( is_array( $venue ) ? ( $venue['parking'] ?? '' ) : '' );
@@ -803,6 +808,40 @@ class TAKA_Platform_Data {
 	}
 
 	public static function seminars_for_language( $lang = null ) { return self::events_for_language( $lang ); }
+
+	/** Convert a two-letter country code into its Unicode regional indicator flag. */
+	public static function flag_for_country_code( $country_code ) {
+		$code = strtoupper( preg_replace( '/[^A-Z]/', '', (string) $country_code ) );
+		if ( 2 !== strlen( $code ) ) { return ''; }
+		$flag = '';
+		for ( $i = 0; $i < 2; $i++ ) {
+			$flag .= html_entity_decode( '&#' . ( 127397 + ord( $code[ $i ] ) ) . ';', ENT_NOQUOTES, 'UTF-8' );
+		}
+		return $flag;
+	}
+
+	/** Resolve the small hero location flag without city-specific rules. */
+	private static function resolve_event_flag( $event, $venue, $organizer ) {
+		$override = trim( (string) ( $event['flag'] ?? '' ) );
+		if ( '' !== $override ) { return $override; }
+
+		$venue_address = is_array( $venue ) ? ( $venue['address'] ?? array() ) : array();
+		$candidates = array(
+			$event['country_code'] ?? '',
+			is_array( $venue_address ) ? ( $venue_address['country_code'] ?? '' ) : '',
+			is_array( $organizer ) ? ( $organizer['country_code'] ?? '' ) : '',
+		);
+
+		foreach ( $candidates as $country_code ) {
+			$flag = self::flag_for_country_code( $country_code );
+			if ( '' !== $flag ) { return $flag; }
+		}
+
+		if ( is_array( $venue ) && '' !== trim( (string) ( $venue['flag'] ?? '' ) ) ) { return trim( (string) $venue['flag'] ); }
+		if ( is_array( $organizer ) && '' !== trim( (string) ( $organizer['flag'] ?? '' ) ) ) { return trim( (string) $organizer['flag'] ); }
+
+		return '';
+	}
 
 	/** Get enabled ticket widget URL for Pretix events. */
 	public static function pretix_event_url( $event ) { return TAKA_Platform_Ticket_Provider_Registry::pretix_widget_url( $event ); }

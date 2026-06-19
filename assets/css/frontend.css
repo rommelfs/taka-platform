@@ -123,6 +123,14 @@
 	text-decoration: none;
 }
 
+.taka-hero-location-flag {
+	display: inline-block;
+	flex: 0 0 auto;
+	margin-right: .35em;
+	font-size: .95em;
+	line-height: 1;
+}
+
 .taka-tour-station-link:hover {
 	border-color: #C7A35C;
 	background: rgba(188, 0, 45, .35);

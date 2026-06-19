@@ -7,7 +7,7 @@ defined( 'ABSPATH' ) || exit;
 
 $hero          = TAKA_Platform_Data::get_hero_settings();
 $hero_image    = $hero['image'] ?? '';
-$hero_events   = TAKA_Platform_Data::get_public_events();
+$hero_events   = TAKA_Platform_Data::events_for_language();
 $text_position = in_array( $hero['text_position'] ?? 'left', array( 'left', 'center', 'right' ), true ) ? $hero['text_position'] : 'left';
 $vertical      = in_array( $hero['vertical_alignment'] ?? 'center', array( 'top', 'center', 'bottom' ), true ) ? $hero['vertical_alignment'] : 'center';
 $box_enabled   = '1' === (string) ( $hero['text_box_enabled'] ?? '1' );
@@ -34,7 +34,7 @@ if ( '' !== $hero_image ) {
 		<nav class="taka-tour-stations" aria-label="<?php echo esc_attr( taka_tour_translate( 'hero.stations_label', 'Tourstationen' ) ); ?>">
 			<?php foreach ( $hero_events as $event ) : ?>
 				<?php $label = 'trier-kinderseminar' === ( $event['slug'] ?? '' ) ? ( $event['city'] ?? $event['title'] ?? '' ) : ( $event['title'] ?? '' ); ?>
-				<a class="taka-tour-station-link" href="#seminar-<?php echo esc_attr( $event['slug'] ?? '' ); ?>"><?php echo esc_html( $label ); ?></a>
+				<a class="taka-tour-station-link" href="#tickets" data-taka-ticket-tab="<?php echo esc_attr( $event['slug'] ?? $event['id'] ?? '' ); ?>"><?php if ( '' !== trim( (string) ( $event['hero_flag'] ?? '' ) ) ) : ?><span class="taka-hero-location-flag" aria-hidden="true"><?php echo esc_html( $event['hero_flag'] ); ?></span><?php endif; ?><span><?php echo esc_html( $label ); ?></span></a>
 			<?php endforeach; ?>
 		</nav>
 		<div class="taka-card-actions">
