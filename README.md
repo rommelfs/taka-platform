@@ -134,6 +134,16 @@ Legacy `includes/class-taka-tour-*.php` files remain as thin compatibility shims
 
 Assets are split into platform files such as `assets/css/frontend.css`, `assets/css/admin.css`, `assets/css/language-switcher.css`, `assets/css/tickets.css`, `assets/js/frontend.js`, `assets/js/admin.js`, `assets/js/media-fields.js` and `assets/js/language-switcher.js` while legacy assets remain in place for compatibility.
 
+## Development workflow
+
+Run the repository lint script before submitting changes:
+
+```bash
+./scripts/lint.sh
+```
+
+The script checks PHP syntax for all `*.php` files with `php -l` and scans the repository for merge conflict markers. No Composer, npm or PHPUnit test configuration is currently included, so broader functional testing is manual in a WordPress install.
+
 ## Migration notes
 
 Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `taka_organizer`, `taka_venue`) continue to work. Existing constants such as `TAKA_TOUR_VERSION` map to the new platform constants. Existing class names such as `Taka_Tour_Data` are aliased to the new `TAKA_Platform_*` classes.
