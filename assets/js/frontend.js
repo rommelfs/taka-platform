@@ -22,6 +22,19 @@
 			panel.classList.toggle('is-active', isActive);
 			panel.toggleAttribute('hidden', !isActive);
 		});
+		setActiveLocation(name);
+	}
+
+	function setActiveLocation(name) {
+		document.querySelectorAll('[data-taka-ticket-tab]').forEach(function (link) {
+			var isActive = link.getAttribute('data-taka-ticket-tab') === name;
+			link.classList.toggle('is-active', isActive);
+			if (isActive) {
+				link.setAttribute('aria-current', 'true');
+			} else {
+				link.removeAttribute('aria-current');
+			}
+		});
 	}
 
 	function takaCssEscape(value) {
@@ -52,5 +65,12 @@
 		}
 
 		activateTab(tab);
+	});
+
+	document.addEventListener('DOMContentLoaded', function () {
+		var activeTab = document.querySelector('[data-taka-tabs] [data-tab].is-active');
+		if (activeTab) {
+			setActiveLocation(activeTab.getAttribute('data-tab'));
+		}
 	});
 }());

@@ -226,6 +226,9 @@ class TAKA_Platform_Data {
 				'name' => get_the_title( $post ),
 				'address' => array( 'street' => (string) get_post_meta( $post->ID, '_taka_street', true ), 'postal_code' => (string) get_post_meta( $post->ID, '_taka_postal_code', true ), 'city' => (string) get_post_meta( $post->ID, '_taka_city', true ), 'country' => (string) get_post_meta( $post->ID, '_taka_country', true ), 'country_code' => (string) get_post_meta( $post->ID, '_taka_country_code', true ) ),
 				'flag' => (string) get_post_meta( $post->ID, '_taka_flag', true ),
+				'map_x' => self::nullable_meta( $post->ID, 'map_x' ),
+				'map_y' => self::nullable_meta( $post->ID, 'map_y' ),
+				'map_label' => (string) get_post_meta( $post->ID, '_taka_map_label', true ),
 				'timezone' => (string) get_post_meta( $post->ID, '_taka_timezone', true ),
 				'website' => (string) get_post_meta( $post->ID, '_taka_website', true ),
 				'parking' => (string) get_post_meta( $post->ID, '_taka_parking', true ),
@@ -271,6 +274,9 @@ class TAKA_Platform_Data {
 				'country' => (string) get_post_meta( $post->ID, '_taka_country', true ),
 				'country_code' => (string) get_post_meta( $post->ID, '_taka_country_code', true ),
 				'flag' => (string) get_post_meta( $post->ID, '_taka_flag', true ),
+				'map_x' => self::nullable_meta( $post->ID, 'map_x' ),
+				'map_y' => self::nullable_meta( $post->ID, 'map_y' ),
+				'map_label' => (string) get_post_meta( $post->ID, '_taka_map_label', true ),
 				'city' => (string) get_post_meta( $post->ID, '_taka_city', true ),
 				'date_start' => (string) get_post_meta( $post->ID, '_taka_date_start', true ),
 				'date_end' => (string) get_post_meta( $post->ID, '_taka_date_end', true ),
@@ -321,13 +327,13 @@ class TAKA_Platform_Data {
 	/** Normalize config venues. */
 	private static function normalize_config_venues( $venues ) {
 		$items = array();
-		foreach ( $venues as $id => $item ) { $item['id'] = (string) $id; $item['config_id'] = (string) $id; $item['flag'] = $item['flag'] ?? ''; $item['image_id'] = $item['image_id'] ?? 0; $item['image_url'] = $item['image_url'] ?? ( $item['image'] ?? '' ); $item['parking_image_id'] = $item['parking_image_id'] ?? 0; $item['parking_image_url'] = $item['parking_image_url'] ?? ''; $item['gallery_image_ids'] = $item['gallery_image_ids'] ?? array(); $items[ (string) $id ] = $item; }
+		foreach ( $venues as $id => $item ) { $item['id'] = (string) $id; $item['config_id'] = (string) $id; $item['flag'] = $item['flag'] ?? ''; $item['map_x'] = $item['map_x'] ?? null; $item['map_y'] = $item['map_y'] ?? null; $item['map_label'] = $item['map_label'] ?? ''; $item['image_id'] = $item['image_id'] ?? 0; $item['image_url'] = $item['image_url'] ?? ( $item['image'] ?? '' ); $item['parking_image_id'] = $item['parking_image_id'] ?? 0; $item['parking_image_url'] = $item['parking_image_url'] ?? ''; $item['gallery_image_ids'] = $item['gallery_image_ids'] ?? array(); $items[ (string) $id ] = $item; }
 		return $items;
 	}
 
 	/** Normalize config events. */
 	private static function normalize_config_events( $events ) {
-		return array_map( static function ( $event ) { $event['long_description'] = $event['long_description'] ?? ''; $event['ticket_card_text'] = $event['ticket_card_text'] ?? ''; $event['accessibility'] = $event['accessibility'] ?? ''; $event['image_id'] = $event['image_id'] ?? 0; $event['image_url'] = $event['image_url'] ?? ( $event['image'] ?? '' ); $event['group_image_id'] = $event['group_image_id'] ?? ( $event['past_group_photo_id'] ?? 0 ); $event['group_image_url'] = $event['group_image_url'] ?? ( $event['group_image'] ?? ( $event['past_group_photo_url'] ?? '' ) ); $event['past_group_photo_id'] = $event['past_group_photo_id'] ?? $event['group_image_id']; $event['past_group_photo_url'] = $event['past_group_photo_url'] ?? $event['group_image_url']; $event['gallery_image_ids'] = $event['gallery_image_ids'] ?? array(); $event['gallery_urls'] = $event['gallery'] ?? array(); $event['booking_information'] = self::normalize_booking_information( $event['booking_information'] ?? array(), false ); $event['program_items'] = self::normalize_program_items( $event['program_items'] ?? ( $event['program'] ?? array() ), $event ); $event['organizers'] = self::normalize_event_organizer_relationships( $event['organizers'] ?? array(), $event['organizer'] ?? '' ); return $event; }, $events );
+		return array_map( static function ( $event ) { $event['long_description'] = $event['long_description'] ?? ''; $event['ticket_card_text'] = $event['ticket_card_text'] ?? ''; $event['accessibility'] = $event['accessibility'] ?? ''; $event['map_x'] = $event['map_x'] ?? null; $event['map_y'] = $event['map_y'] ?? null; $event['map_label'] = $event['map_label'] ?? ''; $event['image_id'] = $event['image_id'] ?? 0; $event['image_url'] = $event['image_url'] ?? ( $event['image'] ?? '' ); $event['group_image_id'] = $event['group_image_id'] ?? ( $event['past_group_photo_id'] ?? 0 ); $event['group_image_url'] = $event['group_image_url'] ?? ( $event['group_image'] ?? ( $event['past_group_photo_url'] ?? '' ) ); $event['past_group_photo_id'] = $event['past_group_photo_id'] ?? $event['group_image_id']; $event['past_group_photo_url'] = $event['past_group_photo_url'] ?? $event['group_image_url']; $event['gallery_image_ids'] = $event['gallery_image_ids'] ?? array(); $event['gallery_urls'] = $event['gallery'] ?? array(); $event['booking_information'] = self::normalize_booking_information( $event['booking_information'] ?? array(), false ); $event['program_items'] = self::normalize_program_items( $event['program_items'] ?? ( $event['program'] ?? array() ), $event ); $event['organizers'] = self::normalize_event_organizer_relationships( $event['organizers'] ?? array(), $event['organizer'] ?? '' ); return $event; }, $events );
 	}
 
 	/** Global media labels. */
@@ -524,6 +530,7 @@ class TAKA_Platform_Data {
 			'text_box_max_width'     => '620px',
 			'text_position'          => 'left',
 			'vertical_alignment'     => 'center',
+			'location_display_mode'  => 'flags',
 		);
 	}
 
@@ -792,6 +799,7 @@ class TAKA_Platform_Data {
 			$event['venue_data'] = is_array( $venue ) ? $venue : null;
 			$event['venue_full'] = is_array( $venue ) ? $venue : null;
 			$event['hero_flag'] = self::resolve_event_flag( $event, $venue, $organizer );
+			$event['hero_map'] = self::resolve_event_map_point( $event, $venue );
 			$event['venue_name'] = is_array( $venue ) ? ( $venue['name'] ?? '' ) : '';
 			$event['address'] = is_array( $venue ) ? self::format_address( $venue['address'] ?? array() ) : '';
 			$event['parking_display'] = $event['parking'] ?: ( is_array( $venue ) ? ( $venue['parking'] ?? '' ) : '' );
@@ -841,6 +849,65 @@ class TAKA_Platform_Data {
 		if ( is_array( $organizer ) && '' !== trim( (string) ( $organizer['flag'] ?? '' ) ) ) { return trim( (string) $organizer['flag'] ); }
 
 		return '';
+	}
+
+	/** Resolve approximate hero map canvas coordinates for one event. */
+	private static function resolve_event_map_point( $event, $venue ) {
+		$x = self::map_coordinate( $event['map_x'] ?? null );
+		$y = self::map_coordinate( $event['map_y'] ?? null );
+		$venue_x = is_array( $venue ) ? self::map_coordinate( $venue['map_x'] ?? null ) : null;
+		$venue_y = is_array( $venue ) ? self::map_coordinate( $venue['map_y'] ?? null ) : null;
+		if ( null === $x && null !== $venue_x ) { $x = $venue_x; }
+		if ( null === $y && null !== $venue_y ) { $y = $venue_y; }
+
+		if ( null === $x || null === $y ) {
+			$fallback = self::default_map_point_for_event( $event );
+			$x = null === $x ? ( $fallback['x'] ?? null ) : $x;
+			$y = null === $y ? ( $fallback['y'] ?? null ) : $y;
+		}
+
+		if ( null === $x || null === $y ) { return null; }
+
+		$label = trim( (string) ( $event['map_label'] ?? '' ) );
+		if ( '' === $label && is_array( $venue ) ) {
+			$label = trim( (string) ( $venue['map_label'] ?? '' ) );
+		}
+		if ( '' === $label ) {
+			$label = trim( (string) ( $event['city'] ?? '' ) ) ?: trim( (string) ( $event['title'] ?? '' ) );
+		}
+
+		return array( 'x' => $x, 'y' => $y, 'label' => $label );
+	}
+
+	private static function map_coordinate( $value ) {
+		if ( null === $value || '' === $value ) { return null; }
+		if ( ! is_numeric( $value ) ) { return null; }
+		return max( 0, min( 100, (float) $value ) );
+	}
+
+	private static function default_map_point_for_event( $event ) {
+		$city = sanitize_key( (string) ( $event['city'] ?? $event['title'] ?? '' ) );
+		$country_code = strtoupper( preg_replace( '/[^A-Z]/', '', (string) ( $event['country_code'] ?? '' ) ) );
+		$city_points = array(
+			'konz' => array( 'x' => 44, 'y' => 63 ),
+			'trier' => array( 'x' => 44, 'y' => 63 ),
+			'illange' => array( 'x' => 43, 'y' => 66 ),
+			'helsinki' => array( 'x' => 63, 'y' => 26 ),
+			'berlin' => array( 'x' => 50, 'y' => 52 ),
+		);
+		if ( isset( $city_points[ $city ] ) ) { return $city_points[ $city ]; }
+
+		$country_points = array(
+			'BE' => array( 'x' => 40, 'y' => 58 ),
+			'DE' => array( 'x' => 48, 'y' => 57 ),
+			'FI' => array( 'x' => 63, 'y' => 26 ),
+			'FR' => array( 'x' => 39, 'y' => 67 ),
+			'LU' => array( 'x' => 43, 'y' => 62 ),
+			'NL' => array( 'x' => 41, 'y' => 52 ),
+			'JP' => array( 'x' => 83, 'y' => 62 ),
+		);
+
+		return $country_points[ $country_code ] ?? array();
 	}
 
 	/** Get enabled ticket widget URL for Pretix events. */

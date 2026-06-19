@@ -10,7 +10,11 @@
     "intro": "中山隆文先生と巡るヨーロッパ・セミナーツアー。ヘルシンキからベルリン、オランダ、ベルギー、ルクセンブルクを経て、トリーア／コンツ地域へ。",
     "primary_button": "セミナーを見る",
     "secondary_button": "チケット",
-    "stations_label": "ツアー開催地"
+    "stations_label": "ツアー開催地",
+    "show_tickets_for": "%s のチケットを表示",
+    "event_locations": "イベント開催地",
+    "map_view": "地図表示",
+    "list_view": "リスト表示"
   },
   "tour": {
     "kicker": "European Tour",

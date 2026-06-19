@@ -10,7 +10,11 @@
     "intro": "Eurooppalainen seminaarikiertue Takafumi Nakayama Sensein kanssa – Helsingistä Berliinin, Alankomaiden, Belgian ja Luxemburgin kautta Trier/Konz-alueelle.",
     "primary_button": "Katso seminaarit",
     "secondary_button": "Tickets",
-    "stations_label": "Kiertuepaikat"
+    "stations_label": "Kiertuepaikat",
+    "show_tickets_for": "Näytä liput: %s",
+    "event_locations": "Tapahtumapaikat",
+    "map_view": "Karttanäkymä",
+    "list_view": "Listanäkymä"
   },
   "tour": {
     "kicker": "European Tour",
