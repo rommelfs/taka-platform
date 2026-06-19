@@ -50,6 +50,19 @@ Always think **platform-first**.
 
 ---
 
+## Mandatory
+
+Every new frontend string MUST be translatable.
+
+Every new configurable element MUST be editable from the admin UI.
+
+Every new feature MUST preserve backwards compatibility unless explicitly approved.
+
+Every new UI component MUST support desktop and mobile layouts.
+
+Every pull request MUST update documentation if architecture changes.
+
+
 ## Core Engineering Principle
 
 Whenever implementing a new feature, ask yourself:
