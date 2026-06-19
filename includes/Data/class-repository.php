@@ -226,8 +226,11 @@ class TAKA_Platform_Data {
 				'name' => get_the_title( $post ),
 				'address' => array( 'street' => (string) get_post_meta( $post->ID, '_taka_street', true ), 'postal_code' => (string) get_post_meta( $post->ID, '_taka_postal_code', true ), 'city' => (string) get_post_meta( $post->ID, '_taka_city', true ), 'country' => (string) get_post_meta( $post->ID, '_taka_country', true ), 'country_code' => (string) get_post_meta( $post->ID, '_taka_country_code', true ) ),
 				'flag' => (string) get_post_meta( $post->ID, '_taka_flag', true ),
+				'route_map_x' => self::nullable_meta( $post->ID, 'route_map_x' ),
+				'route_map_y' => self::nullable_meta( $post->ID, 'route_map_y' ),
 				'map_x' => self::nullable_meta( $post->ID, 'map_x' ),
 				'map_y' => self::nullable_meta( $post->ID, 'map_y' ),
+				'route_map_label' => (string) get_post_meta( $post->ID, '_taka_route_map_label', true ),
 				'map_label' => (string) get_post_meta( $post->ID, '_taka_map_label', true ),
 				'timezone' => (string) get_post_meta( $post->ID, '_taka_timezone', true ),
 				'website' => (string) get_post_meta( $post->ID, '_taka_website', true ),
@@ -274,9 +277,13 @@ class TAKA_Platform_Data {
 				'country' => (string) get_post_meta( $post->ID, '_taka_country', true ),
 				'country_code' => (string) get_post_meta( $post->ID, '_taka_country_code', true ),
 				'flag' => (string) get_post_meta( $post->ID, '_taka_flag', true ),
+				'route_map_x' => self::nullable_meta( $post->ID, 'route_map_x' ),
+				'route_map_y' => self::nullable_meta( $post->ID, 'route_map_y' ),
 				'map_x' => self::nullable_meta( $post->ID, 'map_x' ),
 				'map_y' => self::nullable_meta( $post->ID, 'map_y' ),
+				'route_map_label' => (string) get_post_meta( $post->ID, '_taka_route_map_label', true ),
 				'map_label' => (string) get_post_meta( $post->ID, '_taka_map_label', true ),
+				'route_order' => self::nullable_meta( $post->ID, 'route_order' ),
 				'city' => (string) get_post_meta( $post->ID, '_taka_city', true ),
 				'date_start' => (string) get_post_meta( $post->ID, '_taka_date_start', true ),
 				'date_end' => (string) get_post_meta( $post->ID, '_taka_date_end', true ),
@@ -327,13 +334,13 @@ class TAKA_Platform_Data {
 	/** Normalize config venues. */
 	private static function normalize_config_venues( $venues ) {
 		$items = array();
-		foreach ( $venues as $id => $item ) { $item['id'] = (string) $id; $item['config_id'] = (string) $id; $item['flag'] = $item['flag'] ?? ''; $item['map_x'] = $item['map_x'] ?? null; $item['map_y'] = $item['map_y'] ?? null; $item['map_label'] = $item['map_label'] ?? ''; $item['image_id'] = $item['image_id'] ?? 0; $item['image_url'] = $item['image_url'] ?? ( $item['image'] ?? '' ); $item['parking_image_id'] = $item['parking_image_id'] ?? 0; $item['parking_image_url'] = $item['parking_image_url'] ?? ''; $item['gallery_image_ids'] = $item['gallery_image_ids'] ?? array(); $items[ (string) $id ] = $item; }
+		foreach ( $venues as $id => $item ) { $item['id'] = (string) $id; $item['config_id'] = (string) $id; $item['flag'] = $item['flag'] ?? ''; $item['route_map_x'] = $item['route_map_x'] ?? ( $item['map_x'] ?? null ); $item['route_map_y'] = $item['route_map_y'] ?? ( $item['map_y'] ?? null ); $item['route_map_label'] = $item['route_map_label'] ?? ( $item['map_label'] ?? '' ); $item['image_id'] = $item['image_id'] ?? 0; $item['image_url'] = $item['image_url'] ?? ( $item['image'] ?? '' ); $item['parking_image_id'] = $item['parking_image_id'] ?? 0; $item['parking_image_url'] = $item['parking_image_url'] ?? ''; $item['gallery_image_ids'] = $item['gallery_image_ids'] ?? array(); $items[ (string) $id ] = $item; }
 		return $items;
 	}
 
 	/** Normalize config events. */
 	private static function normalize_config_events( $events ) {
-		return array_map( static function ( $event ) { $event['long_description'] = $event['long_description'] ?? ''; $event['ticket_card_text'] = $event['ticket_card_text'] ?? ''; $event['accessibility'] = $event['accessibility'] ?? ''; $event['map_x'] = $event['map_x'] ?? null; $event['map_y'] = $event['map_y'] ?? null; $event['map_label'] = $event['map_label'] ?? ''; $event['image_id'] = $event['image_id'] ?? 0; $event['image_url'] = $event['image_url'] ?? ( $event['image'] ?? '' ); $event['group_image_id'] = $event['group_image_id'] ?? ( $event['past_group_photo_id'] ?? 0 ); $event['group_image_url'] = $event['group_image_url'] ?? ( $event['group_image'] ?? ( $event['past_group_photo_url'] ?? '' ) ); $event['past_group_photo_id'] = $event['past_group_photo_id'] ?? $event['group_image_id']; $event['past_group_photo_url'] = $event['past_group_photo_url'] ?? $event['group_image_url']; $event['gallery_image_ids'] = $event['gallery_image_ids'] ?? array(); $event['gallery_urls'] = $event['gallery'] ?? array(); $event['booking_information'] = self::normalize_booking_information( $event['booking_information'] ?? array(), false ); $event['program_items'] = self::normalize_program_items( $event['program_items'] ?? ( $event['program'] ?? array() ), $event ); $event['organizers'] = self::normalize_event_organizer_relationships( $event['organizers'] ?? array(), $event['organizer'] ?? '' ); return $event; }, $events );
+		return array_map( static function ( $event ) { $event['long_description'] = $event['long_description'] ?? ''; $event['ticket_card_text'] = $event['ticket_card_text'] ?? ''; $event['accessibility'] = $event['accessibility'] ?? ''; $event['route_map_x'] = $event['route_map_x'] ?? ( $event['map_x'] ?? null ); $event['route_map_y'] = $event['route_map_y'] ?? ( $event['map_y'] ?? null ); $event['route_map_label'] = $event['route_map_label'] ?? ( $event['map_label'] ?? '' ); $event['route_order'] = $event['route_order'] ?? null; $event['image_id'] = $event['image_id'] ?? 0; $event['image_url'] = $event['image_url'] ?? ( $event['image'] ?? '' ); $event['group_image_id'] = $event['group_image_id'] ?? ( $event['past_group_photo_id'] ?? 0 ); $event['group_image_url'] = $event['group_image_url'] ?? ( $event['group_image'] ?? ( $event['past_group_photo_url'] ?? '' ) ); $event['past_group_photo_id'] = $event['past_group_photo_id'] ?? $event['group_image_id']; $event['past_group_photo_url'] = $event['past_group_photo_url'] ?? $event['group_image_url']; $event['gallery_image_ids'] = $event['gallery_image_ids'] ?? array(); $event['gallery_urls'] = $event['gallery'] ?? array(); $event['booking_information'] = self::normalize_booking_information( $event['booking_information'] ?? array(), false ); $event['program_items'] = self::normalize_program_items( $event['program_items'] ?? ( $event['program'] ?? array() ), $event ); $event['organizers'] = self::normalize_event_organizer_relationships( $event['organizers'] ?? array(), $event['organizer'] ?? '' ); return $event; }, $events );
 	}
 
 	/** Global media labels. */
@@ -530,7 +537,7 @@ class TAKA_Platform_Data {
 			'text_box_max_width'     => '620px',
 			'text_position'          => 'left',
 			'vertical_alignment'     => 'center',
-			'location_display_mode'  => 'map_with_list',
+			'location_display_mode'  => 'route_map_with_list',
 		);
 	}
 
@@ -548,11 +555,16 @@ class TAKA_Platform_Data {
 		$merged['description'] = self::translated_setting_value( $merged['description'] ?? '', 'hero.intro', '', $lang );
 		$merged['primary_button_label'] = self::translated_setting_value( $merged['primary_button_label'] ?? '', 'hero.primary_button', 'View seminars', $lang );
 		$merged['primary_button_target'] = '#tickets';
-		if ( ! in_array( $merged['location_display_mode'] ?? 'map_with_list', array( 'list', 'flags', 'map', 'map_with_list' ), true ) ) {
-			$merged['location_display_mode'] = 'map_with_list';
-		}
+		$merged['location_display_mode'] = self::normalize_hero_location_display_mode( $merged['location_display_mode'] ?? 'route_map_with_list' );
 		$merged['image'] = self::resolve_attachment_url( absint( $merged['image_id'] ?? 0 ), 'large', (string) ( $merged['image_url'] ?? '' ) );
 		return $merged;
+	}
+
+	public static function normalize_hero_location_display_mode( $mode ) {
+		$mode = sanitize_key( (string) $mode );
+		$legacy = array( 'map' => 'route_map', 'map_with_list' => 'route_map_with_list' );
+		if ( isset( $legacy[ $mode ] ) ) { return $legacy[ $mode ]; }
+		return in_array( $mode, array( 'list', 'flags', 'route_map', 'route_map_with_list' ), true ) ? $mode : 'route_map_with_list';
 	}
 
 	/** Save-clean defaults for editable homepage content sections. */
@@ -802,7 +814,7 @@ class TAKA_Platform_Data {
 			$event['venue_data'] = is_array( $venue ) ? $venue : null;
 			$event['venue_full'] = is_array( $venue ) ? $venue : null;
 			$event['hero_flag'] = self::resolve_event_flag( $event, $venue, $organizer );
-			$event['hero_map'] = self::resolve_event_map_point( $event, $venue );
+			$event['hero_route_map'] = self::resolve_event_route_map_point( $event, $venue );
 			$event['venue_name'] = is_array( $venue ) ? ( $venue['name'] ?? '' ) : '';
 			$event['address'] = is_array( $venue ) ? self::format_address( $venue['address'] ?? array() ) : '';
 			$event['parking_display'] = $event['parking'] ?: ( is_array( $venue ) ? ( $venue['parking'] ?? '' ) : '' );
@@ -854,26 +866,18 @@ class TAKA_Platform_Data {
 		return '';
 	}
 
-	/** Resolve approximate hero map canvas coordinates for one event. */
-	private static function resolve_event_map_point( $event, $venue ) {
-		$x = self::map_coordinate( $event['map_x'] ?? null );
-		$y = self::map_coordinate( $event['map_y'] ?? null );
-		$venue_x = is_array( $venue ) ? self::map_coordinate( $venue['map_x'] ?? null ) : null;
-		$venue_y = is_array( $venue ) ? self::map_coordinate( $venue['map_y'] ?? null ) : null;
+	/** Resolve optional manually configured route map canvas coordinates for one event. */
+	private static function resolve_event_route_map_point( $event, $venue ) {
+		$x = self::map_coordinate( $event['route_map_x'] ?? ( $event['map_x'] ?? null ) );
+		$y = self::map_coordinate( $event['route_map_y'] ?? ( $event['map_y'] ?? null ) );
+		$venue_x = is_array( $venue ) ? self::map_coordinate( $venue['route_map_x'] ?? ( $venue['map_x'] ?? null ) ) : null;
+		$venue_y = is_array( $venue ) ? self::map_coordinate( $venue['route_map_y'] ?? ( $venue['map_y'] ?? null ) ) : null;
 		if ( null === $x && null !== $venue_x ) { $x = $venue_x; }
 		if ( null === $y && null !== $venue_y ) { $y = $venue_y; }
 
-		if ( null === $x || null === $y ) {
-			$fallback = self::default_map_point_for_event( $event );
-			$x = null === $x ? ( $fallback['x'] ?? null ) : $x;
-			$y = null === $y ? ( $fallback['y'] ?? null ) : $y;
-		}
-
-		if ( null === $x || null === $y ) { return null; }
-
-		$label = trim( (string) ( $event['map_label'] ?? '' ) );
+		$label = trim( (string) ( $event['route_map_label'] ?? ( $event['map_label'] ?? '' ) ) );
 		if ( '' === $label && is_array( $venue ) ) {
-			$label = trim( (string) ( $venue['map_label'] ?? '' ) );
+			$label = trim( (string) ( $venue['route_map_label'] ?? ( $venue['map_label'] ?? '' ) ) );
 		}
 		if ( '' === $label ) {
 			$label = trim( (string) ( $event['city'] ?? '' ) ) ?: trim( (string) ( $event['title'] ?? '' ) );
@@ -886,31 +890,6 @@ class TAKA_Platform_Data {
 		if ( null === $value || '' === $value ) { return null; }
 		if ( ! is_numeric( $value ) ) { return null; }
 		return max( 0, min( 100, (float) $value ) );
-	}
-
-	private static function default_map_point_for_event( $event ) {
-		$city = sanitize_key( (string) ( $event['city'] ?? $event['title'] ?? '' ) );
-		$country_code = strtoupper( preg_replace( '/[^A-Z]/', '', (string) ( $event['country_code'] ?? '' ) ) );
-		$city_points = array(
-			'konz' => array( 'x' => 44, 'y' => 63 ),
-			'trier' => array( 'x' => 44, 'y' => 63 ),
-			'illange' => array( 'x' => 43, 'y' => 66 ),
-			'helsinki' => array( 'x' => 63, 'y' => 26 ),
-			'berlin' => array( 'x' => 50, 'y' => 52 ),
-		);
-		if ( isset( $city_points[ $city ] ) ) { return $city_points[ $city ]; }
-
-		$country_points = array(
-			'BE' => array( 'x' => 40, 'y' => 58 ),
-			'DE' => array( 'x' => 48, 'y' => 57 ),
-			'FI' => array( 'x' => 63, 'y' => 26 ),
-			'FR' => array( 'x' => 39, 'y' => 67 ),
-			'LU' => array( 'x' => 43, 'y' => 62 ),
-			'NL' => array( 'x' => 41, 'y' => 52 ),
-			'JP' => array( 'x' => 83, 'y' => 62 ),
-		);
-
-		return $country_points[ $country_code ] ?? array();
 	}
 
 	/** Get enabled ticket widget URL for Pretix events. */

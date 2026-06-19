@@ -71,9 +71,9 @@ Events support tour/event concepts such as title, subtitle, description, organiz
 
 Organizers support legal names, websites, logos, contact data, social links and repeatable co-organizers with their own logo, website, email, description and active/sort controls. Events can also use global or event-specific booking information for groups, multi-event discounts, payment and cancellation notes. Homepage content sections can be exported as portable config data and used as fallback/demo editorial content. Venues support addresses, websites, parking/accessibility notes, geo data and venue/parking images.
 
-## Hero location map
+## Hero route map
 
-The Hero location overview supports configurable display modes: list, flags, map and map with list. The map is a lightweight stylized SVG panel with clickable event pins, optional `map_x` / `map_y` event or venue coordinates, and an accessible fallback list for keyboard, screen-reader and mobile users.
+The Hero location overview supports configurable display modes: list, flags, route map and route map with list. The route map is a lightweight SVG/HTML tour infographic with clickable event stops, optional `route_map_x` / `route_map_y` event or venue coordinates, automatic route layout fallback, flags and an accessible fallback list for keyboard, screen-reader and mobile users. Legacy `map` and `map_with_list` display modes are normalized to the route map modes for backward compatibility.
 
 ## Import / Export
 
@@ -149,6 +149,10 @@ The script checks PHP syntax for all `*.php` files with `php -l` and scans the r
 Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `taka_organizer`, `taka_venue`) continue to work. Existing constants such as `TAKA_TOUR_VERSION` map to the new platform constants. Existing class names such as `Taka_Tour_Data` are aliased to the new `TAKA_Platform_*` classes.
 
 ## Changelog
+
+### v1.5.0
+
+- Replaced abstract Hero map with a dynamic tour route map using event data, route pins, flags and ticket-tab navigation.
 
 ### v1.4.10
 
