@@ -567,6 +567,18 @@ class TAKA_Platform_Data {
 		return in_array( $mode, array( 'list', 'flags', 'route_map', 'route_map_with_list' ), true ) ? $mode : 'route_map_with_list';
 	}
 
+	/** Languages supported by editable content section translations. */
+	public static function content_section_languages() {
+		return TAKA_Platform_I18n::instance()->get_all_languages();
+	}
+
+	/** Default language used to seed legacy scalar content section fields. */
+	public static function default_content_section_language() {
+		$languages = self::content_section_languages();
+		$locale = function_exists( 'get_locale' ) ? strtolower( substr( (string) get_locale(), 0, 2 ) ) : '';
+		return in_array( $locale, $languages, true ) ? $locale : 'de';
+	}
+
 	/** Save-clean defaults for editable homepage content sections. */
 	public static function default_content_sections() {
 		$images         = self::images();
@@ -642,6 +654,7 @@ class TAKA_Platform_Data {
 		if ( is_string( $gallery_ids ) ) { $gallery_ids = self::csv_to_ints( $gallery_ids ); }
 		$gallery_urls = $section['gallery_image_urls'] ?? ( $section['gallery'] ?? array() );
 		if ( is_string( $gallery_urls ) ) { $gallery_urls = self::lines_to_array( $gallery_urls ); }
+		$translations = self::normalize_content_section_translations( $section );
 		return array(
 			'key'                 => $key,
 			'visible'             => ! empty( $section['visible'] ?? $section['enabled'] ?? '1' ) ? '1' : '0',
@@ -652,6 +665,7 @@ class TAKA_Platform_Data {
 			'subtitle'            => self::normalize_dynamic_text_value( $section['subtitle'] ?? '' ),
 			'text'                => self::normalize_dynamic_text_value( $section['text'] ?? ( $section['body'] ?? '' ) ),
 			'body'                => self::normalize_dynamic_text_value( $section['body'] ?? ( $section['text'] ?? '' ) ),
+			'translations'        => $translations,
 			'image_id'            => absint( $section['image_id'] ?? 0 ),
 			'image_url'           => (string) ( $section['image_url'] ?? ( $section['image'] ?? '' ) ),
 			'secondary_image_id'  => absint( $section['secondary_image_id'] ?? 0 ),
@@ -670,6 +684,63 @@ class TAKA_Platform_Data {
 		);
 	}
 
+	/** Normalize structured content section translations and seed them from legacy scalar fields. */
+	private static function normalize_content_section_translations( $section ) {
+		$languages = self::content_section_languages();
+		$fields = array( 'kicker', 'title', 'subtitle', 'body', 'button_label', 'button_url' );
+		$translations = array();
+		foreach ( $languages as $lang ) {
+			foreach ( $fields as $field ) {
+				$translations[ $lang ][ $field ] = '';
+			}
+		}
+
+		if ( ! empty( $section['translations'] ) && is_array( $section['translations'] ) ) {
+			foreach ( $languages as $lang ) {
+				$item = isset( $section['translations'][ $lang ] ) && is_array( $section['translations'][ $lang ] ) ? $section['translations'][ $lang ] : array();
+				foreach ( $fields as $field ) {
+					$value = $item[ $field ] ?? '';
+					$translations[ $lang ][ $field ] = 'button_url' === $field ? esc_url_raw( $value ) : sanitize_textarea_field( $value );
+				}
+			}
+		}
+
+		$default_lang = self::default_content_section_language();
+		$legacy_fields = array(
+			'kicker' => array( 'kicker' ),
+			'title' => array( 'title' ),
+			'subtitle' => array( 'subtitle' ),
+			'body' => array( 'body', 'text' ),
+			'button_label' => array( 'button_label', 'link_label' ),
+			'button_url' => array( 'button_url', 'link_url' ),
+		);
+
+		foreach ( $legacy_fields as $field => $aliases ) {
+			$value = null;
+			foreach ( $aliases as $alias ) {
+				if ( array_key_exists( $alias, $section ) ) {
+					$value = $section[ $alias ];
+					break;
+				}
+			}
+			if ( null === $value || '' === $value ) { continue; }
+			if ( is_array( $value ) ) {
+				foreach ( $languages as $lang ) {
+					if ( '' !== trim( (string) ( $translations[ $lang ][ $field ] ?? '' ) ) ) { continue; }
+					$legacy_value = $value[ $lang ] ?? '';
+					if ( '' === trim( (string) $legacy_value ) ) { continue; }
+					$translations[ $lang ][ $field ] = 'button_url' === $field ? esc_url_raw( $legacy_value ) : sanitize_textarea_field( $legacy_value );
+				}
+				continue;
+			}
+			if ( '' === trim( (string) ( $translations[ $default_lang ][ $field ] ?? '' ) ) ) {
+				$translations[ $default_lang ][ $field ] = 'button_url' === $field ? esc_url_raw( $value ) : sanitize_textarea_field( $value );
+			}
+		}
+
+		return $translations;
+	}
+
 
 	/** Normalize scalar or per-language text values. */
 	private static function normalize_dynamic_text_value( $value ) {
@@ -685,10 +756,24 @@ class TAKA_Platform_Data {
 
 	/** Resolve per-language section fields for the current frontend language. */
 	private static function resolve_dynamic_section_translations( $section, $lang ) {
-		foreach ( array( 'kicker', 'title', 'subtitle', 'text', 'body', 'button_label', 'link_label' ) as $field ) {
-			$section[ $field ] = taka_platform_get_translated_value( $section[ $field ] ?? '', $lang, 'en' );
+		foreach ( array( 'kicker', 'title', 'subtitle', 'body', 'button_label', 'button_url' ) as $field ) {
+			$section[ $field ] = self::translated_content_section_field( $section['translations'] ?? array(), $field, $lang, $section[ $field ] ?? '' );
 		}
+		$section['text'] = $section['body'];
+		$section['link_label'] = $section['button_label'];
+		$section['link_url'] = $section['button_url'];
 		return $section;
+	}
+
+	/** Resolve one structured content-section field with site default, English and first-value fallbacks. */
+	private static function translated_content_section_field( $translations, $field, $lang, $legacy_fallback = '' ) {
+		$translations = is_array( $translations ) ? $translations : array();
+		$languages = array_values( array_unique( array_filter( array_merge( array( $lang, self::default_content_section_language(), 'en' ), self::content_section_languages() ) ) ) );
+		foreach ( $languages as $language ) {
+			$value = $translations[ $language ][ $field ] ?? '';
+			if ( '' !== trim( (string) $value ) ) { return (string) $value; }
+		}
+		return taka_platform_get_translated_value( $legacy_fallback, $lang, self::default_content_section_language() );
 	}
 
 	/** Venues that have enough public information for the practical-info section. */

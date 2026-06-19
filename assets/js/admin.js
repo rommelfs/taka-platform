@@ -92,3 +92,38 @@ document.addEventListener('click', function (event) {
     }
   }
 });
+
+document.addEventListener('click', function (event) {
+  var copyButton = event.target.closest('[data-taka-copy-default-translations]');
+
+  if (!copyButton) {
+    return;
+  }
+
+  event.preventDefault();
+  var root = copyButton.closest('[data-taka-content-section-translations]');
+  if (!root) {
+    return;
+  }
+
+  var defaultLang = root.getAttribute('data-default-lang') || 'de';
+  var sourceFields = root.querySelectorAll('[data-taka-i18n-lang="' + defaultLang + '"][data-taka-i18n-field]');
+  sourceFields.forEach(function (source) {
+    var field = source.getAttribute('data-taka-i18n-field');
+    var value = source.value || '';
+
+    if (!field || !value.trim()) {
+      return;
+    }
+
+    var targets = root.querySelectorAll('[data-taka-i18n-field="' + field + '"]');
+    targets.forEach(function (target) {
+      if (target === source || target.getAttribute('data-taka-i18n-lang') === defaultLang) {
+        return;
+      }
+      if (!(target.value || '').trim()) {
+        target.value = value;
+      }
+    });
+  });
+});

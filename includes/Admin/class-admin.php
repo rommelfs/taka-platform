@@ -689,18 +689,17 @@ class TAKA_Platform_Admin {
 	/** Render one content-section editor block. */
 	private static function render_content_section_editor( $key, $section, $layouts, $backgrounds, $fits, $positions, $is_new = false ) {
 		$key = sanitize_key( $key );
-		$label = $is_new ? __( 'New section', 'taka-platform' ) : ( ( $section['title'] ?? '' ) ?: $key );
+		$translations = TAKA_Platform_Data::normalize_content_section( $section )['translations'] ?? array();
+		$label_title = self::content_section_admin_translation_value( $translations, 'title' );
+		$label = $is_new ? __( 'New section', 'taka-platform' ) : ( $label_title ?: $key );
 		?>
-		<div class="postbox" style="padding:1rem;max-width:1080px;">
+		<div class="postbox taka-content-section-editor" style="padding:1rem;max-width:1080px;" data-taka-content-section-editor>
 			<h2><?php echo esc_html( $label ); ?></h2>
 			<table class="form-table" role="presentation"><tbody>
 				<?php self::settings_text_row( 'sections[' . $key . '][key]', __( 'Internal key / slug', 'taka-platform' ), $section['key'] ?? $key ); ?>
 				<tr><th scope="row"><?php echo esc_html__( 'Enabled', 'taka-platform' ); ?></th><td><label><input type="checkbox" name="sections[<?php echo esc_attr( $key ); ?>][visible]" value="1" <?php checked( (string) ( $section['visible'] ?? '1' ), '1' ); ?>> <?php echo esc_html__( 'Show section', 'taka-platform' ); ?></label><?php if ( ! $is_new ) : ?><br><label><input type="checkbox" name="sections[<?php echo esc_attr( $key ); ?>][delete]" value="1"> <?php echo esc_html__( 'Delete section', 'taka-platform' ); ?></label><?php endif; ?></td></tr>
 				<?php self::settings_text_row( 'sections[' . $key . '][sort_order]', __( 'Sort order', 'taka-platform' ), $section['sort_order'] ?? 0 ); ?>
-				<?php self::settings_multilingual_text_row( 'sections[' . $key . '][kicker]', __( 'Kicker', 'taka-platform' ), $section['kicker'] ?? '' ); ?>
-				<?php self::settings_multilingual_text_row( 'sections[' . $key . '][title]', __( 'Title', 'taka-platform' ), $section['title'] ?? '' ); ?>
-				<?php self::settings_multilingual_text_row( 'sections[' . $key . '][subtitle]', __( 'Subtitle', 'taka-platform' ), $section['subtitle'] ?? '' ); ?>
-				<?php self::settings_multilingual_textarea_row( 'sections[' . $key . '][body]', __( 'Body', 'taka-platform' ), $section['body'] ?? ( $section['text'] ?? '' ) ); ?>
+				<tr class="taka-content-section-translations-row"><th scope="row"><?php echo esc_html__( 'Translations', 'taka-platform' ); ?></th><td><?php self::render_content_section_translation_tabs( $key, $translations ); ?></td></tr>
 				<?php self::settings_media_row( 'sections[' . $key . '][image_id]', 'sections[' . $key . '][image_url]', 'taka_section_' . $key . '_image', __( 'Main image', 'taka-platform' ), absint( $section['image_id'] ?? 0 ), (string) ( $section['image_url'] ?? '' ) ); ?>
 				<?php self::settings_media_row( 'sections[' . $key . '][secondary_image_id]', 'sections[' . $key . '][secondary_image_url]', 'taka_section_' . $key . '_secondary_image', __( 'Secondary image', 'taka-platform' ), absint( $section['secondary_image_id'] ?? 0 ), (string) ( $section['secondary_image_url'] ?? '' ) ); ?>
 				<?php self::settings_media_row( 'sections[' . $key . '][gallery_image_ids]', 'sections[' . $key . '][gallery_image_urls]', 'taka_section_' . $key . '_gallery', __( 'Gallery', 'taka-platform' ), $section['gallery_image_ids'] ?? array(), implode( "\n", (array) ( $section['gallery_image_urls'] ?? array() ) ), true ); ?>
@@ -708,10 +707,53 @@ class TAKA_Platform_Admin {
 				<?php self::settings_select_row( 'sections[' . $key . '][background_style]', __( 'Background style', 'taka-platform' ), $section['background_style'] ?? 'plain', $backgrounds ); ?>
 				<?php self::settings_select_row( 'sections[' . $key . '][image_fit]', __( 'Image fit', 'taka-platform' ), $section['image_fit'] ?? 'contain', $fits ); ?>
 				<?php self::settings_select_row( 'sections[' . $key . '][image_position]', __( 'Image focus / position', 'taka-platform' ), $section['image_position'] ?? 'center center', $positions ); ?>
-				<?php self::settings_multilingual_text_row( 'sections[' . $key . '][button_label]', __( 'Button label', 'taka-platform' ), $section['button_label'] ?? ( $section['link_label'] ?? '' ) ); ?>
-				<?php self::settings_text_row( 'sections[' . $key . '][button_url]', __( 'Button URL', 'taka-platform' ), $section['button_url'] ?? ( $section['link_url'] ?? '' ) ); ?>
 				<?php self::settings_text_row( 'sections[' . $key . '][css_class]', __( 'CSS modifier/class', 'taka-platform' ), $section['css_class'] ?? '' ); ?>
 			</tbody></table>
+		</div>
+		<?php
+	}
+
+	/** Render language tabs for structured content-section translation data. */
+	private static function render_content_section_translation_tabs( $key, $translations ) {
+		$languages = self::content_section_language_labels();
+		$default_lang = TAKA_Platform_Data::default_content_section_language();
+		$fields = array(
+			'kicker' => array( 'label' => __( 'Kicker', 'taka-platform' ), 'textarea' => false ),
+			'title' => array( 'label' => __( 'Title', 'taka-platform' ), 'textarea' => false ),
+			'subtitle' => array( 'label' => __( 'Subtitle', 'taka-platform' ), 'textarea' => false ),
+			'body' => array( 'label' => __( 'Body', 'taka-platform' ), 'textarea' => true ),
+			'button_label' => array( 'label' => __( 'Button label', 'taka-platform' ), 'textarea' => false ),
+			'button_url' => array( 'label' => __( 'Button URL', 'taka-platform' ), 'textarea' => false, 'type' => 'url' ),
+		);
+		$tab_group = 'taka_section_language_' . $key;
+		?>
+		<div class="taka-content-section-translations" data-taka-content-section-translations data-default-lang="<?php echo esc_attr( $default_lang ); ?>">
+			<p><button type="button" class="button" data-taka-copy-default-translations><?php echo esc_html__( 'Copy default language to missing translations', 'taka-platform' ); ?></button></p>
+			<div class="taka-content-section-tabs">
+				<?php foreach ( $languages as $lang => $label ) : ?>
+					<input class="taka-content-section-tabs__radio" type="radio" name="<?php echo esc_attr( $tab_group ); ?>" id="<?php echo esc_attr( $tab_group . '_' . $lang ); ?>" <?php checked( $lang, $default_lang ); ?>>
+					<label class="taka-content-section-tabs__tab" for="<?php echo esc_attr( $tab_group . '_' . $lang ); ?>"><?php echo esc_html( $label ); ?></label>
+					<div class="taka-content-section-tabs__panel">
+						<?php foreach ( $fields as $field => $settings ) : ?>
+							<?php
+							$name = 'sections[' . $key . '][translations][' . $lang . '][' . $field . ']';
+							$value = $translations[ $lang ][ $field ] ?? '';
+							$is_textarea = ! empty( $settings['textarea'] );
+							$type = $settings['type'] ?? 'text';
+							?>
+							<p class="taka-content-section-tabs__field">
+								<label><strong><?php echo esc_html( $settings['label'] ); ?></strong><br>
+									<?php if ( $is_textarea ) : ?>
+										<textarea class="large-text" rows="5" name="<?php echo esc_attr( $name ); ?>" data-taka-i18n-lang="<?php echo esc_attr( $lang ); ?>" data-taka-i18n-field="<?php echo esc_attr( $field ); ?>"><?php echo esc_textarea( (string) $value ); ?></textarea>
+									<?php else : ?>
+										<input class="regular-text" type="<?php echo esc_attr( $type ); ?>" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( (string) $value ); ?>" data-taka-i18n-lang="<?php echo esc_attr( $lang ); ?>" data-taka-i18n-field="<?php echo esc_attr( $field ); ?>">
+									<?php endif; ?>
+								</label>
+							</p>
+						<?php endforeach; ?>
+					</div>
+				<?php endforeach; ?>
+			</div>
 		</div>
 		<?php
 	}
@@ -776,14 +818,21 @@ class TAKA_Platform_Admin {
 		if ( ! in_array( $image_fit, array( 'cover', 'contain', 'auto' ), true ) ) { $image_fit = 'contain'; }
 		$image_position = strtolower( trim( (string) ( $item['image_position'] ?? 'center center' ) ) );
 		if ( ! in_array( $image_position, array( 'center center', 'center top', 'center bottom', 'left center', 'right center' ), true ) ) { $image_position = 'center center'; }
+		$translations = self::sanitize_content_section_translations( $item );
+		$default_lang = TAKA_Platform_Data::default_content_section_language();
+		$default = $translations[ $default_lang ] ?? array();
+		$body = self::content_section_admin_translation_value( $translations, 'body' );
+		$button_label = self::content_section_admin_translation_value( $translations, 'button_label' );
+		$button_url = self::content_section_admin_translation_value( $translations, 'button_url' );
 		return array(
 			'visible'             => ! empty( $item['visible'] ) ? '1' : '0',
 			'sort_order'          => (int) ( $item['sort_order'] ?? 0 ),
-			'kicker'              => self::sanitize_dynamic_text( $item['kicker'] ?? '', false ),
-			'title'               => self::sanitize_dynamic_text( $item['title'] ?? '', false ),
-			'subtitle'            => self::sanitize_dynamic_text( $item['subtitle'] ?? '', false ),
-			'body'                => self::sanitize_dynamic_text( $item['body'] ?? ( $item['text'] ?? '' ), true ),
-			'text'                => self::sanitize_dynamic_text( $item['body'] ?? ( $item['text'] ?? '' ), true ),
+			'kicker'              => $default['kicker'] ?? '',
+			'title'               => $default['title'] ?? '',
+			'subtitle'            => $default['subtitle'] ?? '',
+			'body'                => $body,
+			'text'                => $body,
+			'translations'        => $translations,
 			'image_id'            => absint( $item['image_id'] ?? 0 ),
 			'image_url'           => esc_url_raw( $item['image_url'] ?? '' ),
 			'secondary_image_id'  => absint( $item['secondary_image_id'] ?? 0 ),
@@ -794,10 +843,25 @@ class TAKA_Platform_Admin {
 			'background_style'    => $background,
 			'image_fit'           => $image_fit,
 			'image_position'      => $image_position,
-			'button_url'          => esc_url_raw( $item['button_url'] ?? ( $item['link_url'] ?? '' ) ),
-			'button_label'        => self::sanitize_dynamic_text( $item['button_label'] ?? ( $item['link_label'] ?? '' ), false ),
+			'button_url'          => esc_url_raw( $button_url ),
+			'button_label'        => $button_label,
 			'css_class'           => sanitize_html_class( $item['css_class'] ?? '' ),
 		);
+	}
+
+	/** Sanitize structured content-section translations, preserving legacy scalar input. */
+	private static function sanitize_content_section_translations( $item ) {
+		$normalized = TAKA_Platform_Data::normalize_content_section( $item );
+		$translations = $normalized['translations'] ?? array();
+		$clean = array();
+		$fields = array( 'kicker', 'title', 'subtitle', 'body', 'button_label', 'button_url' );
+		foreach ( TAKA_Platform_Data::content_section_languages() as $lang ) {
+			foreach ( $fields as $field ) {
+				$value = $translations[ $lang ][ $field ] ?? '';
+				$clean[ $lang ][ $field ] = 'button_url' === $field ? esc_url_raw( $value ) : sanitize_textarea_field( $value );
+			}
+		}
+		return $clean;
 	}
 
 
@@ -1356,6 +1420,25 @@ class TAKA_Platform_Admin {
 			return $out;
 		}
 		return $callback( $value );
+	}
+	private static function content_section_language_labels() {
+		return array(
+			'de' => 'Deutsch',
+			'en' => 'English',
+			'fr' => 'Français',
+			'nl' => 'Nederlands',
+			'lb' => 'Lëtzebuergesch',
+			'fi' => 'Suomi',
+			'ja' => '日本語',
+		);
+	}
+	private static function content_section_admin_translation_value( $translations, $field ) {
+		$languages = array_values( array_unique( array_filter( array_merge( array( TAKA_Platform_Data::default_content_section_language(), 'en' ), TAKA_Platform_Data::content_section_languages() ) ) ) );
+		foreach ( $languages as $lang ) {
+			$value = $translations[ $lang ][ $field ] ?? '';
+			if ( '' !== trim( (string) $value ) ) { return (string) $value; }
+		}
+		return '';
 	}
 	private static function settings_multilingual_text_row( $name, $label, $value ) { self::settings_multilingual_row( $name, $label, $value, false ); }
 	private static function settings_multilingual_textarea_row( $name, $label, $value ) { self::settings_multilingual_row( $name, $label, $value, true ); }

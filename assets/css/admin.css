@@ -1,1 +1,62 @@
 /* TAKA Platform admin-specific styles live here as the admin UI evolves. */
+
+.taka-content-section-translations {
+	max-width: 880px;
+}
+
+.taka-content-section-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0;
+	margin-top: 0.75rem;
+}
+
+.taka-content-section-tabs__radio {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.taka-content-section-tabs__tab {
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-bottom: 0;
+	cursor: pointer;
+	margin: 0 0.25rem 0 0;
+	padding: 0.55rem 0.8rem;
+}
+
+.taka-content-section-tabs__panel {
+	border: 1px solid #c3c4c7;
+	box-sizing: border-box;
+	display: none;
+	flex-basis: 100%;
+	padding: 1rem;
+	width: 100%;
+}
+
+.taka-content-section-tabs__radio:checked + .taka-content-section-tabs__tab {
+	background: #fff;
+	border-bottom: 1px solid #fff;
+	margin-bottom: -1px;
+	position: relative;
+	z-index: 1;
+}
+
+.taka-content-section-tabs__radio:checked + .taka-content-section-tabs__tab + .taka-content-section-tabs__panel {
+	display: block;
+}
+
+.taka-content-section-tabs__field .regular-text,
+.taka-content-section-tabs__field .large-text {
+	max-width: 100%;
+	width: 100%;
+}
+
+@media (max-width: 782px) {
+	.taka-content-section-tabs__tab {
+		box-sizing: border-box;
+		margin-right: 0;
+		width: 50%;
+	}
+}
