@@ -10,7 +10,11 @@
     "intro": "Een Europese seminarreis met Takafumi Nakayama Sensei – van Helsinki via Berlijn, Nederland, België en Luxemburg naar de regio Trier/Konz.",
     "primary_button": "Seminars bekijken",
     "secondary_button": "Tickets",
-    "stations_label": "Tourstops"
+    "stations_label": "Tourstops",
+    "show_tickets_for": "Toon tickets voor %s",
+    "event_locations": "Evenementlocaties",
+    "map_view": "Kaartweergave",
+    "list_view": "Lijstweergave"
   },
   "tour": {
     "kicker": "European Tour",

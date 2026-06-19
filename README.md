@@ -71,9 +71,9 @@ Events support tour/event concepts such as title, subtitle, description, organiz
 
 Organizers support legal names, websites, logos, contact data, social links and repeatable co-organizers with their own logo, website, email, description and active/sort controls. Events can also use global or event-specific booking information for groups, multi-event discounts, payment and cancellation notes. Homepage content sections can be exported as portable config data and used as fallback/demo editorial content. Venues support addresses, websites, parking/accessibility notes, geo data and venue/parking images.
 
-## Future location map
+## Hero location map
 
-A later enhancement may add a stylized Europe map with clickable event pins, event coordinates, an accessible list fallback and a responsive/mobile alternative. The current hero location overview intentionally uses simpler country flags and ticket-tab links first.
+The Hero location overview supports configurable display modes: list, flags, map and map with list. The map is a lightweight stylized SVG panel with clickable event pins, optional `map_x` / `map_y` event or venue coordinates, and an accessible fallback list for keyboard, screen-reader and mobile users.
 
 ## Import / Export
 
@@ -149,6 +149,14 @@ The script checks PHP syntax for all `*.php` files with `php -l` and scans the r
 Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `taka_organizer`, `taka_venue`) continue to work. Existing constants such as `TAKA_TOUR_VERSION` map to the new platform constants. Existing class names such as `Taka_Tour_Data` are aliased to the new `TAKA_Platform_*` classes.
 
 ## Changelog
+
+### v1.4.10
+
+- Fixed Hero Europe map rendering by defaulting the location display mode to map with list and validating stored display modes.
+
+### v1.4.9
+
+- Added a configurable stylized Europe map for Hero event location navigation with accessible fallback list.
 
 ### v1.4.8
 

@@ -10,7 +10,11 @@
     "intro": "Eng europäesch Seminarrees mam Takafumi Nakayama Sensei – vu Helsinki iwwer Berlin, Holland, Belsch a Lëtzebuerg bis an d’Regioun Trier/Konz.",
     "primary_button": "Seminairen ukucken",
     "secondary_button": "Tickets",
-    "stations_label": "Tourstatiounen"
+    "stations_label": "Tourstatiounen",
+    "show_tickets_for": "Tickete fir %s weisen",
+    "event_locations": "Eventplazen",
+    "map_view": "Kaartusiicht",
+    "list_view": "Lëschtenusiicht"
   },
   "tour": {
     "kicker": "European Tour",

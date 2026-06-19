@@ -10,7 +10,11 @@
     "intro": "Un voyage de séminaires européen avec Takafumi Nakayama Sensei – de Helsinki à Berlin, aux Pays-Bas, en Belgique et au Luxembourg jusqu’à la région Trier/Konz.",
     "primary_button": "Voir les séminaires",
     "secondary_button": "Tickets",
-    "stations_label": "Étapes de la tournée"
+    "stations_label": "Étapes de la tournée",
+    "show_tickets_for": "Afficher les billets pour %s",
+    "event_locations": "Lieux des événements",
+    "map_view": "Vue carte",
+    "list_view": "Vue liste"
   },
   "tour": {
     "kicker": "European Tour",

@@ -131,6 +131,154 @@
 	line-height: 1;
 }
 
+.taka-hero-map {
+	width: min(100%, 42rem);
+	margin-top: 1.5rem;
+}
+
+.taka-hero-map__canvas {
+	position: relative;
+	aspect-ratio: 1.42;
+	min-height: 18rem;
+	overflow: hidden;
+	border: 1px solid rgba(199, 163, 92, .34);
+	background:
+		radial-gradient(circle at 65% 18%, rgba(199, 163, 92, .18), transparent 30%),
+		linear-gradient(145deg, rgba(247, 243, 236, .94), rgba(230, 221, 202, .78));
+	box-shadow: 0 22px 55px rgba(0, 0, 0, .28);
+}
+
+.taka-hero-map__svg {
+	position: absolute;
+	inset: 6% 4%;
+	width: 92%;
+	height: 88%;
+}
+
+.taka-hero-map__land {
+	fill: rgba(89, 108, 102, .34);
+	stroke: rgba(38, 55, 53, .24);
+	stroke-width: .7;
+}
+
+.taka-hero-map__land--central {
+	fill: rgba(89, 108, 102, .42);
+}
+
+.taka-hero-map__coast {
+	fill: none;
+	stroke: rgba(38, 55, 53, .22);
+	stroke-linecap: round;
+	stroke-width: .65;
+}
+
+.taka-hero-map__pin {
+	position: absolute;
+	z-index: 2;
+	display: inline-flex;
+	align-items: center;
+	gap: .35rem;
+	min-width: 1.65rem;
+	min-height: 1.65rem;
+	color: #111111 !important;
+	font-size: .78rem;
+	font-weight: 800;
+	text-decoration: none;
+	transform: translate(-50%, -50%);
+}
+
+.taka-hero-map__marker {
+	width: .9rem;
+	height: .9rem;
+	border: 2px solid #ffffff;
+	border-radius: 999px;
+	background: #BC002D;
+	box-shadow: 0 0 0 .25rem rgba(188, 0, 45, .18), 0 .25rem .6rem rgba(17, 17, 17, .35);
+	transition: transform .16s ease, box-shadow .16s ease;
+}
+
+.taka-hero-map__label {
+	position: absolute;
+	left: 1rem;
+	top: 50%;
+	display: inline-flex;
+	align-items: center;
+	max-width: 10rem;
+	padding: .25rem .45rem;
+	background: rgba(255, 255, 255, .92);
+	color: #111111;
+	line-height: 1.15;
+	opacity: 0;
+	pointer-events: none;
+	transform: translateY(-50%) translateX(-.2rem);
+	transition: opacity .16s ease, transform .16s ease;
+	white-space: nowrap;
+}
+
+.taka-hero-map__pin:hover .taka-hero-map__marker,
+.taka-hero-map__pin:focus-visible .taka-hero-map__marker,
+.taka-hero-map__pin.is-active .taka-hero-map__marker {
+	box-shadow: 0 0 0 .35rem rgba(188, 0, 45, .24), 0 .35rem .8rem rgba(17, 17, 17, .38);
+	transform: scale(1.16);
+}
+
+.taka-hero-map__pin:hover .taka-hero-map__label,
+.taka-hero-map__pin:focus-visible .taka-hero-map__label,
+.taka-hero-map__pin.is-active .taka-hero-map__label {
+	opacity: 1;
+	transform: translateY(-50%) translateX(0);
+}
+
+.taka-hero-map__pin:focus-visible,
+.taka-tour-station-link:focus-visible {
+	outline: 2px solid #C7A35C;
+	outline-offset: 3px;
+}
+
+.taka-hero-map__list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .6rem;
+	margin-top: .8rem;
+}
+
+.taka-hero-map__list--fallback {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+	.taka-hero-map {
+		width: 100%;
+	}
+
+	.taka-hero-map__canvas {
+		min-height: 15rem;
+	}
+
+	.taka-hero-map__marker {
+		width: 1.05rem;
+		height: 1.05rem;
+	}
+
+	.taka-hero-map__label {
+		display: none;
+	}
+
+	.taka-hero-map__list--fallback {
+		position: static;
+		width: auto;
+		height: auto;
+		overflow: visible;
+		clip: auto;
+		white-space: normal;
+	}
+}
+
 .taka-tour-station-link:hover {
 	border-color: #C7A35C;
 	background: rgba(188, 0, 45, .35);
