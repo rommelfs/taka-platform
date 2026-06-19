@@ -150,6 +150,10 @@ Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `tak
 
 ## Changelog
 
+### v1.5.3
+
+- Fixed Hero route map label collisions by separating route pins from evenly spaced clickable labels inside the map panel.
+
 ### v1.5.2
 
 - Improved mobile Hero route map sizing so pins and labels fit inside the viewport without horizontal clipping.

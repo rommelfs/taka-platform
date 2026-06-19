@@ -176,22 +176,17 @@
 
 .taka-hero-route-map__stop {
 	position: absolute;
-	z-index: 2;
+	z-index: 4;
 	display: inline-flex;
 	align-items: center;
-	gap: .42rem;
+	justify-content: center;
 	min-width: 2rem;
 	min-height: 2rem;
 	color: #ffffff !important;
 	font-size: .78rem;
 	font-weight: 800;
 	text-decoration: none;
-	transform: translate(-.95rem, -50%);
-}
-
-.taka-hero-route-map__stop--align-left {
-	flex-direction: row-reverse;
-	transform: translate(calc(-100% + .95rem), -50%);
+	transform: translate(-50%, -50%);
 }
 
 .taka-hero-route-map__pin {
@@ -205,18 +200,35 @@
 	transition: transform .16s ease, box-shadow .16s ease;
 }
 
+.taka-hero-route-map__labels {
+	position: absolute;
+	top: .85rem;
+	right: .85rem;
+	bottom: .85rem;
+	z-index: 3;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: .24rem;
+	width: min(13rem, 36%);
+}
+
 .taka-hero-route-map__label {
-	display: inline-flex;
+	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
-	gap: .18rem;
-	max-width: min(11rem, 34vw);
-	padding: .32rem .5rem;
+	gap: .12rem .18rem;
+	width: 100%;
+	min-height: 1.55rem;
+	padding: .25rem .45rem;
 	background: rgba(20, 18, 18, .78);
 	box-shadow: 0 .35rem 1.1rem rgba(0, 0, 0, .26);
-	color: #ffffff;
+	color: #ffffff !important;
+	font-size: .74rem;
+	font-weight: 800;
 	line-height: 1.12;
 	overflow-wrap: anywhere;
+	text-decoration: none;
 	transition: background .16s ease, transform .16s ease;
 	white-space: normal;
 }
@@ -234,16 +246,6 @@
 	font-weight: 700;
 }
 
-.taka-hero-route-map__stop--align-left .taka-hero-route-map__label {
-	justify-content: flex-end;
-	text-align: right;
-}
-
-.taka-hero-route-map__stop--align-left .taka-hero-route-map__label small {
-	margin-right: 1.45rem;
-	margin-left: 0;
-}
-
 .taka-hero-route-map__stop:hover .taka-hero-route-map__pin,
 .taka-hero-route-map__stop:focus-visible .taka-hero-route-map__pin,
 .taka-hero-route-map__stop.is-active .taka-hero-route-map__pin {
@@ -251,14 +253,15 @@
 	transform: scale(1.16);
 }
 
-.taka-hero-route-map__stop:hover .taka-hero-route-map__label,
-.taka-hero-route-map__stop:focus-visible .taka-hero-route-map__label,
-.taka-hero-route-map__stop.is-active .taka-hero-route-map__label {
+.taka-hero-route-map__label:hover,
+.taka-hero-route-map__label:focus-visible,
+.taka-hero-route-map__label.is-active {
 	background: rgba(188, 0, 45, .86);
 	transform: translateX(.15rem);
 }
 
 .taka-hero-route-map__stop:focus-visible,
+.taka-hero-route-map__label:focus-visible,
 .taka-tour-station-link:focus-visible {
 	outline: 2px solid #C7A35C;
 	outline-offset: 3px;
@@ -324,15 +327,10 @@
 	}
 
 	.taka-hero-route-map__stop {
-		gap: .28rem;
 		min-width: 1.45rem;
 		min-height: 1.45rem;
 		font-size: .66rem;
-		transform: translate(-.56rem, -50%);
-	}
-
-	.taka-hero-route-map__stop--align-left {
-		transform: translate(calc(-100% + .56rem), -50%);
+		transform: translate(-50%, -50%);
 	}
 
 	.taka-hero-route-map__pin {
@@ -342,9 +340,18 @@
 		box-shadow: 0 0 0 .18rem rgba(188, 0, 45, .2), 0 .25rem .6rem rgba(0, 0, 0, .42);
 	}
 
+	.taka-hero-route-map__labels {
+		top: .45rem;
+		right: .45rem;
+		bottom: .45rem;
+		gap: .16rem;
+		width: min(7.7rem, 42%);
+	}
+
 	.taka-hero-route-map__label {
 		flex-wrap: nowrap;
-		max-width: min(8rem, 38vw);
+		min-height: 1.25rem;
+		max-width: none;
 		padding: .2rem .3rem;
 		font-size: .66rem;
 		line-height: 1.05;
@@ -363,9 +370,9 @@
 		display: none;
 	}
 
-	.taka-hero-route-map__stop:hover .taka-hero-route-map__label,
-	.taka-hero-route-map__stop:focus-visible .taka-hero-route-map__label,
-	.taka-hero-route-map__stop.is-active .taka-hero-route-map__label {
+	.taka-hero-route-map__label:hover,
+	.taka-hero-route-map__label:focus-visible,
+	.taka-hero-route-map__label.is-active {
 		transform: none;
 	}
 
