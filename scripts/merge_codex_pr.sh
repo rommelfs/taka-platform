@@ -12,7 +12,7 @@ if [ -z "$PR" ]; then
     exit 1
 fi
 
-REPO="rommelfs/taka-tour-wp-plugin"
+REPO="rommelfs/taka-platform"
 
 echo
 echo "Fetching PR information..."
