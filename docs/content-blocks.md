@@ -29,7 +29,7 @@ A Content Reference is a lightweight pointer from another object to a Content Bl
 - sort order
 - display style
 - optional custom title
-- optional override translation structure for future local overrides
+- optional local override translations
 
 In v2.1.0, references are supported for homepage Content Sections and the Event seminar description.
 
@@ -37,9 +37,11 @@ Referenced content is not copied. Updating a Content Block updates every enabled
 
 ## Rendering
 
-Frontend rendering resolves references through `TAKA_Platform_Data::resolve_content_reference()` and `TAKA_Platform_Data::render_content_reference()`.
+Frontend rendering resolves references through `TAKA_Platform_Data::resolve_content_reference()`. `TAKA_Platform_Data::render_content_reference()` is available for places that need to render a reference as a standalone content section.
 
-For homepage sections, a referenced block can replace the visible section text and media. For events, the referenced block body can replace the seminar description.
+For homepage sections, a referenced block can replace the visible section text and media. The reference display style can optionally override the parent section layout. For events, the referenced block body can replace the seminar description; layout-oriented display styles are stored but not used by the plain description renderer.
+
+Reference-level custom titles and local text overrides are multilingual. Empty override fields fall back to the reusable Content Block values.
 
 Fallback behavior follows the existing dynamic-content chain:
 

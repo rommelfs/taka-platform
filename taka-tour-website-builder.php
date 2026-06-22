@@ -44,7 +44,18 @@ require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Frontend/class-renderer.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Core/class-plugin.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Admin/class-admin.php';
 
-register_activation_hook( TAKA_PLATFORM_PLUGIN_FILE, array( 'TAKA_Platform_Admin', 'ensure_capabilities' ) );
+add_action( 'init', array( 'TAKA_Platform_Admin', 'register_post_types' ), 0 );
+
+register_activation_hook(
+	TAKA_PLATFORM_PLUGIN_FILE,
+	static function () {
+		TAKA_Platform_Admin::register_post_types();
+		TAKA_Platform_Admin::ensure_capabilities();
+		if ( function_exists( 'flush_rewrite_rules' ) ) {
+			flush_rewrite_rules();
+		}
+	}
+);
 
 // Legacy class aliases preserve old integrations while new code uses TAKA_Platform_* names.
 if ( ! class_exists( 'Taka_Tour_Data', false ) ) {
@@ -69,7 +80,6 @@ if ( ! class_exists( 'Taka_Tour_Ticket_Providers', false ) ) {
 add_action(
 	'plugins_loaded',
 	static function () {
-		add_action( 'init', array( 'TAKA_Platform_Admin', 'register_post_types' ) );
 		TAKA_Platform_Events_Manager_Integration::init();
 		TAKA_Platform_Plugin::instance();
 		if ( is_admin() ) {

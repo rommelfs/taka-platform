@@ -17,6 +17,16 @@ class TAKA_Platform_Data {
 	const TICKETS_OPTION = 'taka_platform_ticket_section_settings';
 	const OPTION_LISTS_OPTION = 'taka_platform_option_lists';
 
+	/** Custom post types required for the WordPress data source. */
+	public static function required_post_types() {
+		return array(
+			self::EVENT_POST_TYPE => __( 'Events', 'taka-platform' ),
+			self::ORGANIZER_POST_TYPE => __( 'Organizers', 'taka-platform' ),
+			self::VENUE_POST_TYPE => __( 'Venues', 'taka-platform' ),
+			self::CONTENT_BLOCK_POST_TYPE => __( 'Content Blocks', 'taka-platform' ),
+		);
+	}
+
 	/** Event fields backed by configurable option lists. */
 	public static function event_option_list_fields() {
 		return array(
@@ -320,6 +330,21 @@ class TAKA_Platform_Data {
 		);
 	}
 
+	/** Display styles supported by reusable content references. */
+	public static function content_reference_display_styles() {
+		return array(
+			'default' => __( 'Use parent layout', 'taka-platform' ),
+			'text_only' => __( 'Text only', 'taka-platform' ),
+			'image_left' => __( 'Image left', 'taka-platform' ),
+			'image_right' => __( 'Image right', 'taka-platform' ),
+			'image_above' => __( 'Image above', 'taka-platform' ),
+			'full_background' => __( 'Full width image background', 'taka-platform' ),
+			'two_column' => __( 'Two column', 'taka-platform' ),
+			'gallery_grid' => __( 'Gallery grid', 'taka-platform' ),
+			'feature_card' => __( 'Feature card', 'taka-platform' ),
+		);
+	}
+
 	/** Text fields available on one reusable content block. */
 	public static function content_block_text_fields() {
 		return self::translatable_text_fields( 'content_block' );
@@ -364,7 +389,7 @@ class TAKA_Platform_Data {
 			'context' => $context,
 			'enabled' => array_key_exists( 'enabled', $reference ) ? ( ! empty( $reference['enabled'] ) ? '1' : '0' ) : '0',
 			'sort_order' => (int) ( $reference['sort_order'] ?? 0 ),
-			'display_style' => sanitize_key( $reference['display_style'] ?? 'default' ),
+			'display_style' => array_key_exists( sanitize_key( $reference['display_style'] ?? 'default' ), self::content_reference_display_styles() ) ? sanitize_key( $reference['display_style'] ?? 'default' ) : 'default',
 			'custom_title' => self::normalize_dynamic_text_value( $reference['custom_title'] ?? '' ),
 			'override_translations' => self::normalize_content_section_translations( array( 'translations' => $reference['override_translations'] ?? array() ) ),
 		);
@@ -408,14 +433,18 @@ class TAKA_Platform_Data {
 			array(
 				'key' => sanitize_key( ( $context ?: 'content_block' ) . '_' . ( $block['slug'] ?? $block['id'] ?? 'block' ) ),
 				'visible' => '1',
-				'layout' => 'text_only',
+				'layout' => 'default' !== $reference['display_style'] ? $reference['display_style'] : 'text_only',
 				'background_style' => 'plain',
 				'image_fit' => 'contain',
 				'image_position' => 'center center',
 				'css_class' => '',
+				'sort_order' => (int) ( $reference['sort_order'] ?? 0 ),
 			),
 			$block
 		);
+		$classes = array_filter( preg_split( '/\s+/', (string) ( $section['css_class'] ?? '' ) ) );
+		array_unshift( $classes, 'taka-content-reference' );
+		$section['css_class'] = implode( ' ', array_unique( $classes ) );
 		return taka_tour_render_template( 'partials/content-section.php', array( 'section' => $section ) );
 	}
 
@@ -550,12 +579,44 @@ class TAKA_Platform_Data {
 
 	/** Current live data source label. */
 	public static function get_active_data_source() {
-		return self::is_using_wp_events() ? 'wordpress' : 'config';
+		return self::is_using_wp_events() ? 'database' : 'config_fallback';
 	}
 
 	/** Whether frontend data is currently sourced from WordPress events. */
 	public static function is_using_wp_events() {
 		return self::count_wp_events() > 0;
+	}
+
+	/** Whether all required platform post types are registered in WordPress. */
+	public static function required_post_types_registered() {
+		if ( ! function_exists( 'post_type_exists' ) ) { return false; }
+		foreach ( array_keys( self::required_post_types() ) as $post_type ) {
+			if ( ! post_type_exists( $post_type ) ) { return false; }
+		}
+		return true;
+	}
+
+	/** Data-source and CPT health summary for admin/debug views. */
+	public static function data_source_status() {
+		$post_types = array();
+		foreach ( self::required_post_types() as $post_type => $label ) {
+			$post_types[ $post_type ] = array(
+				'label' => $label,
+				'registered' => function_exists( 'post_type_exists' ) ? post_type_exists( $post_type ) : false,
+				'count_any' => self::count_posts( $post_type, 'any' ),
+				'count_publish' => self::count_posts( $post_type, 'publish' ),
+			);
+		}
+		return array(
+			'active_source' => self::get_active_data_source(),
+			'using_database' => self::is_using_wp_events(),
+			'using_config_fallback' => ! self::is_using_wp_events(),
+			'wp_event_count' => self::count_wp_events(),
+			'wp_published_event_count' => self::count_posts( self::EVENT_POST_TYPE, 'publish' ),
+			'config_event_count' => self::count_config_events(),
+			'required_post_types_registered' => self::required_post_types_registered(),
+			'post_types' => $post_types,
+		);
 	}
 
 	/** Count posts safely. */
@@ -1213,6 +1274,10 @@ class TAKA_Platform_Data {
 						$section['gallery_image_ids'] = $block['gallery_image_ids'] ?? array();
 						$section['gallery_image_urls'] = $block['gallery_image_urls'] ?? array();
 					}
+					$display_style = sanitize_key( $block['content_reference']['display_style'] ?? 'default' );
+					if ( 'default' !== $display_style && array_key_exists( $display_style, self::content_reference_display_styles() ) ) {
+						$section['layout'] = $display_style;
+					}
 					$section['referenced_block'] = $block;
 				}
 			}
@@ -1370,6 +1435,18 @@ class TAKA_Platform_Data {
 			if ( '' !== trim( (string) $value ) ) { return (string) $value; }
 		}
 		return self::resolve_dynamic_text( $legacy_fallback, $lang, $source_language );
+	}
+
+	/** Resolve one content-reference override field using content-section translation shape. */
+	private static function resolve_content_section_field( $source, $field, $lang ) {
+		$source = is_array( $source ) ? $source : array();
+		return self::translated_content_section_field(
+			$source['translations'] ?? array(),
+			$field,
+			$lang,
+			self::object_source_language( $source ),
+			''
+		);
 	}
 
 	/** Venues that have enough public information for the practical-info section. */

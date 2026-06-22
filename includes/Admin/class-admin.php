@@ -16,6 +16,7 @@ class TAKA_Platform_Admin {
 		add_action( 'admin_menu', array( __CLASS__, 'limit_organizer_admin_menu' ), 999 );
 		add_action( 'admin_init', array( __CLASS__, 'ensure_capabilities' ) );
 		add_action( 'admin_init', array( __CLASS__, 'guard_event_edit_screen' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'render_data_source_notice' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'add_meta_boxes' ) );
 		add_action( 'show_user_profile', array( __CLASS__, 'render_user_organizer_fields' ) );
@@ -174,6 +175,7 @@ class TAKA_Platform_Admin {
 		add_submenu_page( 'taka-platform', __( 'Media', 'taka-platform' ), __( 'Media', 'taka-platform' ), 'manage_options', 'taka-tour-media', array( __CLASS__, 'render_media' ) );
 		add_submenu_page( 'taka-platform', __( 'Content Sections', 'taka-platform' ), __( 'Content Sections', 'taka-platform' ), 'manage_options', 'taka-platform-content-sections', array( __CLASS__, 'render_content_sections' ) );
 		add_submenu_page( 'taka-platform', __( 'Import / Export', 'taka-platform' ), __( 'Import / Export', 'taka-platform' ), 'manage_options', 'taka-tour-import-export', array( __CLASS__, 'render_import_export' ) );
+		add_submenu_page( 'taka-platform', __( 'Status', 'taka-platform' ), __( 'Status', 'taka-platform' ), 'manage_options', 'taka-platform-status', array( __CLASS__, 'render_status' ) );
 		add_submenu_page( 'taka-platform', __( 'Settings', 'taka-platform' ), __( 'Settings', 'taka-platform' ), 'manage_options', 'taka-tour-settings', array( __CLASS__, 'render_settings' ) );
 		add_submenu_page( 'taka-platform', __( 'Translations', 'taka-platform' ), __( 'Translations', 'taka-platform' ), 'manage_options', 'taka-platform-translations', array( __CLASS__, 'render_translations' ) );
 		add_submenu_page( 'taka-platform', __( 'Integrations / Events Manager', 'taka-platform' ), __( 'Events Manager', 'taka-platform' ), 'manage_options', 'taka-platform-events-manager', array( __CLASS__, 'render_events_manager_integration' ) );
@@ -235,7 +237,8 @@ class TAKA_Platform_Admin {
 			return;
 		}
 		$config             = TAKA_Platform_Data::load_config();
-		$wp_event_count     = TAKA_Platform_Data::count_wp_events();
+		$status             = TAKA_Platform_Data::data_source_status();
+		$wp_event_count     = (int) ( $status['wp_event_count'] ?? 0 );
 		$config_event_count = count( $config['events'] ?? array() );
 		$translations       = glob( TAKA_PLATFORM_PLUGIN_DIR . 'translations/*.json' );
 		?>
@@ -246,10 +249,64 @@ class TAKA_Platform_Admin {
 				<tr><th><?php echo esc_html__( 'Config file', 'taka-platform' ); ?></th><td><?php echo file_exists( TAKA_PLATFORM_PLUGIN_DIR . 'config/tour-events.php' ) ? esc_html__( 'found', 'taka-platform' ) : esc_html__( 'missing', 'taka-platform' ); ?></td></tr>
 				<tr><th><?php echo esc_html__( 'WordPress events', 'taka-platform' ); ?></th><td><?php echo esc_html( (string) $wp_event_count ); ?></td></tr>
 				<tr><th><?php echo esc_html__( 'Config events', 'taka-platform' ); ?></th><td><?php echo esc_html( (string) $config_event_count ); ?></td></tr>
-				<tr><th><?php echo esc_html__( 'Active frontend source', 'taka-platform' ); ?></th><td><?php echo esc_html( TAKA_Platform_Data::is_using_wp_events() ? __( 'WordPress', 'taka-platform' ) : __( 'Config fallback', 'taka-platform' ) ); ?></td></tr>
+				<tr><th><?php echo esc_html__( 'Active frontend source', 'taka-platform' ); ?></th><td><?php echo esc_html( ! empty( $status['using_database'] ) ? __( 'Database', 'taka-platform' ) : __( 'Config fallback', 'taka-platform' ) ); ?></td></tr>
 				<tr><th><?php echo esc_html__( 'Translation files', 'taka-platform' ); ?></th><td><?php echo esc_html( (string) count( is_array( $translations ) ? $translations : array() ) ); ?></td></tr>
+				<tr><th><?php echo esc_html__( 'Required CPTs registered', 'taka-platform' ); ?></th><td><?php echo ! empty( $status['required_post_types_registered'] ) ? esc_html__( 'Yes', 'taka-platform' ) : esc_html__( 'No', 'taka-platform' ); ?></td></tr>
 			</tbody></table>
 			<p><?php echo esc_html__( 'TAKA – Ticketing, Attendance, Knowledge & Administration. Use the Events, Organizers, Venues, Media and Import / Export screens to manage reusable international event tours.', 'taka-platform' ); ?></p>
+		</div>
+		<?php
+	}
+
+	/** Show when frontend is intentionally using bundled config fallback. */
+	public static function render_data_source_notice() {
+		if ( ! current_user_can( 'manage_options' ) || ! TAKA_Platform_Data::data_source_status()['using_config_fallback'] ) {
+			return;
+		}
+		$status = TAKA_Platform_Data::data_source_status();
+		if ( empty( $status['config_event_count'] ) ) {
+			return;
+		}
+		?>
+		<div class="notice notice-warning">
+			<p>
+				<strong><?php echo esc_html__( 'TAKA Platform is using config fallback data.', 'taka-platform' ); ?></strong>
+				<?php echo esc_html__( 'No database events exist yet, so frontend event output comes from config/tour-events.php. Import the config to make admin event edits drive the frontend.', 'taka-platform' ); ?>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=taka-tour-import-export' ) ); ?>"><?php echo esc_html__( 'Open import', 'taka-platform' ); ?></a>
+			</p>
+		</div>
+		<?php
+	}
+
+	/** Render active data source and CPT status. */
+	public static function render_status() {
+		if ( ! current_user_can( 'manage_options' ) ) { return; }
+		$status = TAKA_Platform_Data::data_source_status();
+		?>
+		<div class="wrap">
+			<h1><?php echo esc_html__( 'TAKA Platform Status', 'taka-platform' ); ?></h1>
+			<table class="widefat striped" style="max-width: 900px;"><tbody>
+				<tr><th><?php echo esc_html__( 'Active frontend data source', 'taka-platform' ); ?></th><td><?php echo esc_html( $status['using_database'] ? __( 'Database', 'taka-platform' ) : __( 'Config fallback', 'taka-platform' ) ); ?></td></tr>
+				<tr><th><?php echo esc_html__( 'Database events', 'taka-platform' ); ?></th><td><?php echo esc_html( (string) ( $status['wp_event_count'] ?? 0 ) ); ?></td></tr>
+				<tr><th><?php echo esc_html__( 'Published database events', 'taka-platform' ); ?></th><td><?php echo esc_html( (string) ( $status['wp_published_event_count'] ?? 0 ) ); ?></td></tr>
+				<tr><th><?php echo esc_html__( 'Config fallback events', 'taka-platform' ); ?></th><td><?php echo esc_html( (string) ( $status['config_event_count'] ?? 0 ) ); ?></td></tr>
+				<tr><th><?php echo esc_html__( 'Required CPTs registered', 'taka-platform' ); ?></th><td><?php echo ! empty( $status['required_post_types_registered'] ) ? esc_html__( 'Yes', 'taka-platform' ) : esc_html__( 'No', 'taka-platform' ); ?></td></tr>
+			</tbody></table>
+			<h2><?php echo esc_html__( 'Custom Post Types', 'taka-platform' ); ?></h2>
+			<table class="widefat striped" style="max-width: 900px;">
+				<thead><tr><th><?php echo esc_html__( 'Post type', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Registered', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Published', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'All statuses', 'taka-platform' ); ?></th></tr></thead>
+				<tbody>
+					<?php foreach ( $status['post_types'] as $post_type => $row ) : ?>
+						<tr>
+							<td><code><?php echo esc_html( $post_type ); ?></code> <?php echo esc_html( $row['label'] ?? '' ); ?></td>
+							<td><?php echo ! empty( $row['registered'] ) ? esc_html__( 'Yes', 'taka-platform' ) : esc_html__( 'No', 'taka-platform' ); ?></td>
+							<td><?php echo esc_html( (string) ( $row['count_publish'] ?? 0 ) ); ?></td>
+							<td><?php echo esc_html( (string) ( $row['count_any'] ?? 0 ) ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<p><a class="button button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=taka-tour-import-export' ) ); ?>"><?php echo esc_html__( 'Import config seed data', 'taka-platform' ); ?></a></p>
 		</div>
 		<?php
 	}
@@ -486,7 +543,7 @@ class TAKA_Platform_Admin {
 						<p><label><input type="radio" name="source" value="json"> <?php echo esc_html__( 'Paste JSON', 'taka-platform' ); ?></label><br><textarea class="large-text code" rows="8" name="config_json" placeholder="{ &quot;organizers&quot;: {}, &quot;venues&quot;: {}, &quot;events&quot;: [] }"></textarea></p>
 					</td></tr>
 					<tr><th scope="row"><?php echo esc_html__( 'Options', 'taka-platform' ); ?></th><td>
-						<p><label><input type="checkbox" name="dry_run" value="1" checked> <?php echo esc_html__( 'Dry run / preview only', 'taka-platform' ); ?></label></p>
+						<p><label><input type="checkbox" name="dry_run" value="1"> <?php echo esc_html__( 'Dry run / preview only', 'taka-platform' ); ?></label></p>
 						<p><label><?php echo esc_html__( 'Import mode', 'taka-platform' ); ?> <select name="mode"><option value="missing"><?php echo esc_html__( 'Import missing only', 'taka-platform' ); ?></option><option value="update"><?php echo esc_html__( 'Update existing', 'taka-platform' ); ?></option><option value="overwrite"><?php echo esc_html__( 'Overwrite existing', 'taka-platform' ); ?></option></select></label></p>
 						<p><label><input type="checkbox" name="delete_existing" value="1"> <?php echo esc_html__( 'Delete existing plugin data before import', 'taka-platform' ); ?></label></p>
 					</td></tr>
@@ -1196,6 +1253,7 @@ class TAKA_Platform_Admin {
 
 	/** Import config data idempotently. */
 	private static function import_config( $mode, $dry_run, $delete_existing, $config = null ) {
+		self::register_post_types();
 		$config = is_array( $config ) ? $config : TAKA_Platform_Data::load_config();
 		$summary = array( 'organizers' => array( 'created' => 0, 'updated' => 0, 'skipped' => 0 ), 'venues' => array( 'created' => 0, 'updated' => 0, 'skipped' => 0 ), 'events' => array( 'created' => 0, 'updated' => 0, 'skipped' => 0 ), 'warnings' => array() );
 		if ( $delete_existing && ! $dry_run ) { self::delete_plugin_posts(); }
@@ -1710,8 +1768,10 @@ class TAKA_Platform_Admin {
 			<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[context]" value="<?php echo esc_attr( $context ); ?>">
 			<p><label><input type="checkbox" name="<?php echo esc_attr( $prefix ); ?>[enabled]" value="1" <?php checked( '1', (string) ( $reference['enabled'] ?? '0' ) ); ?>> <?php echo esc_html__( 'Use existing content block', 'taka-platform' ); ?></label></p>
 			<p><label><strong><?php echo esc_html__( 'Content block', 'taka-platform' ); ?></strong><br><select class="widefat" name="<?php echo esc_attr( $prefix ); ?>[block_id]"><?php foreach ( self::content_block_choices() as $value => $choice_label ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( (string) ( $reference['block_id'] ?? '' ), (string) $value ); ?>><?php echo esc_html( $choice_label ); ?></option><?php endforeach; ?></select></label></p>
-			<p><label><strong><?php echo esc_html__( 'Display style', 'taka-platform' ); ?></strong><br><input class="widefat" type="text" name="<?php echo esc_attr( $prefix ); ?>[display_style]" value="<?php echo esc_attr( $reference['display_style'] ?? 'default' ); ?>"></label></p>
-			<p><label><strong><?php echo esc_html__( 'Custom title', 'taka-platform' ); ?></strong><br><input class="widefat" type="text" name="<?php echo esc_attr( $prefix ); ?>[custom_title]" value="<?php echo esc_attr( $reference['custom_title'] ?? '' ); ?>"></label></p>
+			<p><label><strong><?php echo esc_html__( 'Sort order', 'taka-platform' ); ?></strong><br><input type="number" name="<?php echo esc_attr( $prefix ); ?>[sort_order]" value="<?php echo esc_attr( (string) ( $reference['sort_order'] ?? 0 ) ); ?>"></label></p>
+			<p><label><strong><?php echo esc_html__( 'Display style', 'taka-platform' ); ?></strong><br><select class="widefat" name="<?php echo esc_attr( $prefix ); ?>[display_style]"><?php foreach ( TAKA_Platform_Data::content_reference_display_styles() as $value => $choice_label ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( (string) ( $reference['display_style'] ?? 'default' ), (string) $value ); ?>><?php echo esc_html( $choice_label ); ?></option><?php endforeach; ?></select></label></p>
+			<?php self::render_content_reference_custom_title_fields( $prefix, $reference['custom_title'] ?? '' ); ?>
+			<?php self::render_content_reference_override_tabs( $prefix, $reference['override_translations'] ?? array() ); ?>
 			<p class="description"><?php echo esc_html__( 'Referenced block content stays reusable. Local content remains saved and is used again if this reference is disabled.', 'taka-platform' ); ?></p>
 		</div>
 		<?php
@@ -1725,10 +1785,57 @@ class TAKA_Platform_Admin {
 			<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[context]" value="homepage_section">
 			<p><label><input type="checkbox" name="<?php echo esc_attr( $prefix ); ?>[enabled]" value="1" <?php checked( '1', (string) ( $reference['enabled'] ?? '0' ) ); ?>> <?php echo esc_html__( 'Use existing content block', 'taka-platform' ); ?></label></p>
 			<p><label><strong><?php echo esc_html__( 'Content block', 'taka-platform' ); ?></strong><br><select class="regular-text" name="<?php echo esc_attr( $prefix ); ?>[block_id]"><?php foreach ( self::content_block_choices() as $value => $choice_label ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( (string) ( $reference['block_id'] ?? '' ), (string) $value ); ?>><?php echo esc_html( $choice_label ); ?></option><?php endforeach; ?></select></label></p>
-			<p><label><strong><?php echo esc_html__( 'Display style', 'taka-platform' ); ?></strong><br><input class="regular-text" type="text" name="<?php echo esc_attr( $prefix ); ?>[display_style]" value="<?php echo esc_attr( $reference['display_style'] ?? 'default' ); ?>"></label></p>
-			<p><label><strong><?php echo esc_html__( 'Custom title', 'taka-platform' ); ?></strong><br><input class="regular-text" type="text" name="<?php echo esc_attr( $prefix ); ?>[custom_title]" value="<?php echo esc_attr( $reference['custom_title'] ?? '' ); ?>"></label></p>
+			<p><label><strong><?php echo esc_html__( 'Sort order', 'taka-platform' ); ?></strong><br><input type="number" name="<?php echo esc_attr( $prefix ); ?>[sort_order]" value="<?php echo esc_attr( (string) ( $reference['sort_order'] ?? 0 ) ); ?>"></label></p>
+			<p><label><strong><?php echo esc_html__( 'Display style', 'taka-platform' ); ?></strong><br><select class="regular-text" name="<?php echo esc_attr( $prefix ); ?>[display_style]"><?php foreach ( TAKA_Platform_Data::content_reference_display_styles() as $value => $choice_label ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( (string) ( $reference['display_style'] ?? 'default' ), (string) $value ); ?>><?php echo esc_html( $choice_label ); ?></option><?php endforeach; ?></select></label></p>
+			<?php self::render_content_reference_custom_title_fields( $prefix, $reference['custom_title'] ?? '' ); ?>
+			<?php self::render_content_reference_override_tabs( $prefix, $reference['override_translations'] ?? array() ); ?>
 			<p class="description"><?php echo esc_html__( 'Referenced block content stays reusable. Local content remains saved and is used again if this reference is disabled.', 'taka-platform' ); ?></p>
 		</div>
+		<?php
+	}
+
+	private static function render_content_reference_custom_title_fields( $prefix, $value ) {
+		$default_lang = TAKA_Platform_Data::default_content_section_language();
+		echo '<details class="taka-content-reference-overrides"><summary><strong>' . esc_html__( 'Custom title', 'taka-platform' ) . '</strong></summary>';
+		foreach ( self::content_section_language_labels() as $lang => $label ) {
+			$field_value = is_array( $value ) ? ( $value[ $lang ] ?? '' ) : ( $default_lang === $lang ? (string) $value : '' );
+			echo '<p><label><span style="display:inline-block;min-width:9rem;">' . esc_html( $label ) . '</span><br><input class="regular-text" type="text" name="' . esc_attr( $prefix . '[custom_title][' . $lang . ']' ) . '" value="' . esc_attr( (string) $field_value ) . '"></label></p>';
+		}
+		echo '</details>';
+	}
+
+	private static function render_content_reference_override_tabs( $prefix, $translations ) {
+		$translations = TAKA_Platform_Data::normalize_content_reference( array( 'override_translations' => $translations ) )['override_translations'];
+		$fields = TAKA_Platform_Data::content_block_text_fields();
+		$tab_group = sanitize_key( str_replace( array( '[', ']' ), '_', $prefix ) ) . '_overrides';
+		?>
+		<details class="taka-content-reference-overrides">
+			<summary><strong><?php echo esc_html__( 'Local text overrides', 'taka-platform' ); ?></strong></summary>
+			<p class="description"><?php echo esc_html__( 'Leave fields empty to use the reusable block text. Filled values override only this reference.', 'taka-platform' ); ?></p>
+			<div class="taka-content-section-translations" data-taka-content-section-translations data-default-lang="<?php echo esc_attr( TAKA_Platform_Data::default_content_section_language() ); ?>">
+				<div class="taka-content-section-tabs">
+					<?php foreach ( self::content_section_language_labels() as $lang => $label ) : ?>
+						<input class="taka-content-section-tabs__radio" type="radio" name="<?php echo esc_attr( $tab_group ); ?>" id="<?php echo esc_attr( $tab_group . '_' . $lang ); ?>" <?php checked( $lang, TAKA_Platform_Data::default_content_section_language() ); ?>>
+						<label class="taka-content-section-tabs__tab" for="<?php echo esc_attr( $tab_group . '_' . $lang ); ?>"><?php echo esc_html( $label ); ?></label>
+						<div class="taka-content-section-tabs__panel">
+							<?php foreach ( $fields as $field => $field_label ) : ?>
+								<?php $name = $prefix . '[override_translations][' . $lang . '][' . $field . ']'; ?>
+								<?php $value = $translations[ $lang ][ $field ] ?? ''; ?>
+								<p class="taka-content-section-tabs__field">
+									<label><strong><?php echo esc_html( $field_label ); ?></strong><br>
+										<?php if ( 'body' === $field ) : ?>
+											<textarea class="large-text" rows="4" name="<?php echo esc_attr( $name ); ?>"><?php echo esc_textarea( (string) $value ); ?></textarea>
+										<?php else : ?>
+											<input class="regular-text" type="<?php echo esc_attr( 'button_url' === $field ? 'url' : 'text' ); ?>" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( (string) $value ); ?>">
+										<?php endif; ?>
+									</label>
+								</p>
+							<?php endforeach; ?>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			</div>
+		</details>
 		<?php
 	}
 
