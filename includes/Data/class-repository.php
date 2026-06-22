@@ -619,6 +619,69 @@ class TAKA_Platform_Data {
 		);
 	}
 
+	/** Event source diagnostics for admin troubleshooting. */
+	public static function event_diagnostics( $lang = null ) {
+		$lang = $lang ?: taka_tour_current_language();
+		$config = self::load_config();
+		$config_events = self::normalize_config_events( $config['events'] ?? array() );
+		$wp_events = self::load_events_from_wp( 'any' );
+		$final_events = self::events_for_language( $lang );
+		$rows = array();
+
+		foreach ( $config_events as $event ) {
+			$key = self::diagnostic_event_key( $event );
+			$rows[ $key ]['config'] = $event;
+		}
+		foreach ( $wp_events as $event ) {
+			$key = self::diagnostic_event_key( $event );
+			$rows[ $key ]['database'] = $event;
+		}
+		foreach ( $final_events as $event ) {
+			$key = self::diagnostic_event_key( $event );
+			$rows[ $key ]['final'] = $event;
+		}
+
+		$out = array();
+		foreach ( $rows as $key => $sources ) {
+			$final = $sources['final'] ?? array();
+			$database = $sources['database'] ?? array();
+			$config_event = $sources['config'] ?? array();
+			$source = (string) ( $final['data_source'] ?? ( ! empty( $database ) ? 'database_not_public' : 'config_fallback' ) );
+			$event = ! empty( $final ) ? $final : ( ! empty( $database ) ? $database : $config_event );
+			$out[] = array(
+				'key' => $key,
+				'title' => (string) ( $event['title'] ?? '' ),
+				'data_source' => $source,
+				'config_id' => (string) ( $event['config_id'] ?? ( $config_event['id'] ?? '' ) ),
+				'wp_post_id' => (string) ( $event['wp_post_id'] ?? ( $database['wp_post_id'] ?? '' ) ),
+				'wp_post_status' => (string) ( $event['wp_post_status'] ?? ( $database['wp_post_status'] ?? '' ) ),
+				'ticket_provider' => (string) ( $event['ticket_provider'] ?? '' ),
+				'ticket_status' => (string) ( $event['ticket_status'] ?? '' ),
+				'ticket_shop_url' => (string) ( $event['ticket_shop_url'] ?? '' ),
+				'pretix_event_url' => self::pretix_event_url( $event ),
+				'ticket_status_label' => self::ticket_status_label( $event, $lang ),
+				'config_ticket_provider' => (string) ( $config_event['ticket_provider'] ?? '' ),
+				'config_ticket_status' => (string) ( $config_event['ticket_status'] ?? '' ),
+				'config_ticket_shop_url' => (string) ( $config_event['ticket_shop_url'] ?? '' ),
+				'database_ticket_provider' => (string) ( $database['ticket_provider'] ?? '' ),
+				'database_ticket_status' => (string) ( $database['ticket_status'] ?? '' ),
+				'database_ticket_shop_url' => (string) ( $database['ticket_shop_url'] ?? '' ),
+			);
+		}
+
+		usort( $out, static function ( $a, $b ) { return strcmp( (string) ( $a['title'] ?? '' ), (string) ( $b['title'] ?? '' ) ); } );
+		return $out;
+	}
+
+	private static function diagnostic_event_key( $event ) {
+		foreach ( array( 'config_id', 'id', 'slug', 'title' ) as $field ) {
+			if ( '' !== trim( (string) ( $event[ $field ] ?? '' ) ) ) {
+				return sanitize_key( (string) $event[ $field ] );
+			}
+		}
+		return md5( wp_json_encode( $event ) );
+	}
+
 	/** Count posts safely. */
 	private static function count_posts( $post_type, $status = 'publish' ) {
 		if ( ! self::can_use_wp_posts() ) { return 0; }
@@ -794,10 +857,10 @@ class TAKA_Platform_Data {
 		return $items;
 	}
 
-	/** Load published events from WordPress in config-compatible format. */
-	private static function load_events_from_wp() {
+	/** Load events from WordPress in config-compatible format. */
+	private static function load_events_from_wp( $post_status = 'publish' ) {
 		if ( ! self::can_use_wp_posts() ) { return array(); }
-		$posts = get_posts( array( 'post_type' => self::EVENT_POST_TYPE, 'post_status' => 'publish', 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
+		$posts = get_posts( array( 'post_type' => self::EVENT_POST_TYPE, 'post_status' => $post_status, 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
 		$events = array();
 		foreach ( $posts as $post ) {
 			$image_id = absint( get_post_meta( $post->ID, '_taka_image_id', true ) );
@@ -809,6 +872,9 @@ class TAKA_Platform_Data {
 			$events[] = array(
 				'id' => (string) $post->ID,
 				'config_id' => (string) get_post_meta( $post->ID, '_taka_config_id', true ),
+				'data_source' => 'database',
+				'wp_post_id' => (string) $post->ID,
+				'wp_post_status' => $post->post_status,
 				'slug' => $post->post_name,
 				'source_language' => (string) get_post_meta( $post->ID, '_taka_source_language', true ),
 				'text_translations' => self::normalize_object_text_translations( get_post_meta( $post->ID, '_taka_text_translations', true ), self::translatable_text_fields( 'event' ) ),
@@ -888,7 +954,7 @@ class TAKA_Platform_Data {
 
 	/** Normalize config events. */
 	private static function normalize_config_events( $events ) {
-		return array_map( static function ( $event ) { $event['source_language'] = $event['source_language'] ?? self::platform_fallback_language(); $event['text_translations'] = self::normalize_object_text_translations( $event['text_translations'] ?? array(), self::translatable_text_fields( 'event' ) ); $event['long_description'] = $event['long_description'] ?? ''; $event['ticket_card_text'] = $event['ticket_card_text'] ?? ''; $event['accessibility'] = $event['accessibility'] ?? ''; $event['route_map_x'] = $event['route_map_x'] ?? ( $event['map_x'] ?? null ); $event['route_map_y'] = $event['route_map_y'] ?? ( $event['map_y'] ?? null ); $event['route_map_label'] = $event['route_map_label'] ?? ( $event['map_label'] ?? '' ); $event['route_order'] = $event['route_order'] ?? null; $event['image_id'] = $event['image_id'] ?? 0; $event['image_url'] = $event['image_url'] ?? ( $event['image'] ?? '' ); $event['group_image_id'] = $event['group_image_id'] ?? ( $event['past_group_photo_id'] ?? 0 ); $event['group_image_url'] = $event['group_image_url'] ?? ( $event['group_image'] ?? ( $event['past_group_photo_url'] ?? '' ) ); $event['past_group_photo_id'] = $event['past_group_photo_id'] ?? $event['group_image_id']; $event['past_group_photo_url'] = $event['past_group_photo_url'] ?? $event['group_image_url']; $event['gallery_image_ids'] = $event['gallery_image_ids'] ?? array(); $event['gallery_urls'] = $event['gallery'] ?? array(); $event['booking_information'] = self::normalize_booking_information( $event['booking_information'] ?? array(), false ); $event['content_references'] = is_array( $event['content_references'] ?? null ) ? $event['content_references'] : array(); $event['content_references']['event_description'] = self::normalize_content_reference( $event['content_references']['event_description'] ?? array(), 'event_description' ); $event['program_items'] = self::normalize_program_items( $event['program_items'] ?? ( $event['program'] ?? array() ), $event ); $event['organizers'] = self::normalize_event_organizer_relationships( $event['organizers'] ?? array(), $event['organizer'] ?? '' ); return $event; }, $events );
+		return array_map( static function ( $event ) { $event['data_source'] = 'config_fallback'; $event['wp_post_id'] = ''; $event['source_language'] = $event['source_language'] ?? self::platform_fallback_language(); $event['text_translations'] = self::normalize_object_text_translations( $event['text_translations'] ?? array(), self::translatable_text_fields( 'event' ) ); $event['long_description'] = $event['long_description'] ?? ''; $event['ticket_card_text'] = $event['ticket_card_text'] ?? ''; $event['accessibility'] = $event['accessibility'] ?? ''; $event['route_map_x'] = $event['route_map_x'] ?? ( $event['map_x'] ?? null ); $event['route_map_y'] = $event['route_map_y'] ?? ( $event['map_y'] ?? null ); $event['route_map_label'] = $event['route_map_label'] ?? ( $event['map_label'] ?? '' ); $event['route_order'] = $event['route_order'] ?? null; $event['image_id'] = $event['image_id'] ?? 0; $event['image_url'] = $event['image_url'] ?? ( $event['image'] ?? '' ); $event['group_image_id'] = $event['group_image_id'] ?? ( $event['past_group_photo_id'] ?? 0 ); $event['group_image_url'] = $event['group_image_url'] ?? ( $event['group_image'] ?? ( $event['past_group_photo_url'] ?? '' ) ); $event['past_group_photo_id'] = $event['past_group_photo_id'] ?? $event['group_image_id']; $event['past_group_photo_url'] = $event['past_group_photo_url'] ?? $event['group_image_url']; $event['gallery_image_ids'] = $event['gallery_image_ids'] ?? array(); $event['gallery_urls'] = $event['gallery'] ?? array(); $event['booking_information'] = self::normalize_booking_information( $event['booking_information'] ?? array(), false ); $event['content_references'] = is_array( $event['content_references'] ?? null ) ? $event['content_references'] : array(); $event['content_references']['event_description'] = self::normalize_content_reference( $event['content_references']['event_description'] ?? array(), 'event_description' ); $event['program_items'] = self::normalize_program_items( $event['program_items'] ?? ( $event['program'] ?? array() ), $event ); $event['organizers'] = self::normalize_event_organizer_relationships( $event['organizers'] ?? array(), $event['organizer'] ?? '' ); return $event; }, $events );
 	}
 
 	/** Global media labels. */

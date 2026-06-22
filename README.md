@@ -47,7 +47,7 @@ WordPress is the primary live data source. If at least one `taka_event` post exi
 
 `config/tour-events.php` remains seed, demo, fallback, import/export and backup data.
 
-Use **TAKA Platform -> Import / Export** to seed database posts from the bundled config. Use **TAKA Platform -> Status** to verify required CPT registration and whether the frontend is using the database or config fallback.
+Use **TAKA Platform -> Import / Export** to seed database posts from the bundled config. Use **TAKA Platform -> Status** to verify required CPT registration and whether the frontend is using the database or config fallback. Use **TAKA Platform -> Diagnostics** to inspect final per-event ticket values. See [docs/event-data-lifecycle.md](docs/event-data-lifecycle.md).
 
 ## Admin CMS
 
@@ -61,6 +61,7 @@ The WordPress admin menu is branded **TAKA Platform** and includes:
 - Media
 - Content Sections
 - Status
+- Diagnostics
 - Import / Export
 - Settings
 - Translations

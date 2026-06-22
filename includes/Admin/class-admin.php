@@ -176,6 +176,7 @@ class TAKA_Platform_Admin {
 		add_submenu_page( 'taka-platform', __( 'Content Sections', 'taka-platform' ), __( 'Content Sections', 'taka-platform' ), 'manage_options', 'taka-platform-content-sections', array( __CLASS__, 'render_content_sections' ) );
 		add_submenu_page( 'taka-platform', __( 'Import / Export', 'taka-platform' ), __( 'Import / Export', 'taka-platform' ), 'manage_options', 'taka-tour-import-export', array( __CLASS__, 'render_import_export' ) );
 		add_submenu_page( 'taka-platform', __( 'Status', 'taka-platform' ), __( 'Status', 'taka-platform' ), 'manage_options', 'taka-platform-status', array( __CLASS__, 'render_status' ) );
+		add_submenu_page( 'taka-platform', __( 'Diagnostics', 'taka-platform' ), __( 'Diagnostics', 'taka-platform' ), 'manage_options', 'taka-platform-diagnostics', array( __CLASS__, 'render_diagnostics' ) );
 		add_submenu_page( 'taka-platform', __( 'Settings', 'taka-platform' ), __( 'Settings', 'taka-platform' ), 'manage_options', 'taka-tour-settings', array( __CLASS__, 'render_settings' ) );
 		add_submenu_page( 'taka-platform', __( 'Translations', 'taka-platform' ), __( 'Translations', 'taka-platform' ), 'manage_options', 'taka-platform-translations', array( __CLASS__, 'render_translations' ) );
 		add_submenu_page( 'taka-platform', __( 'Integrations / Events Manager', 'taka-platform' ), __( 'Events Manager', 'taka-platform' ), 'manage_options', 'taka-platform-events-manager', array( __CLASS__, 'render_events_manager_integration' ) );
@@ -307,6 +308,52 @@ class TAKA_Platform_Admin {
 				</tbody>
 			</table>
 			<p><a class="button button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=taka-tour-import-export' ) ); ?>"><?php echo esc_html__( 'Import config seed data', 'taka-platform' ); ?></a></p>
+		</div>
+		<?php
+	}
+
+	/** Render per-event source-of-truth diagnostics. */
+	public static function render_diagnostics() {
+		if ( ! current_user_can( 'manage_options' ) ) { return; }
+		$lang = sanitize_key( $_GET['lang'] ?? taka_tour_current_language() ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! in_array( $lang, TAKA_Platform_I18n::instance()->get_all_languages(), true ) ) { $lang = TAKA_Platform_Data::platform_fallback_language(); }
+		$status = TAKA_Platform_Data::data_source_status();
+		$rows = TAKA_Platform_Data::event_diagnostics( $lang );
+		?>
+		<div class="wrap">
+			<h1><?php echo esc_html__( 'TAKA Platform Diagnostics', 'taka-platform' ); ?></h1>
+			<p><?php echo esc_html__( 'This page shows the event source of truth and final ticket values used by the frontend.', 'taka-platform' ); ?></p>
+			<p><strong><?php echo esc_html__( 'Active frontend data source', 'taka-platform' ); ?>:</strong> <?php echo esc_html( ! empty( $status['using_database'] ) ? __( 'Database', 'taka-platform' ) : __( 'Config fallback', 'taka-platform' ) ); ?></p>
+			<table class="widefat striped">
+				<thead>
+					<tr>
+						<th><?php echo esc_html__( 'Event', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Data source', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Config ID', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'WP post ID', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Ticket provider', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Ticket status', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Ticket URL', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Pretix URL', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Final label', 'taka-platform' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $rows as $row ) : ?>
+						<tr>
+							<td><strong><?php echo esc_html( $row['title'] ?? '' ); ?></strong></td>
+							<td><?php echo esc_html( $row['data_source'] ?? '' ); ?></td>
+							<td><code><?php echo esc_html( $row['config_id'] ?? '' ); ?></code></td>
+							<td><?php echo esc_html( trim( (string) ( $row['wp_post_id'] ?? '' ) . ' ' . ( ! empty( $row['wp_post_status'] ) ? '(' . $row['wp_post_status'] . ')' : '' ) ) ); ?></td>
+							<td><?php echo esc_html( $row['ticket_provider'] ?? '' ); ?></td>
+							<td><?php echo esc_html( $row['ticket_status'] ?? '' ); ?></td>
+							<td><?php echo '' !== (string) ( $row['ticket_shop_url'] ?? '' ) ? '<a href="' . esc_url( $row['ticket_shop_url'] ) . '">' . esc_html( $row['ticket_shop_url'] ) . '</a>' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
+							<td><?php echo '' !== (string) ( $row['pretix_event_url'] ?? '' ) ? '<a href="' . esc_url( $row['pretix_event_url'] ) . '">' . esc_html( $row['pretix_event_url'] ) . '</a>' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
+							<td><?php echo esc_html( $row['ticket_status_label'] ?? '' ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
 		</div>
 		<?php
 	}
