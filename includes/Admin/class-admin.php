@@ -331,11 +331,13 @@ class TAKA_Platform_Admin {
 						<th><?php echo esc_html__( 'Data source', 'taka-platform' ); ?></th>
 						<th><?php echo esc_html__( 'Config ID', 'taka-platform' ); ?></th>
 						<th><?php echo esc_html__( 'WP post ID', 'taka-platform' ); ?></th>
-						<th><?php echo esc_html__( 'Ticket provider', 'taka-platform' ); ?></th>
-						<th><?php echo esc_html__( 'Ticket status', 'taka-platform' ); ?></th>
-						<th><?php echo esc_html__( 'Ticket URL', 'taka-platform' ); ?></th>
-						<th><?php echo esc_html__( 'Pretix URL', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Final ticket provider', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Final ticket status', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Final ticket URL', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Final Pretix URL', 'taka-platform' ); ?></th>
 						<th><?php echo esc_html__( 'Final label', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Database ticket', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Config ticket', 'taka-platform' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -350,6 +352,8 @@ class TAKA_Platform_Admin {
 							<td><?php echo '' !== (string) ( $row['ticket_shop_url'] ?? '' ) ? '<a href="' . esc_url( $row['ticket_shop_url'] ) . '">' . esc_html( $row['ticket_shop_url'] ) . '</a>' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
 							<td><?php echo '' !== (string) ( $row['pretix_event_url'] ?? '' ) ? '<a href="' . esc_url( $row['pretix_event_url'] ) . '">' . esc_html( $row['pretix_event_url'] ) . '</a>' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
 							<td><?php echo esc_html( $row['ticket_status_label'] ?? '' ); ?></td>
+							<td><code><?php echo esc_html( trim( (string) ( $row['database_ticket_provider'] ?? '' ) . ' / ' . (string) ( $row['database_ticket_status'] ?? '' ) . ' / ' . (string) ( $row['database_ticket_shop_url'] ?? '' ) ) ); ?></code></td>
+							<td><code><?php echo esc_html( trim( (string) ( $row['config_ticket_provider'] ?? '' ) . ' / ' . (string) ( $row['config_ticket_status'] ?? '' ) . ' / ' . (string) ( $row['config_ticket_shop_url'] ?? '' ) ) ); ?></code></td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>
@@ -1342,15 +1346,32 @@ class TAKA_Platform_Admin {
 		if ( $dry_run ) { $summary[ $existing ? 'updated' : 'created' ]++; return $existing; }
 		$post_data = array( 'post_type' => $post_type, 'post_title' => sanitize_text_field( $title ), 'post_content' => wp_kses_post( $content ), 'post_status' => 'publish' );
 		if ( '' !== $slug ) { $post_data['post_name'] = sanitize_title( $slug ); }
-		if ( $existing ) { $post_data['ID'] = $existing; $post_id = wp_update_post( $post_data, true ); $summary['updated']++; } else { $post_id = wp_insert_post( $post_data, true ); $summary['created']++; }
+		if ( $existing ) {
+			if ( 'overwrite' === $mode ) {
+				$post_data['ID'] = $existing;
+				$post_id = wp_update_post( $post_data, true );
+			} else {
+				$post_id = $existing;
+			}
+			$summary['updated']++;
+		} else {
+			$post_id = wp_insert_post( $post_data, true );
+			$summary['created']++;
+		}
 		if ( is_wp_error( $post_id ) ) { $summary['skipped']++; return 0; }
 		update_post_meta( $post_id, '_taka_config_id', sanitize_text_field( $config_id ) );
 		foreach ( $meta as $key => $value ) {
 			$is_media_id = in_array( $key, array( '_taka_logo_id', '_taka_image_id', '_taka_group_image_id', '_taka_parking_image_id', '_taka_gallery_image_ids' ), true );
+			if ( $existing && 'overwrite' !== $mode && '' !== self::meta_to_string( get_post_meta( $post_id, $key, true ) ) ) { continue; }
 			if ( $existing && 'overwrite' !== $mode && $is_media_id && '' !== (string) get_post_meta( $post_id, $key, true ) ) { continue; }
 			update_post_meta( $post_id, $key, $value );
 		}
 		return (int) $post_id;
+	}
+
+	private static function meta_to_string( $value ) {
+		if ( is_array( $value ) ) { return empty( $value ) ? '' : wp_json_encode( $value ); }
+		return trim( (string) $value );
 	}
 
 

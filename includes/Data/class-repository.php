@@ -685,8 +685,7 @@ class TAKA_Platform_Data {
 	/** Count posts safely. */
 	private static function count_posts( $post_type, $status = 'publish' ) {
 		if ( ! self::can_use_wp_posts() ) { return 0; }
-		$posts = get_posts( array( 'post_type' => $post_type, 'post_status' => $status, 'posts_per_page' => -1, 'fields' => 'ids' ) );
-		return is_array( $posts ) ? count( $posts ) : 0;
+		return count( self::query_post_ids( $post_type, $status ) );
 	}
 
 	/** Get all organizers, WordPress first with config fallback. */
@@ -727,7 +726,7 @@ class TAKA_Platform_Data {
 	/** Get one event by ID or slug. */
 	public static function get_event( $id ) {
 		foreach ( self::get_events() as $event ) {
-			if ( (string) $id === (string) ( $event['id'] ?? '' ) || (string) $id === (string) ( $event['slug'] ?? '' ) ) { return $event; }
+			if ( in_array( (string) $id, array( (string) ( $event['id'] ?? '' ), (string) ( $event['config_id'] ?? '' ), (string) ( $event['slug'] ?? '' ), (string) ( $event['wp_post_id'] ?? '' ) ), true ) ) { return $event; }
 		}
 		return null;
 	}
@@ -860,9 +859,11 @@ class TAKA_Platform_Data {
 	/** Load events from WordPress in config-compatible format. */
 	private static function load_events_from_wp( $post_status = 'publish' ) {
 		if ( ! self::can_use_wp_posts() ) { return array(); }
-		$posts = get_posts( array( 'post_type' => self::EVENT_POST_TYPE, 'post_status' => $post_status, 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
+		$post_ids = self::query_post_ids( self::EVENT_POST_TYPE, $post_status );
+		$posts = array_filter( array_map( 'get_post', $post_ids ) );
 		$events = array();
 		foreach ( $posts as $post ) {
+			$config_id = (string) get_post_meta( $post->ID, '_taka_config_id', true );
 			$image_id = absint( get_post_meta( $post->ID, '_taka_image_id', true ) );
 			$venue_id = (string) absint( get_post_meta( $post->ID, '_taka_venue_id', true ) );
 			$additional_venues = array_map( 'strval', self::csv_to_ints( get_post_meta( $post->ID, '_taka_venue_ids', true ) ) );
@@ -870,8 +871,8 @@ class TAKA_Platform_Data {
 			$legacy_organizer_id = (string) absint( get_post_meta( $post->ID, '_taka_organizer_id', true ) );
 			$organizer_relationships = self::normalize_event_organizer_relationships( get_post_meta( $post->ID, '_taka_event_organizers', true ), $legacy_organizer_id );
 			$events[] = array(
-				'id' => (string) $post->ID,
-				'config_id' => (string) get_post_meta( $post->ID, '_taka_config_id', true ),
+				'id' => self::stable_event_id( $post, $config_id ),
+				'config_id' => $config_id,
 				'data_source' => 'database',
 				'wp_post_id' => (string) $post->ID,
 				'wp_post_status' => $post->post_status,
@@ -936,6 +937,33 @@ class TAKA_Platform_Data {
 			);
 		}
 		return $events;
+	}
+
+	/** Query post IDs without letting missing CPT registration hide existing records. */
+	private static function query_post_ids( $post_type, $post_status = 'publish' ) {
+		$args = array( 'post_type' => $post_type, 'post_status' => $post_status, 'posts_per_page' => -1, 'fields' => 'ids', 'orderby' => 'title', 'order' => 'ASC' );
+		$ids = get_posts( $args );
+		if ( is_array( $ids ) && ! empty( $ids ) ) { return array_map( 'absint', $ids ); }
+		if ( ! isset( $GLOBALS['wpdb'] ) ) { return array(); }
+
+		global $wpdb;
+		$statuses = 'any' === $post_status ? array( 'publish', 'future', 'draft', 'pending', 'private' ) : (array) $post_status;
+		$statuses = array_values( array_filter( array_map( 'sanitize_key', $statuses ) ) );
+		if ( empty( $statuses ) ) { return array(); }
+
+		$status_placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
+		$query = $wpdb->prepare(
+			"SELECT ID FROM {$wpdb->posts} WHERE post_type = %s AND post_status IN ($status_placeholders) ORDER BY post_title ASC",
+			array_merge( array( $post_type ), $statuses )
+		);
+		return array_map( 'absint', $wpdb->get_col( $query ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+	}
+
+	/** Keep the public event ID stable while exposing the WordPress post ID separately. */
+	private static function stable_event_id( $post, $config_id ) {
+		if ( '' !== trim( (string) $config_id ) ) { return (string) $config_id; }
+		if ( '' !== trim( (string) ( $post->post_name ?? '' ) ) ) { return (string) $post->post_name; }
+		return (string) ( $post->ID ?? '' );
 	}
 
 	/** Normalize config organizers. */
@@ -1658,6 +1686,7 @@ class TAKA_Platform_Data {
 			$event['venue_name'] = is_array( $venue ) ? ( $venue['name'] ?? '' ) : '';
 			$event['address'] = is_array( $venue ) ? self::format_address( $venue['address'] ?? array() ) : '';
 			$event['parking_display'] = $event['parking'] ?: ( is_array( $venue ) ? ( $venue['parking'] ?? '' ) : '' );
+			$event['pretix_event_url'] = self::pretix_event_url( $event );
 			$event['ticket_status_label'] = self::ticket_status_label( $event, $lang );
 			$event['ticket_tab_label'] = taka_platform_get_translated_value( $event['ticket_tab_label'] ?? '', $lang, 'en' ) ?: ( $event['title'] ?? ( $event['city'] ?? '' ) );
 			$event['organizer_full'] = is_array( $organizer ) ? $organizer : null;
@@ -1674,7 +1703,7 @@ class TAKA_Platform_Data {
 
 	/** Whether this normalized event came from the Event CPT instead of bundled config. */
 	private static function is_wordpress_event_record( $event ) {
-		return is_numeric( (string) ( $event['id'] ?? '' ) );
+		return 'database' === (string) ( $event['data_source'] ?? '' ) || '' !== (string) ( $event['wp_post_id'] ?? '' );
 	}
 
 	/** Convert a two-letter country code into its Unicode regional indicator flag. */
