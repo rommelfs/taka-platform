@@ -584,10 +584,12 @@ class TAKA_Platform_Data {
 	public static function normalize_content_reference( $reference, $context = '' ) {
 		$reference = is_array( $reference ) ? $reference : array();
 		$context = sanitize_key( $reference['context'] ?? $context );
+		$block_id = sanitize_text_field( (string) ( $reference['block_id'] ?? '' ) );
+		$enabled = array_key_exists( 'enabled', $reference ) ? ( ! empty( $reference['enabled'] ) ? '1' : '0' ) : ( '' !== $block_id ? '1' : '0' );
 		return array(
-			'block_id' => sanitize_text_field( (string) ( $reference['block_id'] ?? '' ) ),
+			'block_id' => $block_id,
 			'context' => $context,
-			'enabled' => array_key_exists( 'enabled', $reference ) ? ( ! empty( $reference['enabled'] ) ? '1' : '0' ) : '0',
+			'enabled' => $enabled,
 			'sort_order' => (int) ( $reference['sort_order'] ?? 0 ),
 			'display_style' => array_key_exists( sanitize_key( $reference['display_style'] ?? 'default' ), self::content_reference_display_styles() ) ? sanitize_key( $reference['display_style'] ?? 'default' ) : 'default',
 			'custom_title' => self::normalize_dynamic_text_value( $reference['custom_title'] ?? '' ),
@@ -646,6 +648,64 @@ class TAKA_Platform_Data {
 		array_unshift( $classes, 'taka-content-reference' );
 		$section['css_class'] = implode( ' ', array_unique( $classes ) );
 		return taka_tour_render_template( 'partials/content-section.php', array( 'section' => $section ) );
+	}
+
+	/** Homepage section descriptors in render order. */
+	public static function get_homepage_sections() {
+		$ticket_settings = self::get_ticket_section_settings();
+		$sections = array(
+			array( 'key' => 'hero', 'type' => 'template', 'template' => 'partials/hero.php', 'sort_order' => 0, 'visible' => '1' ),
+			array( 'key' => 'tickets', 'type' => 'template', 'template' => 'tickets.php', 'sort_order' => 20, 'visible' => '1' ),
+			array( 'key' => 'image_grid', 'type' => 'template', 'template' => 'partials/image-grid.php', 'sort_order' => 30, 'visible' => '1' ),
+		);
+		if ( ! empty( $ticket_settings['show_seminar_overview'] ) && '1' === (string) $ticket_settings['show_seminar_overview'] ) {
+			$sections[] = array( 'key' => 'tour_schedule', 'type' => 'template', 'template' => 'tour-schedule.php', 'sort_order' => 10, 'visible' => '1' );
+		}
+		foreach ( self::get_content_sections() as $key => $section ) {
+			$section['key'] = sanitize_key( $section['key'] ?? $key );
+			$section['type'] = 'content_section';
+			$section['template'] = 'partials/content-section.php';
+			$section['content_sort_order'] = (int) ( $section['sort_order'] ?? 0 );
+			$section['sort_order'] = 100 + $section['content_sort_order'];
+			$sections[] = $section;
+		}
+		$sections[] = array( 'key' => 'footer', 'type' => 'footer', 'sort_order' => 10000, 'visible' => '1' );
+		$sections = apply_filters( 'taka_platform_homepage_sections', $sections, $ticket_settings );
+		$sections = array_values( array_filter( (array) $sections, 'is_array' ) );
+		usort( $sections, static function ( $a, $b ) {
+			$sort = (int) ( $a['sort_order'] ?? 0 ) <=> (int) ( $b['sort_order'] ?? 0 );
+			return 0 !== $sort ? $sort : strcasecmp( (string) ( $a['key'] ?? '' ), (string) ( $b['key'] ?? '' ) );
+		} );
+		return $sections;
+	}
+
+	/** Render one homepage section descriptor through the generic section pipeline. */
+	public static function render_homepage_section( $section, $context = array() ) {
+		$section = is_array( $section ) ? $section : array();
+		if ( '0' === (string) ( $section['visible'] ?? '1' ) ) { return ''; }
+		$type = sanitize_key( $section['type'] ?? 'content_section' );
+		if ( 'template' === $type ) {
+			$template = (string) ( $section['template'] ?? '' );
+			$allowed = array( 'partials/hero.php', 'tour-schedule.php', 'tickets.php', 'partials/image-grid.php' );
+			if ( ! in_array( $template, $allowed, true ) ) {
+				return self::homepage_admin_comment( sprintf( 'Unsupported homepage template "%s".', $template ) );
+			}
+			return taka_tour_render_template( $template, $context );
+		}
+		if ( 'footer' === $type ) {
+			return '<footer class="taka-footer">' . esc_html( taka_tour_translate( 'footer.text', 'TAKA European Tour 2026' ) ) . '</footer>';
+		}
+		if ( 'content_section' !== $type ) {
+			$section['css_class'] = trim( (string) ( $section['css_class'] ?? '' ) . ' taka-content-section--type-' . sanitize_html_class( $type ) );
+		}
+		return taka_tour_render_template( 'partials/content-section.php', array( 'section' => $section ) );
+	}
+
+	private static function homepage_admin_comment( $message ) {
+		if ( function_exists( 'current_user_can' ) && current_user_can( 'manage_options' ) ) {
+			return "\n<!-- TAKA homepage: " . esc_html( $message ) . " -->\n";
+		}
+		return '';
 	}
 
 	/** Usage contexts for admin and translation package context labels. */

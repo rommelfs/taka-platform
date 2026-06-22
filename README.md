@@ -66,7 +66,7 @@ The WordPress admin menu is branded **TAKA Platform** and includes:
 - Settings
 - Translations
 
-The dashboard explains the long form: **TAKA – Ticketing, Attendance, Knowledge & Administration**. Settings expose editable hero copy, hero image/layout controls, overlay strength, readable text-box options, ticket section headings and configurable booking information. Content Sections expose fully configurable homepage editorial blocks with add/delete controls, visibility, sort order, multilingual kicker/title/subtitle/body/button fields, layout/background styles, main/secondary images, galleries, image fit and image focus controls.
+The dashboard explains the long form: **TAKA – Ticketing, Attendance, Knowledge & Administration**. Settings expose editable hero copy, hero image/layout controls, overlay strength, readable text-box options, ticket section headings and configurable booking information. Content Sections expose fully configurable homepage editorial blocks with add/delete controls, visibility, sort order, multilingual kicker/title/subtitle/body/button fields, layout/background styles, main/secondary images, galleries, image fit and image focus controls. Homepage rendering uses a generic section pipeline, so administrator-created Content Section keys render through the shared content-section partial without adding PHP templates.
 
 ## Content Blocks
 

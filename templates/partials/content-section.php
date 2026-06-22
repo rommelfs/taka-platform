@@ -15,11 +15,17 @@ $second  = (string) ( $section['secondary_image'] ?? '' );
 $gallery = is_array( $section['gallery_images'] ?? null ) ? $section['gallery_images'] : array();
 $visible = '0' !== (string) ( $section['visible'] ?? '1' );
 if ( ! $visible ) {
+	if ( function_exists( 'current_user_can' ) && current_user_can( 'manage_options' ) ) {
+		echo "\n<!-- TAKA content section skipped: key=" . esc_html( $key ) . " reason=disabled -->\n";
+	}
 	return;
 }
 $body = (string) ( $section['body'] ?? ( $section['text'] ?? '' ) );
 $has_content = '' !== trim( (string) ( $section['kicker'] ?? '' ) . ( $section['title'] ?? '' ) . ( $section['subtitle'] ?? '' ) . $body . ( $section['button_url'] ?? '' ) . $image . $second . implode( '', $gallery ) );
 if ( ! $has_content ) {
+	if ( function_exists( 'current_user_can' ) && current_user_can( 'manage_options' ) ) {
+		echo "\n<!-- TAKA content section skipped: key=" . esc_html( $key ) . " reason=empty-or-unresolved-reference -->\n";
+	}
 	return;
 }
 $fit = in_array( (string) ( $section['image_fit'] ?? 'contain' ), array( 'cover', 'contain', 'auto' ), true ) ? (string) $section['image_fit'] : 'contain';

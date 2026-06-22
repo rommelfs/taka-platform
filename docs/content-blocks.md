@@ -43,6 +43,10 @@ For homepage sections, a referenced block can replace the visible section text a
 
 Reference-level custom titles and local text overrides are multilingual. Empty override fields fall back to the reusable Content Block values.
 
+Homepage rendering is descriptor-driven through `TAKA_Platform_Data::get_homepage_sections()` and `TAKA_Platform_Data::render_homepage_section()`. Core sections such as hero, tickets and image grid keep their existing templates, while administrator-created Content Sections render through the generic `partials/content-section.php` partial. New Content Section keys do not require PHP template files. A Content Block is not rendered by itself; it appears on the homepage when a Content Section references it.
+
+Content References with a block ID are treated as enabled unless they explicitly store `enabled=0`. This keeps imported or older section data with a selected block from resolving to an empty section.
+
 Fallback behavior follows the existing dynamic-content chain:
 
 1. current selected language
