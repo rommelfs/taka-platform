@@ -1995,14 +1995,12 @@ class TAKA_Platform_Admin {
 		<div class="taka-content-reference-fields" style="border:1px solid #dcdcde;padding:12px;margin:12px 0;background:#fff;">
 			<h3><?php echo esc_html( $label ); ?></h3>
 			<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[context]" value="<?php echo esc_attr( $context ); ?>">
-			<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[enabled]" value="0">
-			<p><label><input type="checkbox" name="<?php echo esc_attr( $prefix ); ?>[enabled]" value="1" <?php checked( '1', (string) ( $reference['enabled'] ?? '0' ) ); ?>> <?php echo esc_html__( 'Use existing content block', 'taka-platform' ); ?></label></p>
 			<p><label><strong><?php echo esc_html__( 'Content block', 'taka-platform' ); ?></strong><br><select class="widefat" name="<?php echo esc_attr( $prefix ); ?>[block_id]"><?php foreach ( self::content_block_choices() as $value => $choice_label ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( (string) ( $reference['block_id'] ?? '' ), (string) $value ); ?>><?php echo esc_html( $choice_label ); ?></option><?php endforeach; ?></select></label></p>
 			<p><label><strong><?php echo esc_html__( 'Sort order', 'taka-platform' ); ?></strong><br><input type="number" name="<?php echo esc_attr( $prefix ); ?>[sort_order]" value="<?php echo esc_attr( (string) ( $reference['sort_order'] ?? 0 ) ); ?>"></label></p>
 			<p><label><strong><?php echo esc_html__( 'Display style', 'taka-platform' ); ?></strong><br><select class="widefat" name="<?php echo esc_attr( $prefix ); ?>[display_style]"><?php foreach ( TAKA_Platform_Data::content_reference_display_styles() as $value => $choice_label ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( (string) ( $reference['display_style'] ?? 'default' ), (string) $value ); ?>><?php echo esc_html( $choice_label ); ?></option><?php endforeach; ?></select></label></p>
 			<?php self::render_content_reference_custom_title_fields( $prefix, $reference['custom_title'] ?? '' ); ?>
 			<?php self::render_content_reference_override_tabs( $prefix, $reference['override_translations'] ?? array() ); ?>
-			<p class="description"><?php echo esc_html__( 'Referenced block content stays reusable. Local content remains saved and is used again if this reference is disabled.', 'taka-platform' ); ?></p>
+			<p class="description"><?php echo esc_html__( 'Select a block to use reusable content. Choose No reusable block to use the saved local content.', 'taka-platform' ); ?></p>
 		</div>
 		<?php
 	}
@@ -2013,14 +2011,12 @@ class TAKA_Platform_Admin {
 		?>
 		<div class="taka-content-reference-fields">
 			<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[context]" value="homepage_section">
-			<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[enabled]" value="0">
-			<p><label><input type="checkbox" name="<?php echo esc_attr( $prefix ); ?>[enabled]" value="1" <?php checked( '1', (string) ( $reference['enabled'] ?? '0' ) ); ?>> <?php echo esc_html__( 'Use existing content block', 'taka-platform' ); ?></label></p>
 			<p><label><strong><?php echo esc_html__( 'Content block', 'taka-platform' ); ?></strong><br><select class="regular-text" name="<?php echo esc_attr( $prefix ); ?>[block_id]"><?php foreach ( self::content_block_choices() as $value => $choice_label ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( (string) ( $reference['block_id'] ?? '' ), (string) $value ); ?>><?php echo esc_html( $choice_label ); ?></option><?php endforeach; ?></select></label></p>
 			<p><label><strong><?php echo esc_html__( 'Sort order', 'taka-platform' ); ?></strong><br><input type="number" name="<?php echo esc_attr( $prefix ); ?>[sort_order]" value="<?php echo esc_attr( (string) ( $reference['sort_order'] ?? 0 ) ); ?>"></label></p>
 			<p><label><strong><?php echo esc_html__( 'Display style', 'taka-platform' ); ?></strong><br><select class="regular-text" name="<?php echo esc_attr( $prefix ); ?>[display_style]"><?php foreach ( TAKA_Platform_Data::content_reference_display_styles() as $value => $choice_label ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( (string) ( $reference['display_style'] ?? 'default' ), (string) $value ); ?>><?php echo esc_html( $choice_label ); ?></option><?php endforeach; ?></select></label></p>
 			<?php self::render_content_reference_custom_title_fields( $prefix, $reference['custom_title'] ?? '' ); ?>
 			<?php self::render_content_reference_override_tabs( $prefix, $reference['override_translations'] ?? array() ); ?>
-			<p class="description"><?php echo esc_html__( 'Referenced block content stays reusable. Local content remains saved and is used again if this reference is disabled.', 'taka-platform' ); ?></p>
+			<p class="description"><?php echo esc_html__( 'Select a block to use reusable content. Choose No reusable block to use the saved local content.', 'taka-platform' ); ?></p>
 		</div>
 		<?php
 	}

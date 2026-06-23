@@ -585,11 +585,10 @@ class TAKA_Platform_Data {
 		$reference = is_array( $reference ) ? $reference : array();
 		$context = sanitize_key( $reference['context'] ?? $context );
 		$block_id = sanitize_text_field( (string) ( $reference['block_id'] ?? '' ) );
-		$enabled = array_key_exists( 'enabled', $reference ) ? ( ! empty( $reference['enabled'] ) ? '1' : '0' ) : ( '' !== $block_id ? '1' : '0' );
 		return array(
 			'block_id' => $block_id,
 			'context' => $context,
-			'enabled' => $enabled,
+			'enabled' => '' !== $block_id ? '1' : '0',
 			'sort_order' => (int) ( $reference['sort_order'] ?? 0 ),
 			'display_style' => array_key_exists( sanitize_key( $reference['display_style'] ?? 'default' ), self::content_reference_display_styles() ) ? sanitize_key( $reference['display_style'] ?? 'default' ) : 'default',
 			'custom_title' => self::normalize_dynamic_text_value( $reference['custom_title'] ?? '' ),
@@ -801,19 +800,22 @@ class TAKA_Platform_Data {
 
 	private static function load_content_blocks_from_wp() {
 		if ( ! self::can_use_wp_posts() ) { return array(); }
-		$posts = get_posts( array( 'post_type' => self::CONTENT_BLOCK_POST_TYPE, 'post_status' => array( 'publish', 'draft' ), 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
+		$posts = get_posts( array( 'post_type' => self::CONTENT_BLOCK_POST_TYPE, 'post_status' => 'any', 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC' ) );
 		$blocks = array();
 		foreach ( $posts as $post ) {
+			$post_status = (string) ( $post->post_status ?? '' );
 			$id = (string) $post->ID;
 			$slug = (string) get_post_meta( $post->ID, '_taka_block_slug', true );
 			if ( '' === $slug ) { $slug = (string) get_post_meta( $post->ID, '_taka_config_id', true ); }
 			if ( '' === $slug ) { $slug = $post->post_name; }
 			$gallery_ids = self::csv_to_ints( get_post_meta( $post->ID, '_taka_gallery_image_ids', true ) );
 			$gallery_urls = self::lines_to_array( get_post_meta( $post->ID, '_taka_gallery_image_urls', true ) );
+			$enabled_meta = (string) get_post_meta( $post->ID, '_taka_enabled', true );
 			$block = array(
 				'id' => $id,
 				'config_id' => $slug,
 				'slug' => $slug,
+				'post_status' => $post_status,
 				'internal_name' => get_the_title( $post ),
 				'type' => sanitize_key( get_post_meta( $post->ID, '_taka_block_type', true ) ?: 'generic' ),
 				'category' => (string) get_post_meta( $post->ID, '_taka_category', true ),
@@ -829,7 +831,7 @@ class TAKA_Platform_Data {
 				'image_url' => (string) get_post_meta( $post->ID, '_taka_image_url', true ),
 				'gallery_image_ids' => $gallery_ids,
 				'gallery_image_urls' => $gallery_urls,
-				'enabled' => 'draft' !== $post->post_status && ( '' === (string) get_post_meta( $post->ID, '_taka_enabled', true ) || '1' === (string) get_post_meta( $post->ID, '_taka_enabled', true ) ) ? '1' : '0',
+				'enabled' => self::content_block_enabled_from_status( $post_status, $enabled_meta ) ? '1' : '0',
 				'notes' => (string) get_post_meta( $post->ID, '_taka_notes', true ),
 				'created_at' => $post->post_date_gmt,
 				'updated_at' => $post->post_modified_gmt,
@@ -838,6 +840,12 @@ class TAKA_Platform_Data {
 			if ( '' !== $slug ) { $blocks[ $slug ] = $block; }
 		}
 		return $blocks;
+	}
+
+	private static function content_block_enabled_from_status( $post_status, $enabled_meta ) {
+		if ( in_array( (string) $post_status, array( 'trash', 'auto-draft' ), true ) ) { return false; }
+		if ( '' !== (string) $enabled_meta ) { return '1' === (string) $enabled_meta; }
+		return 'publish' === (string) $post_status;
 	}
 
 

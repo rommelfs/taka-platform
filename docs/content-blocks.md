@@ -33,11 +33,11 @@ A Content Reference is a lightweight pointer from another object to a Content Bl
 
 In v2.1.0, references are supported for homepage Content Sections and the Event seminar description.
 
-Referenced content is not copied. Updating a Content Block updates every enabled reference automatically. Existing local section and event text remains saved and is used again if the reference is disabled.
+Referenced content is not copied. Updating a Content Block updates every reference automatically. Existing local section and event text remains saved and is used again if the reference is cleared or the referenced block is inactive.
 
 ## Rendering
 
-Frontend rendering resolves content through `TAKA_Platform_Data::resolve_content_source()`. That method is the shared source-of-truth decision point for inline content versus referenced Content Blocks. It first tries an enabled, active referenced block and falls back to the inline object fields only when the reference cannot be resolved. Callers may require a specific block field; the event description uses this to require a non-empty block body before replacing the inline description.
+Frontend rendering resolves content through `TAKA_Platform_Data::resolve_content_source()`. That method is the shared source-of-truth decision point for inline content versus referenced Content Blocks. It first tries an active referenced block and falls back to the inline object fields only when the reference cannot be resolved. Callers may require a specific block field; the event description uses this to require a non-empty block body before replacing the inline description.
 
 `TAKA_Platform_Data::resolve_content_reference()` remains the lower-level helper that turns one reference into translated block fields. `TAKA_Platform_Data::render_content_reference()` is available for places that need to render a reference as a standalone content section, and it also goes through the shared content-source resolver.
 
@@ -47,7 +47,7 @@ Reference-level custom titles and local text overrides are multilingual. Empty o
 
 Homepage rendering is descriptor-driven through `TAKA_Platform_Data::get_homepage_sections()` and `TAKA_Platform_Data::render_homepage_section()`. Core sections such as hero, tickets and image grid keep their existing templates, while administrator-created Content Sections render through the generic `partials/content-section.php` partial. New Content Section keys do not require PHP template files. A Content Block is not rendered by itself; it appears on the homepage when a Content Section references it.
 
-Content References with a block ID are treated as enabled unless they explicitly store `enabled=0`. This keeps imported or older section data with a selected block from resolving to an empty section.
+Content References with a block ID are active references. Clear the selected block to use the inline section or event content again.
 
 Fallback behavior follows the existing dynamic-content chain:
 
