@@ -564,10 +564,22 @@ class TAKA_Platform_Data {
 
 	/** Get one content block by post ID or slug/config ID. */
 	public static function get_content_block( $block_id, $resolve_translations = false, $lang = null ) {
-		$block_id = (string) $block_id;
+		$block_id = trim( (string) $block_id );
 		if ( '' === $block_id || '0' === $block_id ) { return null; }
 		$blocks = self::get_content_blocks( $resolve_translations, $lang );
-		return $blocks[ $block_id ] ?? null;
+		if ( isset( $blocks[ $block_id ] ) ) { return $blocks[ $block_id ]; }
+		$normalized = sanitize_title( $block_id );
+		if ( '' !== $normalized && isset( $blocks[ $normalized ] ) ) { return $blocks[ $normalized ]; }
+		foreach ( $blocks as $block ) {
+			if ( ! is_array( $block ) ) { continue; }
+			foreach ( array( 'id', 'slug', 'config_id', 'post_name' ) as $field ) {
+				$value = trim( (string) ( $block[ $field ] ?? '' ) );
+				if ( '' !== $value && ( $block_id === $value || $normalized === sanitize_title( $value ) ) ) {
+					return $block;
+				}
+			}
+		}
+		return null;
 	}
 
 	/** Resolve one content block for frontend display. */
@@ -584,7 +596,13 @@ class TAKA_Platform_Data {
 	public static function normalize_content_reference( $reference, $context = '' ) {
 		$reference = is_array( $reference ) ? $reference : array();
 		$context = sanitize_key( $reference['context'] ?? $context );
-		$block_id = sanitize_text_field( (string) ( $reference['block_id'] ?? '' ) );
+		$block_id = '';
+		foreach ( array( 'block_id', 'content_block_id', 'content_block_slug', 'block_slug', 'content_block', 'block', 'slug', 'id' ) as $field ) {
+			if ( isset( $reference[ $field ] ) && ! is_array( $reference[ $field ] ) && '' !== trim( (string) $reference[ $field ] ) ) {
+				$block_id = sanitize_text_field( (string) $reference[ $field ] );
+				break;
+			}
+		}
 		return array(
 			'block_id' => $block_id,
 			'context' => $context,
@@ -805,16 +823,20 @@ class TAKA_Platform_Data {
 		foreach ( $posts as $post ) {
 			$post_status = (string) ( $post->post_status ?? '' );
 			$id = (string) $post->ID;
+			$config_id = (string) get_post_meta( $post->ID, '_taka_config_id', true );
+			$post_name = (string) ( $post->post_name ?? '' );
 			$slug = (string) get_post_meta( $post->ID, '_taka_block_slug', true );
-			if ( '' === $slug ) { $slug = (string) get_post_meta( $post->ID, '_taka_config_id', true ); }
+			if ( '' === $slug ) { $slug = $config_id; }
 			if ( '' === $slug ) { $slug = $post->post_name; }
+			if ( '' === $config_id ) { $config_id = $slug; }
 			$gallery_ids = self::csv_to_ints( get_post_meta( $post->ID, '_taka_gallery_image_ids', true ) );
 			$gallery_urls = self::lines_to_array( get_post_meta( $post->ID, '_taka_gallery_image_urls', true ) );
 			$enabled_meta = (string) get_post_meta( $post->ID, '_taka_enabled', true );
 			$block = array(
 				'id' => $id,
-				'config_id' => $slug,
+				'config_id' => $config_id,
 				'slug' => $slug,
+				'post_name' => $post_name,
 				'post_status' => $post_status,
 				'internal_name' => get_the_title( $post ),
 				'type' => sanitize_key( get_post_meta( $post->ID, '_taka_block_type', true ) ?: 'generic' ),
@@ -837,7 +859,10 @@ class TAKA_Platform_Data {
 				'updated_at' => $post->post_modified_gmt,
 			);
 			$blocks[ $id ] = $block;
-			if ( '' !== $slug ) { $blocks[ $slug ] = $block; }
+			foreach ( array( $slug, $config_id, $post_name ) as $alias ) {
+				$alias = trim( (string) $alias );
+				if ( '' !== $alias ) { $blocks[ $alias ] = $block; }
+			}
 		}
 		return $blocks;
 	}
@@ -1821,7 +1846,7 @@ class TAKA_Platform_Data {
 			'text'                => self::normalize_dynamic_text_value( $section['text'] ?? ( $section['body'] ?? '' ) ),
 			'body'                => self::normalize_dynamic_text_value( $section['body'] ?? ( $section['text'] ?? '' ) ),
 			'translations'        => $translations,
-			'content_reference'   => self::normalize_content_reference( $section['content_reference'] ?? array(), 'homepage_section' ),
+			'content_reference'   => self::content_reference_from_section( $section ),
 			'image_id'            => absint( $section['image_id'] ?? 0 ),
 			'image_url'           => (string) ( $section['image_url'] ?? ( $section['image'] ?? '' ) ),
 			'secondary_image_id'  => absint( $section['secondary_image_id'] ?? 0 ),
@@ -1838,6 +1863,19 @@ class TAKA_Platform_Data {
 			'image_fit'           => $image_fit,
 			'image_position'      => $image_position,
 		);
+	}
+
+	private static function content_reference_from_section( $section ) {
+		$reference = is_array( $section['content_reference'] ?? null ) ? $section['content_reference'] : array();
+		foreach ( array( 'content_block_id', 'content_block_slug', 'content_block', 'block_id', 'block_slug', 'block' ) as $field ) {
+			if ( '' === trim( (string) ( $reference['block_id'] ?? '' ) ) && isset( $section[ $field ] ) && ! is_array( $section[ $field ] ) && '' !== trim( (string) $section[ $field ] ) ) {
+				$reference['block_id'] = (string) $section[ $field ];
+			}
+		}
+		if ( '' === trim( (string) ( $reference['block_id'] ?? '' ) ) && is_array( $section['referenced_block'] ?? null ) ) {
+			$reference['block_id'] = (string) ( $section['referenced_block']['slug'] ?? ( $section['referenced_block']['id'] ?? '' ) );
+		}
+		return self::normalize_content_reference( $reference, 'homepage_section' );
 	}
 
 	/** Normalize structured content section translations and seed them from legacy scalar fields. */

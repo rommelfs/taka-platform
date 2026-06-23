@@ -47,7 +47,7 @@ Reference-level custom titles and local text overrides are multilingual. Empty o
 
 Homepage rendering is descriptor-driven through `TAKA_Platform_Data::get_homepage_sections()` and `TAKA_Platform_Data::render_homepage_section()`. Core sections such as hero, tickets and image grid keep their existing templates, while administrator-created Content Sections render through the generic `partials/content-section.php` partial. New Content Section keys do not require PHP template files. A Content Block is not rendered by itself; it appears on the homepage when a Content Section references it.
 
-Content References with a block ID are active references. Clear the selected block to use the inline section or event content again.
+Content References store the stable Content Block slug when one is available. Existing references that store a post ID or legacy alias key are still resolved. Clear the selected block to use the inline section or event content again.
 
 Fallback behavior follows the existing dynamic-content chain:
 

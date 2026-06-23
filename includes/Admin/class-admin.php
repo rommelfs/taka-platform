@@ -1183,6 +1183,7 @@ class TAKA_Platform_Admin {
 		$body = self::content_section_admin_translation_value( $translations, 'body' );
 		$button_label = self::content_section_admin_translation_value( $translations, 'button_label' );
 		$button_url = self::content_section_admin_translation_value( $translations, 'button_url' );
+		$normalized = TAKA_Platform_Data::normalize_content_section( $item );
 		return array(
 			'visible'             => ! empty( $item['visible'] ) ? '1' : '0',
 			'source_language'     => TAKA_Platform_Translation_Packages::sanitize_language( $item['source_language'] ?? 'de' ),
@@ -1193,7 +1194,7 @@ class TAKA_Platform_Admin {
 			'body'                => $body,
 			'text'                => $body,
 			'translations'        => $translations,
-			'content_reference'   => TAKA_Platform_Data::normalize_content_reference( $item['content_reference'] ?? array(), 'homepage_section' ),
+			'content_reference'   => $normalized['content_reference'] ?? TAKA_Platform_Data::normalize_content_reference( $item['content_reference'] ?? array(), 'homepage_section' ),
 			'image_id'            => absint( $item['image_id'] ?? 0 ),
 			'image_url'           => esc_url_raw( $item['image_url'] ?? '' ),
 			'secondary_image_id'  => absint( $item['secondary_image_id'] ?? 0 ),
@@ -1983,9 +1984,21 @@ class TAKA_Platform_Admin {
 			if ( (string) ( $block['id'] ?? '' ) !== (string) $id ) { continue; }
 			$label = trim( (string) ( $block['internal_name'] ?? '' ) );
 			$slug = trim( (string) ( $block['slug'] ?? '' ) );
-			$choices[ (string) $id ] = $label . ( '' !== $slug ? ' (' . $slug . ')' : '' );
+			$value = '' !== $slug ? $slug : (string) $id;
+			if ( '' === $label ) { $label = '' !== $slug ? $slug : (string) $id; }
+			$choices[ $value ] = $label . ( '' !== $slug ? ' (' . $slug . ')' : '' );
 		}
 		return $choices;
+	}
+
+	private static function content_block_choice_selected( $current, $value ) {
+		$current = trim( (string) $current );
+		$value = trim( (string) $value );
+		if ( $current === $value ) { return true; }
+		if ( '' === $current || '' === $value ) { return false; }
+		$current_block = TAKA_Platform_Data::get_content_block( $current, false );
+		$value_block = TAKA_Platform_Data::get_content_block( $value, false );
+		return is_array( $current_block ) && is_array( $value_block ) && (string) ( $current_block['id'] ?? '' ) === (string) ( $value_block['id'] ?? '' );
 	}
 
 	private static function render_content_reference_fields( $field, $reference, $context, $label ) {
@@ -1995,7 +2008,7 @@ class TAKA_Platform_Admin {
 		<div class="taka-content-reference-fields" style="border:1px solid #dcdcde;padding:12px;margin:12px 0;background:#fff;">
 			<h3><?php echo esc_html( $label ); ?></h3>
 			<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[context]" value="<?php echo esc_attr( $context ); ?>">
-			<p><label><strong><?php echo esc_html__( 'Content block', 'taka-platform' ); ?></strong><br><select class="widefat" name="<?php echo esc_attr( $prefix ); ?>[block_id]"><?php foreach ( self::content_block_choices() as $value => $choice_label ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( (string) ( $reference['block_id'] ?? '' ), (string) $value ); ?>><?php echo esc_html( $choice_label ); ?></option><?php endforeach; ?></select></label></p>
+			<p><label><strong><?php echo esc_html__( 'Content block', 'taka-platform' ); ?></strong><br><select class="widefat" name="<?php echo esc_attr( $prefix ); ?>[block_id]"><?php foreach ( self::content_block_choices() as $value => $choice_label ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( self::content_block_choice_selected( $reference['block_id'] ?? '', $value ) ); ?>><?php echo esc_html( $choice_label ); ?></option><?php endforeach; ?></select></label></p>
 			<p><label><strong><?php echo esc_html__( 'Sort order', 'taka-platform' ); ?></strong><br><input type="number" name="<?php echo esc_attr( $prefix ); ?>[sort_order]" value="<?php echo esc_attr( (string) ( $reference['sort_order'] ?? 0 ) ); ?>"></label></p>
 			<p><label><strong><?php echo esc_html__( 'Display style', 'taka-platform' ); ?></strong><br><select class="widefat" name="<?php echo esc_attr( $prefix ); ?>[display_style]"><?php foreach ( TAKA_Platform_Data::content_reference_display_styles() as $value => $choice_label ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( (string) ( $reference['display_style'] ?? 'default' ), (string) $value ); ?>><?php echo esc_html( $choice_label ); ?></option><?php endforeach; ?></select></label></p>
 			<?php self::render_content_reference_custom_title_fields( $prefix, $reference['custom_title'] ?? '' ); ?>
@@ -2011,7 +2024,7 @@ class TAKA_Platform_Admin {
 		?>
 		<div class="taka-content-reference-fields">
 			<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>[context]" value="homepage_section">
-			<p><label><strong><?php echo esc_html__( 'Content block', 'taka-platform' ); ?></strong><br><select class="regular-text" name="<?php echo esc_attr( $prefix ); ?>[block_id]"><?php foreach ( self::content_block_choices() as $value => $choice_label ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( (string) ( $reference['block_id'] ?? '' ), (string) $value ); ?>><?php echo esc_html( $choice_label ); ?></option><?php endforeach; ?></select></label></p>
+			<p><label><strong><?php echo esc_html__( 'Content block', 'taka-platform' ); ?></strong><br><select class="regular-text" name="<?php echo esc_attr( $prefix ); ?>[block_id]"><?php foreach ( self::content_block_choices() as $value => $choice_label ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( self::content_block_choice_selected( $reference['block_id'] ?? '', $value ) ); ?>><?php echo esc_html( $choice_label ); ?></option><?php endforeach; ?></select></label></p>
 			<p><label><strong><?php echo esc_html__( 'Sort order', 'taka-platform' ); ?></strong><br><input type="number" name="<?php echo esc_attr( $prefix ); ?>[sort_order]" value="<?php echo esc_attr( (string) ( $reference['sort_order'] ?? 0 ) ); ?>"></label></p>
 			<p><label><strong><?php echo esc_html__( 'Display style', 'taka-platform' ); ?></strong><br><select class="regular-text" name="<?php echo esc_attr( $prefix ); ?>[display_style]"><?php foreach ( TAKA_Platform_Data::content_reference_display_styles() as $value => $choice_label ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( (string) ( $reference['display_style'] ?? 'default' ), (string) $value ); ?>><?php echo esc_html( $choice_label ); ?></option><?php endforeach; ?></select></label></p>
 			<?php self::render_content_reference_custom_title_fields( $prefix, $reference['custom_title'] ?? '' ); ?>
