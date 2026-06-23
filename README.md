@@ -41,7 +41,7 @@ Additional event-tour aliases:
 
 All aliases call the same rendering logic.
 
-Ticket tabs support direct event links with `?taka_event=<event-slug>#tickets`. These URLs open the ticket section with the referenced event selected and are used by the event share buttons.
+Ticket tabs support direct event links with `?taka_lang=<language>#tickets/<event-slug>`. These URLs open the ticket section with the referenced event selected while keeping the event selector out of server-side query parsing. Legacy `?taka_event=<event-slug>#tickets` links are still recognized by the frontend when they reach the page.
 
 ## WordPress-first data flow
 
@@ -174,6 +174,11 @@ The script checks PHP syntax for all `*.php` files with `php -l` and scans the r
 Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `taka_organizer`, `taka_venue`) continue to work. Existing constants such as `TAKA_TOUR_VERSION` map to the new platform constants. Existing class names such as `Taka_Tour_Data` are aliased to the new `TAKA_Platform_*` classes.
 
 ## Changelog
+
+### v2.2.6
+
+- Consolidated event sharing into one share panel with copy action and locally generated QR codes.
+- Moved direct event selection from the `taka_event` query parameter into the `#tickets/<event-slug>` URL fragment to avoid server-side query conflicts.
 
 ### v2.2.5
 

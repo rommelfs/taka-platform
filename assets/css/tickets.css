@@ -800,9 +800,9 @@
 	flex-wrap: wrap;
 	gap: .45rem;
 	justify-content: flex-end;
+	position: relative;
 }
 
-.taka-ticket-share-link,
 .taka-ticket-share-button {
 	align-items: center;
 	background: #fff;
@@ -826,14 +826,84 @@
 	font-family: inherit;
 }
 
-.taka-ticket-share-link:hover,
-.taka-ticket-share-link:focus-visible,
 .taka-ticket-share-button:hover,
 .taka-ticket-share-button:focus-visible {
 	background: #BC002D;
 	color: #fff;
 	outline: none;
 	transform: translateY(-1px);
+}
+
+.taka-ticket-share-panel {
+	background: #fff;
+	border: 1px solid rgba(17,17,17,.12);
+	border-radius: .75rem;
+	box-shadow: 0 16px 42px rgba(17,17,17,.14);
+	display: grid;
+	gap: .7rem;
+	min-width: min(280px, calc(100vw - 2rem));
+	padding: .85rem;
+	position: absolute;
+	right: 0;
+	top: calc(100% + .5rem);
+	z-index: 20;
+}
+
+.taka-ticket-share-panel[hidden] {
+	display: none;
+}
+
+.taka-ticket-share-qr {
+	align-items: center;
+	background: #fff;
+	border: 1px solid rgba(17,17,17,.08);
+	border-radius: .45rem;
+	display: flex;
+	justify-content: center;
+	min-height: 132px;
+	padding: .45rem;
+}
+
+.taka-ticket-share-qr svg {
+	display: block;
+	height: 132px;
+	width: 132px;
+}
+
+.taka-ticket-share-url-row {
+	display: grid;
+	gap: .45rem;
+	grid-template-columns: minmax(0, 1fr) max-content;
+}
+
+.taka-ticket-share-url-row input {
+	border: 1px solid rgba(17,17,17,.14);
+	border-radius: .45rem;
+	box-sizing: border-box;
+	font: inherit;
+	min-width: 0;
+	padding: .46rem .55rem;
+	width: 100%;
+}
+
+.taka-ticket-share-copy {
+	background: #BC002D;
+	border: 1px solid #BC002D;
+	border-radius: .45rem;
+	color: #fff;
+	cursor: pointer;
+	font: inherit;
+	font-size: .82rem;
+	font-weight: 850;
+	padding: .48rem .65rem;
+	white-space: nowrap;
+}
+
+.taka-ticket-share-copy:hover,
+.taka-ticket-share-copy:focus-visible {
+	background: #8f001f;
+	border-color: #8f001f;
+	outline: none;
 }
 
 .taka-ticket-booking-panel__aside {
@@ -1326,5 +1396,15 @@
 
 	.taka-ticket-share-actions {
 		justify-content: flex-start;
+		position: static;
+	}
+
+	.taka-ticket-share-panel {
+		position: static;
+		width: 100%;
+	}
+
+	.taka-ticket-share-url-row {
+		grid-template-columns: 1fr;
 	}
 }

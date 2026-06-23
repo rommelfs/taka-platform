@@ -209,7 +209,9 @@
     "event_link": "イベントリンク",
     "share_event": "共有",
     "share_copied": "リンクをコピーしました",
-    "copy_event_link_prompt": "イベントリンクをコピー"
+    "copy_event_link_prompt": "イベントリンクをコピー",
+    "copy_link": "リンクをコピー",
+    "qr_code": "QRコード"
   },
   "country": {
     "france": "フランス"

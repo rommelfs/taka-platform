@@ -1226,10 +1226,11 @@ class TAKA_Platform_Data {
 		if ( '' === $base_url && function_exists( 'home_url' ) ) { $base_url = (string) home_url( '/' ); }
 		if ( '' === $base_url ) { return '#tickets'; }
 		$lang = null === $lang && function_exists( 'taka_tour_current_language' ) ? taka_tour_current_language() : $lang;
-		$args = array( 'taka_event' => $event_key );
+		$args = array();
 		if ( '' !== trim( (string) $lang ) ) { $args['taka_lang'] = sanitize_key( $lang ); }
-		$url = function_exists( 'add_query_arg' ) ? add_query_arg( $args, $base_url ) : rtrim( $base_url, '?' ) . '?' . http_build_query( $args );
-		return strtok( $url, '#' ) . '#tickets';
+		if ( function_exists( 'remove_query_arg' ) ) { $base_url = remove_query_arg( array( 'taka_event', 'taka_ticket_event' ), $base_url ); }
+		$url = function_exists( 'add_query_arg' ) && ! empty( $args ) ? add_query_arg( $args, $base_url ) : $base_url;
+		return strtok( $url, '#' ) . '#tickets/' . rawurlencode( $event_key );
 	}
 
 	/** Get public events by organizer. */

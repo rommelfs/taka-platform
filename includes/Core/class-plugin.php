@@ -22,6 +22,7 @@ class TAKA_Platform_Plugin {
 		add_action( 'wp_enqueue_scripts', array( $this, 'register_assets' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_shortcode_assets' ), 20 );
 		add_action( 'wp_head', array( $this, 'print_hreflang_links' ) );
+		add_filter( 'request', array( $this, 'strip_legacy_event_share_query_var' ) );
 		$this->register_shortcodes();
 	}
 
@@ -33,6 +34,14 @@ class TAKA_Platform_Plugin {
 		if ( in_array( $lang, TAKA_Platform_I18n::instance()->get_all_languages(), true ) && ! headers_sent() ) {
 			setcookie( 'taka_lang', $lang, time() + ( defined( 'MONTH_IN_SECONDS' ) ? MONTH_IN_SECONDS : 30 * ( defined( 'DAY_IN_SECONDS' ) ? DAY_IN_SECONDS : 86400 ) ), ( defined( 'COOKIEPATH' ) && COOKIEPATH ? COOKIEPATH : '/' ), ( defined( 'COOKIE_DOMAIN' ) ? COOKIE_DOMAIN : '' ), is_ssl(), true );
 		}
+	}
+
+	public function strip_legacy_event_share_query_var( $query_vars ) {
+		if ( function_exists( 'is_admin' ) && is_admin() ) {
+			return $query_vars;
+		}
+		unset( $query_vars['taka_event'], $query_vars['taka_ticket_event'] );
+		return $query_vars;
 	}
 
 

@@ -209,7 +209,9 @@
     "event_link": "Event link",
     "share_event": "Share",
     "share_copied": "Link copied",
-    "copy_event_link_prompt": "Copy event link"
+    "copy_event_link_prompt": "Copy event link",
+    "copy_link": "Copy link",
+    "qr_code": "QR code"
   },
   "country": {
     "france": "France"

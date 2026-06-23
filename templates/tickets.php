@@ -54,9 +54,16 @@ $ticket_settings = TAKA_Platform_Data::get_ticket_section_settings();
 								<?php if ( ! empty( $seminar['subtitle'] ) ) : ?><p class="taka-ticket-event-panel__subtitle"><?php echo esc_html( $seminar['subtitle'] ); ?></p><?php endif; ?>
 							</div>
 							<?php if ( '' !== $share_url ) : ?>
-								<div class="taka-ticket-share-actions" aria-label="<?php echo esc_attr( taka_tour_translate( 'event.share_actions', 'Event teilen' ) ); ?>">
-									<a class="taka-ticket-share-link" href="<?php echo esc_url( $share_url ); ?>" data-taka-ticket-tab="<?php echo esc_attr( $panel_key ); ?>"><?php echo esc_html( taka_tour_translate( 'event.event_link', 'Event-Link' ) ); ?></a>
-									<button type="button" class="taka-ticket-share-button" data-taka-share-event data-share-url="<?php echo esc_url( $share_url ); ?>" data-share-title="<?php echo esc_attr( $seminar['title'] ?? '' ); ?>" data-share-label="<?php echo esc_attr( taka_tour_translate( 'event.share_event', 'Teilen' ) ); ?>" data-share-copied-label="<?php echo esc_attr( taka_tour_translate( 'event.share_copied', 'Link kopiert' ) ); ?>" data-share-prompt-label="<?php echo esc_attr( taka_tour_translate( 'event.copy_event_link_prompt', 'Event-Link kopieren' ) ); ?>"><?php echo esc_html( taka_tour_translate( 'event.share_event', 'Teilen' ) ); ?></button>
+								<?php $share_panel_id = 'taka-share-panel-' . $event_key; $share_input_id = 'taka-share-url-' . $event_key; ?>
+								<div class="taka-ticket-share-actions" data-taka-share-root aria-label="<?php echo esc_attr( taka_tour_translate( 'event.share_actions', 'Event teilen' ) ); ?>">
+									<button type="button" class="taka-ticket-share-button" data-taka-share-event data-share-url="<?php echo esc_url( $share_url ); ?>" data-share-title="<?php echo esc_attr( $seminar['title'] ?? '' ); ?>" data-share-label="<?php echo esc_attr( taka_tour_translate( 'event.share_event', 'Teilen' ) ); ?>" data-share-copied-label="<?php echo esc_attr( taka_tour_translate( 'event.share_copied', 'Link kopiert' ) ); ?>" data-share-prompt-label="<?php echo esc_attr( taka_tour_translate( 'event.copy_event_link_prompt', 'Event-Link kopieren' ) ); ?>" aria-expanded="false" aria-controls="<?php echo esc_attr( $share_panel_id ); ?>"><?php echo esc_html( taka_tour_translate( 'event.share_event', 'Teilen' ) ); ?></button>
+									<div id="<?php echo esc_attr( $share_panel_id ); ?>" class="taka-ticket-share-panel" data-taka-share-panel hidden>
+										<div class="taka-ticket-share-qr" data-taka-share-qr data-qr-label="<?php echo esc_attr( taka_tour_translate( 'event.qr_code', 'QR-Code' ) ); ?>" aria-hidden="true"></div>
+										<div class="taka-ticket-share-url-row">
+											<input id="<?php echo esc_attr( $share_input_id ); ?>" type="text" readonly value="<?php echo esc_attr( $share_url ); ?>" aria-label="<?php echo esc_attr( taka_tour_translate( 'event.event_link', 'Event-Link' ) ); ?>">
+											<button type="button" class="taka-ticket-share-copy" data-taka-copy-share-url><?php echo esc_html( taka_tour_translate( 'event.copy_link', 'Link kopieren' ) ); ?></button>
+										</div>
+									</div>
 								</div>
 							<?php endif; ?>
 						</div>
