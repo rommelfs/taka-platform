@@ -8,6 +8,7 @@ defined( 'ABSPATH' ) || exit;
 class TAKA_Platform_I18n {
 	private static $instance = null;
 	private $translations = array();
+	private $current_language = null;
 
 	public static function instance() {
 		if ( null === self::$instance ) {
@@ -21,20 +22,23 @@ class TAKA_Platform_I18n {
 	}
 
 	public function get_current_language() {
+		if ( null !== $this->current_language ) {
+			return $this->current_language;
+		}
+
 		if ( isset( $_GET['taka_lang'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$lang = sanitize_key( wp_unslash( $_GET['taka_lang'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			if ( in_array( $lang, $this->get_all_languages(), true ) ) {
-				if ( ! headers_sent() ) {
-					setcookie( 'taka_lang', $lang, time() + ( defined( 'MONTH_IN_SECONDS' ) ? MONTH_IN_SECONDS : 30 * ( defined( 'DAY_IN_SECONDS' ) ? DAY_IN_SECONDS : 86400 ) ), ( defined( 'COOKIEPATH' ) && COOKIEPATH ? COOKIEPATH : '/' ), ( defined( 'COOKIE_DOMAIN' ) ? COOKIE_DOMAIN : '' ), is_ssl(), true );
-				}
-				return $lang;
+				$this->current_language = $lang;
+				return $this->current_language;
 			}
 		}
 
 		if ( isset( $_COOKIE['taka_lang'] ) ) {
 			$lang = sanitize_key( wp_unslash( $_COOKIE['taka_lang'] ) );
 			if ( in_array( $lang, $this->get_all_languages(), true ) ) {
-				return $lang;
+				$this->current_language = $lang;
+				return $this->current_language;
 			}
 		}
 
@@ -42,11 +46,13 @@ class TAKA_Platform_I18n {
 		foreach ( explode( ',', $accepted ) as $part ) {
 			$lang = strtolower( substr( trim( $part ), 0, 2 ) );
 			if ( in_array( $lang, $this->get_all_languages(), true ) ) {
-				return $lang;
+				$this->current_language = $lang;
+				return $this->current_language;
 			}
 		}
 
-		return 'de';
+		$this->current_language = 'de';
+		return $this->current_language;
 	}
 
 	public function translate( $path, $fallback = '', $lang = null ) {

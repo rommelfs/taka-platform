@@ -175,6 +175,10 @@ Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `tak
 
 ## Changelog
 
+### v2.2.7
+
+- Fixed valid `taka_lang` requests causing oversized repeated `Set-Cookie` headers during full frontend rendering.
+
 ### v2.2.6
 
 - Consolidated event sharing into one share panel with copy action and locally generated QR codes.
