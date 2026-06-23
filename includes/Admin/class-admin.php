@@ -1476,8 +1476,57 @@ class TAKA_Platform_Admin {
 		return TAKA_Platform_Data::normalize_event_organizer_relationships( $relationships, '' );
 	}
 
-	private static function organizer_meta_from_config( $item ) { $social = is_array( $item['social'] ?? null ) ? $item['social'] : ( is_array( $item['social_links'] ?? null ) ? $item['social_links'] : array() ); return array( '_taka_legal_name' => $item['legal_name'] ?? '', '_taka_website' => $item['website'] ?? '', '_taka_country' => $item['country'] ?? '', '_taka_country_code' => $item['country_code'] ?? '', '_taka_flag' => $item['flag'] ?? '', '_taka_logo_id' => (int) ( $item['logo_id'] ?? 0 ), '_taka_logo_url' => $item['logo_url'] ?? ( $item['logo'] ?? '' ), '_taka_emails' => implode( "\n", $item['emails'] ?? array() ), '_taka_contact_persons' => self::contact_persons_to_lines( $item['contact_persons'] ?? array() ), '_taka_instagram' => $social['instagram'] ?? '', '_taka_facebook' => $social['facebook'] ?? '', '_taka_youtube' => $social['youtube'] ?? '', '_taka_platform_co_organizers' => self::sanitize_co_organizers( $item['co_organizers'] ?? array() ), '_taka_active' => 1 ); }
-	private static function venue_meta_from_config( $item ) { $a = $item['address'] ?? array(); $g = $item['geo'] ?? array(); return array( '_taka_image_id' => (int) ( $item['image_id'] ?? 0 ), '_taka_image_url' => $item['image_url'] ?? ( $item['image'] ?? '' ), '_taka_parking_image_id' => (int) ( $item['parking_image_id'] ?? 0 ), '_taka_parking_image_url' => $item['parking_image_url'] ?? '', '_taka_gallery_image_ids' => implode( ',', $item['gallery_image_ids'] ?? array() ), '_taka_street' => $a['street'] ?? '', '_taka_postal_code' => $a['postal_code'] ?? '', '_taka_city' => $a['city'] ?? '', '_taka_country' => $a['country'] ?? '', '_taka_country_code' => $a['country_code'] ?? '', '_taka_flag' => $item['flag'] ?? ( $a['flag'] ?? '' ), '_taka_route_map_x' => $item['route_map_x'] ?? ( $item['map_x'] ?? '' ), '_taka_route_map_y' => $item['route_map_y'] ?? ( $item['map_y'] ?? '' ), '_taka_route_map_label' => $item['route_map_label'] ?? ( $item['map_label'] ?? '' ), '_taka_timezone' => $item['timezone'] ?? '', '_taka_website' => $item['website'] ?? '', '_taka_parking' => $item['parking'] ?? '', '_taka_accessibility' => $item['accessibility'] ?? '', '_taka_notes' => $item['notes'] ?? '', '_taka_lat' => $g['lat'] ?? '', '_taka_lng' => $g['lng'] ?? '' ); }
+	private static function organizer_meta_from_config( $item ) {
+		$social = is_array( $item['social'] ?? null ) ? $item['social'] : ( is_array( $item['social_links'] ?? null ) ? $item['social_links'] : array() );
+		$country = TAKA_Platform_Data::normalize_event_option_value( 'country', $item['country_code'] ?? ( $item['country'] ?? '' ) );
+		$country_code = TAKA_Platform_Data::country_code_for_value( $country );
+		return array(
+			'_taka_legal_name' => $item['legal_name'] ?? '',
+			'_taka_website' => $item['website'] ?? '',
+			'_taka_country' => $country,
+			'_taka_country_code' => $country_code,
+			'_taka_flag' => TAKA_Platform_Data::flag_for_country_code( $country_code ) ?: ( $item['flag'] ?? '' ),
+			'_taka_logo_id' => (int) ( $item['logo_id'] ?? 0 ),
+			'_taka_logo_url' => $item['logo_url'] ?? ( $item['logo'] ?? '' ),
+			'_taka_emails' => implode( "\n", $item['emails'] ?? array() ),
+			'_taka_contact_persons' => self::contact_persons_to_lines( $item['contact_persons'] ?? array() ),
+			'_taka_instagram' => $social['instagram'] ?? '',
+			'_taka_facebook' => $social['facebook'] ?? '',
+			'_taka_youtube' => $social['youtube'] ?? '',
+			'_taka_platform_co_organizers' => self::sanitize_co_organizers( $item['co_organizers'] ?? array() ),
+			'_taka_active' => 1,
+		);
+	}
+
+	private static function venue_meta_from_config( $item ) {
+		$a = $item['address'] ?? array();
+		$g = $item['geo'] ?? array();
+		$country = TAKA_Platform_Data::normalize_event_option_value( 'country', $a['country_code'] ?? ( $a['country'] ?? '' ) );
+		$country_code = TAKA_Platform_Data::country_code_for_value( $country );
+		return array(
+			'_taka_image_id' => (int) ( $item['image_id'] ?? 0 ),
+			'_taka_image_url' => $item['image_url'] ?? ( $item['image'] ?? '' ),
+			'_taka_parking_image_id' => (int) ( $item['parking_image_id'] ?? 0 ),
+			'_taka_parking_image_url' => $item['parking_image_url'] ?? '',
+			'_taka_gallery_image_ids' => implode( ',', $item['gallery_image_ids'] ?? array() ),
+			'_taka_street' => $a['street'] ?? '',
+			'_taka_postal_code' => $a['postal_code'] ?? '',
+			'_taka_city' => $a['city'] ?? '',
+			'_taka_country' => $country,
+			'_taka_country_code' => $country_code,
+			'_taka_flag' => TAKA_Platform_Data::flag_for_country_code( $country_code ) ?: ( $item['flag'] ?? ( $a['flag'] ?? '' ) ),
+			'_taka_route_map_x' => $item['route_map_x'] ?? ( $item['map_x'] ?? '' ),
+			'_taka_route_map_y' => $item['route_map_y'] ?? ( $item['map_y'] ?? '' ),
+			'_taka_route_map_label' => $item['route_map_label'] ?? ( $item['map_label'] ?? '' ),
+			'_taka_timezone' => $item['timezone'] ?? TAKA_Platform_Data::timezone_for_country( $country_code ),
+			'_taka_website' => $item['website'] ?? '',
+			'_taka_parking' => $item['parking'] ?? '',
+			'_taka_accessibility' => $item['accessibility'] ?? '',
+			'_taka_notes' => $item['notes'] ?? '',
+			'_taka_lat' => $g['lat'] ?? '',
+			'_taka_lng' => $g['lng'] ?? '',
+		);
+	}
 	private static function event_meta_from_config( $item ) {
 		$raw_booking = is_array( $item['booking_information'] ?? null ) ? $item['booking_information'] : array();
 		if ( ! empty( $raw_booking ) && ! isset( $raw_booking['override'] ) ) { $raw_booking['override'] = '1'; }
@@ -1543,9 +1592,8 @@ class TAKA_Platform_Admin {
 		self::render_object_source_language_field( $post->ID );
 		self::text( $post->ID, 'legal_name', __( 'Legal name', 'taka-platform' ) );
 		self::url( $post->ID, 'website', __( 'Website', 'taka-platform' ) );
-		self::text( $post->ID, 'country', __( 'Country', 'taka-platform' ) );
-		self::text( $post->ID, 'country_code', __( 'Country code', 'taka-platform' ) );
-		self::text( $post->ID, 'flag', __( 'Flag', 'taka-platform' ) );
+		self::event_option_select( $post->ID, 'country', __( 'Country', 'taka-platform' ), __( 'organizer', 'taka-platform' ) );
+		self::render_derived_country_fields( $post->ID, false );
 		self::media_field( $post->ID, 'logo_id', __( 'Logo', 'taka-platform' ), false, __( 'Select logo', 'taka-platform' ) );
 		self::url( $post->ID, 'logo_url', __( 'Fallback logo URL', 'taka-platform' ) );
 		self::textarea( $post->ID, 'emails', __( 'Email addresses (one per line)', 'taka-platform' ) );
@@ -1562,7 +1610,10 @@ class TAKA_Platform_Admin {
 	public static function render_venue_meta_box( $post ) {
 		self::nonce();
 		self::render_object_source_language_field( $post->ID );
-		foreach ( array( 'street' => 'Street', 'postal_code' => 'Postal code', 'city' => 'City', 'country' => 'Country', 'country_code' => 'Country code', 'flag' => 'Flag', 'route_map_x' => 'Route map X (0–100)', 'route_map_y' => 'Route map Y (0–100)', 'route_map_label' => 'Route map label', 'timezone' => 'Timezone', 'lat' => 'Geo lat', 'lng' => 'Geo lng' ) as $key => $label ) { self::text( $post->ID, $key, __( $label, 'taka-platform' ) ); }
+		foreach ( array( 'street' => 'Street', 'postal_code' => 'Postal code', 'city' => 'City' ) as $key => $label ) { self::text( $post->ID, $key, __( $label, 'taka-platform' ) ); }
+		self::event_option_select( $post->ID, 'country', __( 'Country', 'taka-platform' ), __( 'venue', 'taka-platform' ) );
+		self::render_derived_country_fields( $post->ID );
+		foreach ( array( 'route_map_x' => 'Route map X (0–100)', 'route_map_y' => 'Route map Y (0–100)', 'route_map_label' => 'Route map label', 'timezone' => 'Timezone override', 'lat' => 'Geo lat', 'lng' => 'Geo lng' ) as $key => $label ) { self::text( $post->ID, $key, __( $label, 'taka-platform' ) ); }
 		self::url( $post->ID, 'website', __( 'Website', 'taka-platform' ) );
 		self::media_field( $post->ID, 'image_id', __( 'Venue photo', 'taka-platform' ), false, __( 'Select venue photo', 'taka-platform' ) );
 		self::url( $post->ID, 'image_url', __( 'Fallback venue photo URL', 'taka-platform' ) );
@@ -1644,10 +1695,11 @@ class TAKA_Platform_Admin {
 
 	public static function save_organizer( $post_id ) {
 		self::save( $post_id, array( 'legal_name', 'website', 'country', 'country_code', 'flag', 'logo_id', 'logo_url', 'emails', 'contact_persons', 'instagram', 'facebook', 'youtube', 'active' ) );
+		self::save_object_country_meta( $post_id );
 		self::save_object_text_translations( $post_id, 'organizer' );
 		self::save_co_organizers( $post_id );
 	}
-	public static function save_venue( $post_id ) { self::save( $post_id, array( 'street', 'postal_code', 'city', 'country', 'country_code', 'flag', 'route_map_x', 'route_map_y', 'route_map_label', 'timezone', 'lat', 'lng', 'website', 'image_id', 'image_url', 'parking_image_id', 'parking_image_url', 'gallery_image_ids', 'parking', 'accessibility', 'notes' ) ); self::save_object_text_translations( $post_id, 'venue' ); }
+	public static function save_venue( $post_id ) { self::save( $post_id, array( 'street', 'postal_code', 'city', 'country', 'country_code', 'flag', 'route_map_x', 'route_map_y', 'route_map_label', 'timezone', 'lat', 'lng', 'website', 'image_id', 'image_url', 'parking_image_id', 'parking_image_url', 'gallery_image_ids', 'parking', 'accessibility', 'notes' ) ); self::save_object_country_meta( $post_id, true ); self::save_object_text_translations( $post_id, 'venue' ); }
 	public static function save_content_block( $post_id ) {
 		self::save( $post_id, array( 'block_slug', 'block_type', 'category', 'enabled', 'kicker', 'block_title', 'subtitle', 'button_label', 'button_url', 'image_id', 'image_url', 'gallery_image_ids', 'gallery_image_urls', 'notes' ) );
 		self::save_object_text_translations( $post_id, 'content_block' );
@@ -1854,7 +1906,7 @@ class TAKA_Platform_Admin {
 			elseif ( in_array( $field, array( 'route_map_x', 'route_map_y' ), true ) ) { $value = is_numeric( $value ) ? (string) max( 0, min( 100, (float) $value ) ) : ''; }
 			elseif ( in_array( $field, array( 'website', 'ticket_shop_url', 'image_url', 'group_image_url', 'parking_image_url', 'logo_url', 'button_url' ), true ) ) { $value = esc_url_raw( $value ); }
 			elseif ( 'languages' === $field ) { $value = implode( ',', TAKA_Platform_Data::normalize_language_codes( $value ) ); }
-			elseif ( in_array( $field, array( 'ticket_provider', 'ticket_status', 'format', 'audience', 'level', 'currency' ), true ) ) { $value = TAKA_Platform_Data::normalize_event_option_value( $field, $value ); }
+			elseif ( in_array( $field, array( 'ticket_provider', 'ticket_status', 'format', 'audience', 'level', 'country', 'currency' ), true ) ) { $value = TAKA_Platform_Data::normalize_event_option_value( $field, $value ); }
 			elseif ( 'booking_info_contact_email' === $field ) { $value = sanitize_email( $value ); }
 			elseif ( in_array( $field, array( 'emails', 'contact_persons', 'short_description', 'long_description', 'ticket_card_text', 'booking_info_intro', 'booking_info_group_booking', 'booking_info_multi_event_discount', 'booking_info_booking_process', 'booking_info_payment_methods', 'booking_info_cancellation_policy', 'booking_info_additional_notes', 'parking', 'accessibility', 'notes', 'gallery_image_urls' ), true ) ) { $value = sanitize_textarea_field( $value ); }
 			elseif ( in_array( $field, array( 'gallery_image_ids', 'venue_ids' ), true ) ) { $value = implode( ',', array_map( 'absint', preg_split( '/\s*,\s*/', (string) $value ) ) ); }
@@ -1869,6 +1921,20 @@ class TAKA_Platform_Admin {
 		if ( ! isset( $_POST[ self::NONCE ] ) ) { return false; }
 		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE ] ) ), self::NONCE ) ) { return false; }
 		return current_user_can( 'edit_post', $post_id );
+	}
+
+	private static function save_object_country_meta( $post_id, $suggest_timezone = false ) {
+		if ( ! self::can_save_post_meta( $post_id ) ) { return; }
+		$country_key = self::posted_event_field_key( 'country' );
+		if ( '' === $country_key ) { return; }
+		$country = TAKA_Platform_Data::normalize_event_option_value( 'country', wp_unslash( $_POST[ $country_key ] ) );
+		$country_code = TAKA_Platform_Data::country_code_for_value( $country );
+		update_post_meta( $post_id, '_taka_country', $country );
+		update_post_meta( $post_id, '_taka_country_code', $country_code );
+		update_post_meta( $post_id, '_taka_flag', TAKA_Platform_Data::flag_for_country_code( $country_code ) );
+		if ( $suggest_timezone && '' === trim( (string) get_post_meta( $post_id, '_taka_timezone', true ) ) ) {
+			update_post_meta( $post_id, '_taka_timezone', TAKA_Platform_Data::timezone_for_country( $country_code ) );
+		}
 	}
 
 	private static function save_event_structured_meta( $post_id ) {
@@ -2143,7 +2209,7 @@ class TAKA_Platform_Admin {
 		echo '</div>';
 	}
 
-	private static function event_option_select( $post_id, $field, $label ) {
+	private static function event_option_select( $post_id, $field, $label, $legacy_context = '' ) {
 		$raw = (string) self::meta( $post_id, $field );
 		$matched_key = TAKA_Platform_Data::option_key_for_value( $field, $raw );
 		$current = '' !== $matched_key ? $matched_key : $raw;
@@ -2157,19 +2223,20 @@ class TAKA_Platform_Admin {
 		}
 		$html .= '</select>';
 		if ( '' !== $raw && '' === $matched_key ) {
-			$html .= '<p class="description">' . esc_html__( 'This event uses a custom legacy value. It will continue to display unless you choose a configured option.', 'taka-platform' ) . '</p>';
+			$legacy_context = '' !== trim( (string) $legacy_context ) ? (string) $legacy_context : __( 'event', 'taka-platform' );
+			$html .= '<p class="description">' . esc_html( sprintf( __( 'This %s uses a custom legacy value. It will continue to display unless you choose a configured option.', 'taka-platform' ), $legacy_context ) ) . '</p>';
 		}
 		self::field( $label, $html );
 	}
 
-	private static function render_derived_country_fields( $post_id ) {
+	private static function render_derived_country_fields( $post_id, $show_suggestions = true ) {
 		$country = (string) self::meta( $post_id, 'country' );
 		$code = TAKA_Platform_Data::country_code_for_value( self::meta( $post_id, 'country_code' ) ?: $country );
 		$flag = TAKA_Platform_Data::flag_for_country_code( $code );
 		$timezone = TAKA_Platform_Data::timezone_for_country( $code );
 		$currency = TAKA_Platform_Data::currency_for_country( $code );
 		$html = '<code>' . esc_html( $code ?: '—' ) . '</code> ' . esc_html( $flag );
-		if ( '' !== $timezone || '' !== $currency ) {
+		if ( $show_suggestions && ( '' !== $timezone || '' !== $currency ) ) {
 			$html .= '<p class="description">' . esc_html( trim( sprintf( __( 'Suggested timezone: %1$s. Suggested currency: %2$s.', 'taka-platform' ), $timezone ?: '—', $currency ?: '—' ) ) ) . '</p>';
 		}
 		self::field( __( 'Derived country data', 'taka-platform' ), $html );

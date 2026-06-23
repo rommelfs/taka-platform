@@ -35,7 +35,7 @@ Aliases allow automatic migration from older free-text values or older IDs. For 
 
 Use **TAKA Platform -> Option Lists** to edit, reorder, deactivate, export and import option lists.
 
-The Event editor now uses structured controls for ticket provider, ticket status, format, audience, level, country, currency and languages. Country code and flag are derived from country and are no longer edited directly. Timezone and currency are suggested from country and can be overridden.
+The Event editor uses structured controls for ticket provider, ticket status, format, audience, level, country, currency and languages. Organizer and Venue editors use the same structured country selector. Country code and flag are derived from country and are no longer edited directly. Timezone and currency are suggested from country where applicable and can be overridden where the object exposes those fields.
 
 ## Translation Workflow
 

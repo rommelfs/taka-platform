@@ -1212,6 +1212,8 @@ class TAKA_Platform_Data {
 			$id = (string) $post->ID;
 			$config_id = (string) get_post_meta( $post->ID, '_taka_config_id', true );
 			$logo_id = absint( get_post_meta( $post->ID, '_taka_logo_id', true ) );
+			$country = self::normalize_event_option_value( 'country', get_post_meta( $post->ID, '_taka_country', true ) );
+			$country_code = self::country_code_for_value( get_post_meta( $post->ID, '_taka_country_code', true ) ?: $country );
 			$item = array(
 				'id' => $id,
 				'config_id' => $config_id,
@@ -1220,9 +1222,10 @@ class TAKA_Platform_Data {
 				'text_translations' => self::normalize_object_text_translations( get_post_meta( $post->ID, '_taka_text_translations', true ), self::translatable_text_fields( 'organizer' ) ),
 				'legal_name' => (string) get_post_meta( $post->ID, '_taka_legal_name', true ),
 				'website' => (string) get_post_meta( $post->ID, '_taka_website', true ),
-				'country' => self::normalize_event_option_value( 'country', get_post_meta( $post->ID, '_taka_country', true ) ),
-				'country_code' => self::country_code_for_value( get_post_meta( $post->ID, '_taka_country_code', true ) ?: get_post_meta( $post->ID, '_taka_country', true ) ),
-				'flag' => (string) get_post_meta( $post->ID, '_taka_flag', true ) ?: self::flag_for_country_code( self::country_code_for_value( get_post_meta( $post->ID, '_taka_country', true ) ) ),
+				'country' => $country,
+				'country_code' => $country_code,
+				'country_label' => self::country_label( $country ?: $country_code, taka_tour_current_language() ),
+				'flag' => (string) get_post_meta( $post->ID, '_taka_flag', true ) ?: self::flag_for_country_code( $country_code ),
 				'logo_id' => $logo_id,
 				'logo_url' => self::resolve_attachment_url( $logo_id, 'large', (string) get_post_meta( $post->ID, '_taka_logo_url', true ) ),
 				'logo' => self::resolve_attachment_url( $logo_id, 'large', (string) get_post_meta( $post->ID, '_taka_logo_url', true ) ),
@@ -1249,22 +1252,25 @@ class TAKA_Platform_Data {
 			$id = (string) $post->ID;
 			$config_id = (string) get_post_meta( $post->ID, '_taka_config_id', true );
 			$image_id = absint( get_post_meta( $post->ID, '_taka_image_id', true ) );
+			$country = self::normalize_event_option_value( 'country', get_post_meta( $post->ID, '_taka_country', true ) );
+			$country_code = self::country_code_for_value( get_post_meta( $post->ID, '_taka_country_code', true ) ?: $country );
+			$country_label = self::country_label( $country ?: $country_code, taka_tour_current_language() );
 			$item = array(
 				'id' => $id,
 				'config_id' => $config_id,
 				'name' => get_the_title( $post ),
 				'source_language' => (string) get_post_meta( $post->ID, '_taka_source_language', true ),
 				'text_translations' => self::normalize_object_text_translations( get_post_meta( $post->ID, '_taka_text_translations', true ), self::translatable_text_fields( 'venue' ) ),
-				'address' => array( 'street' => (string) get_post_meta( $post->ID, '_taka_street', true ), 'postal_code' => (string) get_post_meta( $post->ID, '_taka_postal_code', true ), 'city' => (string) get_post_meta( $post->ID, '_taka_city', true ), 'country' => (string) get_post_meta( $post->ID, '_taka_country', true ), 'country_code' => (string) get_post_meta( $post->ID, '_taka_country_code', true ) ),
-				'flag' => (string) get_post_meta( $post->ID, '_taka_flag', true ),
+				'address' => array( 'street' => (string) get_post_meta( $post->ID, '_taka_street', true ), 'postal_code' => (string) get_post_meta( $post->ID, '_taka_postal_code', true ), 'city' => (string) get_post_meta( $post->ID, '_taka_city', true ), 'country' => $country, 'country_label' => $country_label, 'country_code' => $country_code ),
+				'flag' => (string) get_post_meta( $post->ID, '_taka_flag', true ) ?: self::flag_for_country_code( $country_code ),
 				'route_map_x' => self::nullable_meta( $post->ID, 'route_map_x' ),
 				'route_map_y' => self::nullable_meta( $post->ID, 'route_map_y' ),
 				'map_x' => self::nullable_meta( $post->ID, 'map_x' ),
 				'map_y' => self::nullable_meta( $post->ID, 'map_y' ),
 				'route_map_label' => (string) get_post_meta( $post->ID, '_taka_route_map_label', true ),
 				'map_label' => (string) get_post_meta( $post->ID, '_taka_map_label', true ),
-				'timezone' => (string) get_post_meta( $post->ID, '_taka_timezone', true ) ?: self::timezone_for_country( get_post_meta( $post->ID, '_taka_country', true ) ),
-				'currency' => self::normalize_event_option_value( 'currency', get_post_meta( $post->ID, '_taka_currency', true ) ?: self::currency_for_country( get_post_meta( $post->ID, '_taka_country', true ) ) ),
+				'timezone' => (string) get_post_meta( $post->ID, '_taka_timezone', true ) ?: self::timezone_for_country( $country_code ?: $country ),
+				'currency' => self::normalize_event_option_value( 'currency', get_post_meta( $post->ID, '_taka_currency', true ) ?: self::currency_for_country( $country_code ?: $country ) ),
 				'website' => (string) get_post_meta( $post->ID, '_taka_website', true ),
 				'parking' => (string) get_post_meta( $post->ID, '_taka_parking', true ),
 				'accessibility' => (string) get_post_meta( $post->ID, '_taka_accessibility', true ),
@@ -2635,6 +2641,6 @@ class TAKA_Platform_Data {
 	private static function csv_to_strings( $value ) { return array_values( array_filter( array_map( 'trim', preg_split( '/\s*,\s*/', (string) $value ) ) ) ); }
 	private static function format_event_date( $event ) { $start = $event['date_start'] ?? ''; $end = $event['date_end'] ?? ''; if ( '' === $start ) { return ''; } $start_ts = strtotime( $start ); $end_ts = '' !== $end ? strtotime( $end ) : false; if ( false === $start_ts ) { return $start; } if ( false === $end_ts || $start === $end ) { return gmdate( 'j.', $start_ts ) . ' ' . self::month_name( (int) gmdate( 'n', $start_ts ) ) . ' ' . gmdate( 'Y', $start_ts ); } if ( gmdate( 'Ym', $start_ts ) === gmdate( 'Ym', $end_ts ) ) { return gmdate( 'j.', $start_ts ) . '–' . gmdate( 'j.', $end_ts ) . ' ' . self::month_name( (int) gmdate( 'n', $end_ts ) ) . ' ' . gmdate( 'Y', $end_ts ); } return gmdate( 'j.', $start_ts ) . ' ' . self::month_name( (int) gmdate( 'n', $start_ts ) ) . ' ' . gmdate( 'Y', $start_ts ) . ' – ' . gmdate( 'j.', $end_ts ) . ' ' . self::month_name( (int) gmdate( 'n', $end_ts ) ) . ' ' . gmdate( 'Y', $end_ts ); }
 	private static function month_name( $month ) { $months = array( 1 => 'Januar', 2 => 'Februar', 3 => 'März', 4 => 'April', 5 => 'Mai', 6 => 'Juni', 7 => 'Juli', 8 => 'August', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Dezember' ); return $months[ $month ] ?? ''; }
-	private static function format_address( $address ) { $street = $address['street'] ?? ''; $city_line = trim( ( $address['postal_code'] ?? '' ) . ' ' . ( $address['city'] ?? '' ) ); $country = $address['country'] ?? ''; return implode( ', ', array_filter( array( $street, $city_line, $country ) ) ); }
+	private static function format_address( $address ) { $street = $address['street'] ?? ''; $city_line = trim( ( $address['postal_code'] ?? '' ) . ' ' . ( $address['city'] ?? '' ) ); $country = $address['country_label'] ?? ( $address['country'] ?? '' ); return implode( ', ', array_filter( array( $street, $city_line, $country ) ) ); }
 	private static function ticket_status_label( $event, $lang ) { return '' !== self::pretix_event_url( $event ) ? taka_tour_translate( 'seminar.ticketshop_open_pretix', 'Tickets bei Pretix öffnen', $lang ) : taka_tour_translate( 'event.ticketshop_soon', taka_tour_translate( 'seminar.ticketshop_soon', 'Ticketshop folgt', $lang ), $lang ); }
 }

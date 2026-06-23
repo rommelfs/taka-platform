@@ -84,7 +84,7 @@ Organizers support legal names, websites, logos, contact data, social links and 
 
 ## Option lists
 
-Recurring event fields such as ticket provider, ticket status, format, audience, level, country and currency use configurable option lists from **TAKA Platform -> Option Lists**. Events store stable option keys where possible, while unknown legacy text values remain valid and are reported for review. Option labels have a source language, translations, aliases, optional icons, sort order and enabled state, and are included in TAKA Translation Packages. See [docs/option-lists.md](docs/option-lists.md).
+Recurring fields such as ticket provider, ticket status, format, audience, level, country and currency use configurable option lists from **TAKA Platform -> Option Lists**. Events, organizers and venues store stable country keys where possible, while unknown legacy text values remain valid and are reported for review. Option labels have a source language, translations, aliases, optional icons, sort order and enabled state, and are included in TAKA Translation Packages. See [docs/option-lists.md](docs/option-lists.md).
 
 ## Hero route map
 
@@ -172,6 +172,10 @@ The script checks PHP syntax for all `*.php` files with `php -l` and scans the r
 Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `taka_organizer`, `taka_venue`) continue to work. Existing constants such as `TAKA_TOUR_VERSION` map to the new platform constants. Existing class names such as `Taka_Tour_Data` are aliased to the new `TAKA_Platform_*` classes.
 
 ## Changelog
+
+### v2.2.3
+
+- Extended structured country option lists to Organizer and Venue admin screens, with derived country code/flag storage.
 
 ### v2.2.2
 
