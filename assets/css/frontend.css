@@ -271,6 +271,10 @@ body.admin-bar {
 	filter: drop-shadow(0 0 5px rgba(188, 0, 45, .45));
 }
 
+.taka-hero-route-map__line--mobile {
+	display: none;
+}
+
 .taka-hero-route-map__marker {
 	position: absolute;
 	z-index: 7;
@@ -422,6 +426,14 @@ body.admin-bar {
 		max-width: 100%;
 		overflow: hidden;
 		box-shadow: 0 16px 38px rgba(0, 0, 0, .28);
+	}
+
+	.taka-hero-route-map__line--desktop {
+		display: none;
+	}
+
+	.taka-hero-route-map__line--mobile {
+		display: inline;
 	}
 
 	.taka-hero-route-map__marker {
