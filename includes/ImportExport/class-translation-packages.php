@@ -249,6 +249,7 @@ class TAKA_Platform_Translation_Packages {
 		$allow_changed = ! empty( $args['allow_changed_source'] );
 		$index = self::current_item_index( (array) ( $package['items'] ?? array() ) );
 		$changes = array();
+		$source_language_changes = array();
 		foreach ( (array) ( $package['items'] ?? array() ) as $item ) {
 			if ( ! is_array( $item ) || empty( $item['id'] ) || empty( $item['translations'] ) || ! is_array( $item['translations'] ) ) {
 				$summary['errors'][] = 'Invalid item in package.';
@@ -283,6 +284,10 @@ class TAKA_Platform_Translation_Packages {
 				}
 				continue;
 			}
+			if ( $source_language !== $current_source_language ) {
+				$source_language_changes[ $current['object_type'] ][ $current['object_id'] ] = $source_language;
+				$summary['report'][] = self::import_report_row( $item, '', 'source_language_updated' );
+			}
 			foreach ( $translations as $lang => $translation ) {
 				$raw_lang = (string) $lang;
 				$lang = self::sanitize_language( $lang, '' );
@@ -316,8 +321,8 @@ class TAKA_Platform_Translation_Packages {
 				}
 			}
 		}
-		if ( $summary['imported'] > 0 ) {
-			self::apply_changes( $changes );
+		if ( $summary['imported'] > 0 || ! empty( $source_language_changes ) ) {
+			self::apply_changes( $changes, $source_language_changes );
 		}
 		return $summary;
 	}
@@ -523,7 +528,7 @@ class TAKA_Platform_Translation_Packages {
 		return '';
 	}
 
-	private static function apply_changes( $changes ) {
+	private static function apply_changes( $changes, $source_language_changes = array() ) {
 		if ( ! empty( $changes['content_section'] ) ) {
 			$sections = get_option( TAKA_Platform_Data::SECTIONS_OPTION, array() );
 			$sections = is_array( $sections ) ? $sections : array();
@@ -561,6 +566,50 @@ class TAKA_Platform_Translation_Packages {
 		}
 		if ( ! empty( $changes['option_list'] ) ) {
 			TAKA_Platform_Data::update_option_list_translations( $changes['option_list'] );
+		}
+		if ( ! empty( $source_language_changes ) ) {
+			self::apply_source_language_changes( $source_language_changes );
+		}
+	}
+
+	private static function apply_source_language_changes( $changes ) {
+		if ( ! empty( $changes['content_section'] ) ) {
+			$sections = get_option( TAKA_Platform_Data::SECTIONS_OPTION, array() );
+			$sections = is_array( $sections ) ? $sections : array();
+			foreach ( TAKA_Platform_Data::get_content_sections( false ) as $key => $section ) {
+				if ( empty( $changes['content_section'][ $key ] ) ) { continue; }
+				$sections[ $key ] = array_merge( $section, $sections[ $key ] ?? array() );
+				$sections[ $key ]['source_language'] = self::sanitize_language( $changes['content_section'][ $key ], TAKA_Platform_Data::platform_fallback_language() );
+			}
+			update_option( TAKA_Platform_Data::SECTIONS_OPTION, $sections, false );
+		}
+		foreach ( array( 'booking_information' => TAKA_Platform_Data::BOOKING_OPTION, 'ticket_section' => TAKA_Platform_Data::TICKETS_OPTION, 'hero' => TAKA_Platform_Data::HERO_OPTION ) as $type => $option ) {
+			if ( empty( $changes[ $type ]['global'] ) ) { continue; }
+			$data = get_option( $option, array() );
+			$data = is_array( $data ) ? $data : array();
+			$data['source_language'] = self::sanitize_language( $changes[ $type ]['global'], TAKA_Platform_Data::platform_fallback_language() );
+			update_option( $option, $data, false );
+		}
+		foreach ( array( 'event' => TAKA_PLATFORM_CPT_EVENT, 'organizer' => TAKA_PLATFORM_CPT_ORGANIZER, 'venue' => TAKA_PLATFORM_CPT_VENUE, 'content_block' => TAKA_PLATFORM_CPT_CONTENT_BLOCK ) as $type => $post_type ) {
+			foreach ( (array) ( $changes[ $type ] ?? array() ) as $object_id => $lang ) {
+				$post_id = self::find_post_id( $post_type, $object_id );
+				if ( ! $post_id ) { continue; }
+				update_post_meta( $post_id, '_taka_source_language', self::sanitize_language( $lang, TAKA_Platform_Data::platform_fallback_language() ) );
+			}
+		}
+		if ( ! empty( $changes['option_list'] ) ) {
+			$lists = TAKA_Platform_Data::get_option_lists( true );
+			foreach ( (array) $changes['option_list'] as $object_id => $lang ) {
+				$parts = explode( '.', (string) $object_id, 2 );
+				if ( 2 !== count( $parts ) ) { continue; }
+				list( $list_key, $option_key ) = $parts;
+				if ( empty( $lists[ $list_key ]['options'] ) ) { continue; }
+				foreach ( $lists[ $list_key ]['options'] as $index => $option ) {
+					if ( (string) ( $option['key'] ?? '' ) !== $option_key ) { continue; }
+					$lists[ $list_key ]['options'][ $index ]['source_language'] = self::sanitize_language( $lang, TAKA_Platform_Data::platform_fallback_language() );
+				}
+			}
+			update_option( TAKA_Platform_Data::OPTION_LISTS_OPTION, $lists, false );
 		}
 	}
 
