@@ -368,12 +368,15 @@ class TAKA_Platform_Admin {
 			<table class="widefat striped">
 				<thead>
 					<tr>
+						<th><?php echo esc_html__( 'Route index', 'taka-platform' ); ?></th>
 						<th><?php echo esc_html__( 'Event ID', 'taka-platform' ); ?></th>
 						<th><?php echo esc_html__( 'Event title', 'taka-platform' ); ?></th>
 						<th><?php echo esc_html__( 'Location name', 'taka-platform' ); ?></th>
 						<th><?php echo esc_html__( 'Country', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Start date', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Start time', 'taka-platform' ); ?></th>
 						<th><?php echo esc_html__( 'Start datetime', 'taka-platform' ); ?></th>
-						<th><?php echo esc_html__( 'Coordinates', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Assigned marker coordinates', 'taka-platform' ); ?></th>
 						<th><?php echo esc_html__( 'Coordinate source', 'taka-platform' ); ?></th>
 						<th><?php echo esc_html__( 'Final map label', 'taka-platform' ); ?></th>
 						<th><?php echo esc_html__( 'Label source', 'taka-platform' ); ?></th>
@@ -388,10 +391,13 @@ class TAKA_Platform_Admin {
 				<tbody>
 					<?php foreach ( $route_rows as $row ) : ?>
 						<tr>
+							<td><code><?php echo esc_html( $row['route_index'] ?? '' ); ?></code></td>
 							<td><code><?php echo esc_html( $row['event_id'] ?? '' ); ?></code></td>
 							<td><?php echo esc_html( $row['event_title'] ?? '' ); ?></td>
 							<td><?php echo esc_html( $row['location_name'] ?? '' ); ?></td>
 							<td><?php echo esc_html( $row['country'] ?? '' ); ?></td>
+							<td><code><?php echo esc_html( $row['event_start_date'] ?? '' ); ?></code></td>
+							<td><code><?php echo esc_html( $row['event_start_time'] ?? '' ); ?></code></td>
 							<td><code><?php echo esc_html( $row['start_datetime'] ?? '' ); ?></code></td>
 							<td><code><?php echo esc_html( $row['coordinates'] ?? '' ); ?></code></td>
 							<td><?php echo esc_html( $row['coordinate_source'] ?? '' ); ?></td>

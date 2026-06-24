@@ -2432,33 +2432,36 @@ class TAKA_Platform_Data {
 
 		$stations = array();
 		$count = max( 1, count( $events ) );
+		$visual_slots = self::hero_route_map_visual_slots( $events );
 		foreach ( $events as $index => $event ) {
 			$point = is_array( $event['hero_route_map'] ?? null ) ? $event['hero_route_map'] : self::resolve_event_route_map_point( $event, $event['venue_full'] ?? ( $event['venue_data'] ?? null ) );
-			$manual_x = isset( $point['x'] ) && is_numeric( $point['x'] ) ? max( 0, min( 100, (float) $point['x'] ) ) : null;
-			$manual_y = isset( $point['y'] ) && is_numeric( $point['y'] ) ? max( 0, min( 100, (float) $point['y'] ) ) : null;
-			$progress = 1 === $count ? 0 : $index / ( $count - 1 );
-			$auto_x = 72 - min( 42, $index * 5.4 ) + ( 0 === $index % 2 ? 0 : -4 );
-			$auto_y = 13 + $progress * 72;
-			$marker_x = null !== $manual_x ? $manual_x : max( 18, min( 82, $auto_x ) );
-			$marker_y = null !== $manual_y ? $manual_y : max( 12, min( 88, $auto_y ) );
+			$slot = $visual_slots[ $index ] ?? self::hero_route_map_auto_slot( $index, $count );
+			$marker_x = $slot['marker_x'];
+			$marker_y = $slot['marker_y'];
 			$label = trim( (string) ( $point['label'] ?? '' ) );
 			if ( '' === $label ) { $label = self::hero_route_location_name( $event ); }
 			if ( '' === $label ) { continue; }
+			$route_index = count( $stations ) + 1;
+			$start_date = self::event_start_date_for_sort( $event );
+			$start_time = self::event_start_time_for_sort( $event );
 
 			$stations[] = array(
 				'event' => $event,
 				'event_id' => (string) ( $event['id'] ?? ( $event['config_id'] ?? ( $event['wp_post_id'] ?? '' ) ) ),
 				'event_title' => (string) ( $event['title'] ?? '' ),
+				'route_index' => $route_index,
 				'location_name' => self::hero_route_location_name( $event ),
 				'country' => (string) ( $event['country_label'] ?? ( $event['country'] ?? '' ) ),
 				'date_label' => (string) ( $event['date'] ?? '' ),
+				'event_start_date' => $start_date,
+				'event_start_time' => $start_time,
 				'start_datetime' => self::event_start_datetime( $event ),
 				'tour_order' => self::event_tour_order( $event ),
 				'marker_x' => $marker_x,
 				'marker_y' => $marker_y,
 				'x' => $marker_x,
 				'y' => $marker_y,
-				'coordinate_source' => (string) ( $point['coordinate_source'] ?? ( null !== $manual_x || null !== $manual_y ? 'event_or_venue' : 'auto' ) ),
+				'coordinate_source' => (string) ( $slot['coordinate_source'] ?? 'chronological_slot' ),
 				'label' => $label,
 				'display_label' => $label,
 				'short_label' => trim( (string) ( $event['route_map_short_label'] ?? ( $event['short_label'] ?? '' ) ) ) ?: $label,
@@ -2476,15 +2479,68 @@ class TAKA_Platform_Data {
 		return TAKA_Platform_Tour_Map_Label_Layout::compute( $stations );
 	}
 
+	/** Build reusable visual slots and sort them from north/top to south/bottom. */
+	private static function hero_route_map_visual_slots( $events ) {
+		$events = array_values( is_array( $events ) ? $events : array() );
+		$count = max( 1, count( $events ) );
+		$slots = array();
+
+		foreach ( $events as $index => $event ) {
+			$point = is_array( $event['hero_route_map'] ?? null ) ? $event['hero_route_map'] : self::resolve_event_route_map_point( $event, $event['venue_full'] ?? ( $event['venue_data'] ?? null ) );
+			$auto = self::hero_route_map_auto_slot( $index, $count );
+			$manual_x = isset( $point['x'] ) && is_numeric( $point['x'] ) ? max( 0, min( 100, (float) $point['x'] ) ) : null;
+			$manual_y = isset( $point['y'] ) && is_numeric( $point['y'] ) ? max( 0, min( 100, (float) $point['y'] ) ) : null;
+			$coordinate_source = (string) ( $point['coordinate_source'] ?? ( null !== $manual_x || null !== $manual_y ? 'event_or_venue' : 'auto' ) );
+
+			$slots[] = array(
+				'marker_x' => null !== $manual_x ? $manual_x : $auto['marker_x'],
+				'marker_y' => null !== $manual_y ? $manual_y : $auto['marker_y'],
+				'coordinate_source' => 'chronological_slot:' . $coordinate_source,
+				'slot_index' => $index,
+			);
+		}
+
+		usort(
+			$slots,
+			static function ( $a, $b ) {
+				$y_compare = (float) ( $a['marker_y'] ?? 0 ) <=> (float) ( $b['marker_y'] ?? 0 );
+				if ( 0 !== $y_compare ) { return $y_compare; }
+				$x_compare = (float) ( $a['marker_x'] ?? 0 ) <=> (float) ( $b['marker_x'] ?? 0 );
+				if ( 0 !== $x_compare ) { return $x_compare; }
+				return (int) ( $a['slot_index'] ?? 0 ) <=> (int) ( $b['slot_index'] ?? 0 );
+			}
+		);
+
+		return array_values( $slots );
+	}
+
+	private static function hero_route_map_auto_slot( $index, $count ) {
+		$count = max( 1, (int) $count );
+		$index = max( 0, (int) $index );
+		$progress = 1 === $count ? 0 : $index / ( $count - 1 );
+		$auto_x = 72 - min( 42, $index * 5.4 ) + ( 0 === $index % 2 ? 0 : -4 );
+		$auto_y = 13 + $progress * 72;
+
+		return array(
+			'marker_x' => max( 18, min( 82, $auto_x ) ),
+			'marker_y' => max( 12, min( 88, $auto_y ) ),
+			'coordinate_source' => 'auto',
+			'slot_index' => $index,
+		);
+	}
+
 	/** Diagnostics rows for the Admin -> Diagnostics route map section. */
 	public static function hero_route_map_diagnostics( $lang = null ) {
 		return array_map(
 			static function ( $station ) {
 				return array(
+					'route_index' => $station['route_index'] ?? '',
 					'event_id' => $station['event_id'] ?? '',
 					'event_title' => $station['event_title'] ?? '',
 					'location_name' => $station['location_name'] ?? '',
 					'country' => $station['country'] ?? '',
+					'event_start_date' => $station['event_start_date'] ?? '',
+					'event_start_time' => $station['event_start_time'] ?? '',
 					'start_datetime' => $station['start_datetime'] ?? '',
 					'coordinates' => round( (float) ( $station['marker_x'] ?? ( $station['x'] ?? 0 ) ), 2 ) . ', ' . round( (float) ( $station['marker_y'] ?? ( $station['y'] ?? 0 ) ), 2 ),
 					'coordinate_source' => $station['coordinate_source'] ?? '',
@@ -2502,35 +2558,45 @@ class TAKA_Platform_Data {
 		);
 	}
 
-	/** Compare hero route stations by explicit tour order when present, then chronologically. */
+	/** Debug helper for inspecting final chronological route-map station assignment. */
+	public static function hero_route_map_debug_rows( $lang = null ) {
+		return self::hero_route_map_diagnostics( $lang );
+	}
+
+	/** Compare hero route stations chronologically, using event ID only as the stable tie-breaker. */
 	private static function compare_hero_route_map_events( $a, $b ) {
-		$a_order = self::event_tour_order( $a );
-		$b_order = self::event_tour_order( $b );
-		if ( null !== $a_order || null !== $b_order ) {
-			$order_compare = ( $a_order ?? 999999 ) <=> ( $b_order ?? 999999 );
-			if ( 0 !== $order_compare ) { return $order_compare; }
+		$a_start = self::event_start_datetime_object( $a );
+		$b_start = self::event_start_datetime_object( $b );
+		if ( $a_start instanceof DateTimeImmutable && $b_start instanceof DateTimeImmutable ) {
+			if ( $a_start < $b_start ) { return -1; }
+			if ( $a_start > $b_start ) { return 1; }
+		} elseif ( $a_start instanceof DateTimeImmutable ) {
+			return -1;
+		} elseif ( $b_start instanceof DateTimeImmutable ) {
+			return 1;
 		}
 
-		$a_start = self::event_start_datetime( $a );
-		$b_start = self::event_start_datetime( $b );
-		if ( '' !== $a_start || '' !== $b_start ) {
-			$start_compare = strcmp( '' !== $a_start ? $a_start : '9999-12-31T23:59', '' !== $b_start ? $b_start : '9999-12-31T23:59' );
-			if ( 0 !== $start_compare ) { return $start_compare; }
-		}
-
-		$label_compare = strcmp( self::hero_route_location_name( $a ) ?: (string) ( $a['title'] ?? '' ), self::hero_route_location_name( $b ) ?: (string) ( $b['title'] ?? '' ) );
-		if ( 0 !== $label_compare ) { return $label_compare; }
-		return strcmp( (string) ( $a['id'] ?? ( $a['wp_post_id'] ?? '' ) ), (string) ( $b['id'] ?? ( $b['wp_post_id'] ?? '' ) ) );
+		return strcmp( self::event_route_id( $a ), self::event_route_id( $b ) );
 	}
 
 	private static function event_start_datetime( $event ) {
+		$datetime = self::event_start_datetime_object( $event );
+		return $datetime instanceof DateTimeImmutable ? $datetime->format( 'Y-m-d\TH:i' ) : '';
+	}
+
+	private static function event_start_datetime_object( $event ) {
+		$date = self::event_start_date_for_sort( $event );
+		if ( '' === $date ) { return null; }
+		$time = self::event_start_time_for_sort( $event );
+		$datetime = DateTimeImmutable::createFromFormat( '!Y-m-d H:i', $date . ' ' . $time, new DateTimeZone( 'UTC' ) );
+		return $datetime instanceof DateTimeImmutable ? $datetime : null;
+	}
+
+	private static function event_start_date_for_sort( $event ) {
 		$date = self::normalize_program_date( $event['date_start'] ?? '' );
-		if ( '' === $date ) {
-			$items = self::normalize_program_items( $event['program_items'] ?? array(), $event );
-			$date = (string) ( $items[0]['date'] ?? '' );
-		}
-		if ( '' === $date ) { return ''; }
-		return $date . 'T' . self::event_start_time_for_sort( $event );
+		if ( '' !== $date ) { return $date; }
+		$items = self::normalize_program_items( $event['program_items'] ?? array(), $event );
+		return self::normalize_program_date( $items[0]['date'] ?? '' );
 	}
 
 	private static function event_start_time_for_sort( $event ) {
@@ -2554,9 +2620,16 @@ class TAKA_Platform_Data {
 		return null;
 	}
 
+	private static function event_route_id( $event ) {
+		foreach ( array( 'id', 'config_id', 'slug', 'wp_post_id' ) as $field ) {
+			$value = trim( (string) ( $event[ $field ] ?? '' ) );
+			if ( '' !== $value ) { return $value; }
+		}
+		return md5( wp_json_encode( $event ) );
+	}
+
 	private static function hero_route_sort_key( $event ) {
-		$order = self::event_tour_order( $event );
-		return 'tour_order=' . ( null === $order ? 'none' : (string) $order ) . ';start=' . ( self::event_start_datetime( $event ) ?: 'none' ) . ';label=' . ( self::hero_route_location_name( $event ) ?: (string) ( $event['title'] ?? '' ) );
+		return 'start=' . ( self::event_start_datetime( $event ) ?: 'none' ) . ';event_id=' . self::event_route_id( $event );
 	}
 
 	private static function hero_route_location_name( $event, $venue = null ) {
