@@ -163,6 +163,23 @@ class TAKA_Platform_Admin {
 			);
 		}
 
+		if ( TAKA_PLATFORM_CPT_VENUE === $post_type ) {
+			$args['map_meta_cap'] = true;
+			$args['capabilities'] = array(
+				'edit_post'              => 'edit_taka_venues',
+				'read_post'              => 'edit_taka_venues',
+				'delete_post'            => 'manage_options',
+				'edit_posts'             => 'edit_taka_venues',
+				'edit_others_posts'      => 'manage_options',
+				'publish_posts'          => 'manage_options',
+				'edit_published_posts'   => 'edit_taka_venues',
+				'read_private_posts'     => 'manage_options',
+				'delete_posts'           => 'manage_options',
+				'delete_others_posts'    => 'manage_options',
+				'create_posts'           => 'manage_options',
+			);
+		}
+
 		register_post_type(
 			$post_type,
 			$args

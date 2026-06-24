@@ -1922,7 +1922,10 @@ class TAKA_Platform_Data {
 		}
 		uasort( $sections, static function ( $a, $b ) {
 			$sort = (int) ( $a['sort_order'] ?? 0 ) <=> (int) ( $b['sort_order'] ?? 0 );
-			return 0 !== $sort ? $sort : strcasecmp( (string) ( $a['title'] ?? '' ), (string) ( $b['title'] ?? '' ) );
+			if ( 0 !== $sort ) { return $sort; }
+			$title_a = self::resolve_dynamic_text( $a['title'] ?? '', self::platform_fallback_language(), $a['source_language'] ?? self::platform_fallback_language() );
+			$title_b = self::resolve_dynamic_text( $b['title'] ?? '', self::platform_fallback_language(), $b['source_language'] ?? self::platform_fallback_language() );
+			return strcasecmp( $title_a, $title_b );
 		} );
 		return $sections;
 	}
