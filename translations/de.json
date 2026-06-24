@@ -4,6 +4,10 @@
     "name": "Deutsch",
     "switcher_label": "Sprache wählen"
   },
+  "navigation": {
+    "primary": "Hauptnavigation",
+    "home": "Home"
+  },
   "hero": {
     "kicker": "TAKA European Tour 2026",
     "headline": "Harmony in Motion",

@@ -175,6 +175,10 @@ Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `tak
 
 ## Changelog
 
+### v2.2.11
+
+- Added a reusable frontend header/menu shell with a Home scroll action and context-preserving language switcher URLs for homepage and event detail views.
+
 ### v2.2.10
 
 - Added optional structured event promo videos with admin fields for uploaded videos, oEmbed URLs and preview images, plus responsive ticket-page rendering without autoplay.

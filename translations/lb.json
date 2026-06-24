@@ -4,6 +4,10 @@
     "name": "Lëtzebuergesch",
     "switcher_label": "Sprooch auswielen"
   },
+  "navigation": {
+    "primary": "Haaptnavigatioun",
+    "home": "Home"
+  },
   "hero": {
     "kicker": "TAKA European Tour 2026",
     "headline": "Harmony in Motion",
