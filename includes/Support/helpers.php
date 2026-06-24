@@ -40,6 +40,31 @@ function taka_platform_render_template( $template, $args = array() ) {
 }
 
 /**
+ * Render the shared frontend header once per request.
+ *
+ * @param bool $once Whether repeated calls should return an empty string.
+ * @return string
+ */
+function taka_tour_render_site_header( $once = true ) {
+	static $rendered = false;
+	if ( $once && $rendered ) {
+		return '';
+	}
+	$rendered = true;
+	return taka_tour_render_template( 'partials/site-header.php' );
+}
+
+/**
+ * Render the shared frontend header once per request.
+ *
+ * @param bool $once Whether repeated calls should return an empty string.
+ * @return string
+ */
+function taka_platform_render_site_header( $once = true ) {
+	return taka_tour_render_site_header( $once );
+}
+
+/**
  * Return allowed HTML for rich template text.
  *
  * @return array
@@ -146,6 +171,44 @@ function taka_tour_current_language() {
  */
 function taka_platform_current_language() {
 	return taka_tour_current_language();
+}
+
+/**
+ * Build a language switch URL from the current frontend request.
+ *
+ * WordPress/PHP cannot see URL fragments such as #tickets/helsinki, so the
+ * frontend enhancer appends the active fragment right before navigation.
+ *
+ * @param string      $language Target language code.
+ * @param string|null $url      Optional base URL.
+ * @return string
+ */
+function taka_tour_language_url( $language, $url = null ) {
+	$language = sanitize_key( $language );
+	if ( '' === $language ) {
+		return '';
+	}
+
+	if ( null === $url ) {
+		$request_uri = '/';
+		if ( ! empty( $_SERVER['REQUEST_URI'] ) ) {
+			$request_uri = esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) );
+		}
+		$url = home_url( $request_uri );
+	}
+
+	return add_query_arg( 'taka_lang', $language, remove_query_arg( 'taka_lang', $url ) );
+}
+
+/**
+ * Build a language switch URL from the current frontend request.
+ *
+ * @param string      $language Target language code.
+ * @param string|null $url      Optional base URL.
+ * @return string
+ */
+function taka_platform_language_url( $language, $url = null ) {
+	return taka_tour_language_url( $language, $url );
 }
 
 /**

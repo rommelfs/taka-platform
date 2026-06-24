@@ -136,7 +136,7 @@ class TAKA_Platform_Plugin {
 		}
 
 		foreach ( TAKA_Platform_I18n::instance()->get_all_languages() as $lang ) {
-			echo '<link rel="alternate" hreflang="' . esc_attr( $lang ) . '" href="' . esc_url( add_query_arg( 'taka_lang', $lang ) ) . '" />' . "\n";
+			echo '<link rel="alternate" hreflang="' . esc_attr( $lang ) . '" href="' . esc_url( taka_tour_language_url( $lang ) ) . '" />' . "\n";
 		}
 	}
 }

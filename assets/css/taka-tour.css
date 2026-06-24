@@ -10,6 +10,90 @@
 	box-sizing: border-box;
 }
 
+.taka-page-top {
+	display: block;
+	height: 0;
+	scroll-margin-top: 4.5rem;
+}
+
+.taka-site-header {
+	position: sticky;
+	top: 0;
+	z-index: 40;
+	background: rgba(247, 243, 236, .95);
+	border-bottom: 1px solid rgba(17, 17, 17, .1);
+	color: #111111;
+	backdrop-filter: blur(14px);
+}
+
+.taka-site-header__inner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	max-width: 1180px;
+	min-height: 3.75rem;
+	margin: 0 auto;
+	padding: .5rem clamp(1rem, 5vw, 5rem);
+}
+
+.taka-site-nav {
+	display: flex;
+	flex: 1 1 auto;
+	align-items: center;
+	gap: .35rem;
+	min-width: 0;
+}
+
+.taka-site-nav__link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 2.45rem;
+	padding: .45rem .85rem;
+	border: 1px solid rgba(188, 0, 45, .22);
+	border-radius: 999px;
+	color: #111111 !important;
+	font-size: .88rem;
+	font-weight: 800;
+	text-decoration: none;
+}
+
+.taka-site-nav__link:hover,
+.taka-site-nav__link:focus-visible {
+	background: rgba(188, 0, 45, .08);
+	border-color: rgba(188, 0, 45, .48);
+	color: #BC002D !important;
+}
+
+.taka-site-header__language {
+	display: flex;
+	flex: 0 0 auto;
+	justify-content: flex-end;
+	min-width: 0;
+}
+
+.taka-site-header .taka-language-menu {
+	margin-bottom: 0;
+	padding: .24rem;
+	border-color: rgba(17, 17, 17, .1);
+	background: rgba(255, 255, 255, .72);
+	box-shadow: 0 12px 34px rgba(17, 17, 17, .08);
+	overflow: visible;
+}
+
+.taka-site-header .taka-language-icon {
+	min-width: 38px;
+	min-height: 38px;
+	color: #111111 !important;
+}
+
+.taka-site-header .taka-language-icon:hover,
+.taka-site-header .taka-language-icon.is-active {
+	background: rgba(188, 0, 45, .08);
+	color: #BC002D !important;
+}
+
 .taka-hero,
 .taka-section {
 	padding: clamp(3.5rem, 8vw, 8rem) clamp(1rem, 5vw, 5rem);
@@ -700,6 +784,13 @@
 	gap: .15rem;
 }
 
+@media (hover: hover) and (pointer: fine) {
+	.taka-language-dropdown:hover .taka-language-dropdown-menu {
+		display: grid;
+		gap: .15rem;
+	}
+}
+
 .taka-language-dropdown-item {
 	display: block;
 	padding: .65rem .75rem;
@@ -749,6 +840,35 @@
 		max-width: 100%;
 		overflow-x: auto;
 		border-radius: 24px;
+	}
+
+	.taka-site-header__inner {
+		gap: .6rem;
+		min-height: 3.4rem;
+		padding-block: .42rem;
+	}
+
+	.taka-site-nav__link {
+		min-height: 2.25rem;
+		padding: .35rem .7rem;
+	}
+
+	.taka-site-header .taka-language-menu {
+		overflow: visible;
+		border-radius: 999px;
+	}
+
+	.taka-site-header .taka-language-icon {
+		min-width: 34px;
+		min-height: 34px;
+		padding: 0 .32rem;
+		font-size: .95rem;
+	}
+
+	.taka-site-header .taka-language-dropdown-menu {
+		right: 0;
+		left: auto;
+		transform: none;
 	}
 
 	.taka-sensei-section {

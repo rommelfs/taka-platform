@@ -27,7 +27,6 @@ if ( '' !== $hero_image ) {
 ?>
 <section class="taka-hero taka-hero--text-<?php echo esc_attr( $text_position ); ?> taka-hero--vertical-<?php echo esc_attr( $vertical ); ?>" style="<?php echo esc_attr( $style ); ?>">
 	<div class="taka-hero-content <?php echo $box_enabled ? 'taka-hero-content--boxed' : ''; ?>">
-		<?php echo taka_tour_render_template( 'partials/language-switcher.php' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		<?php if ( '' !== trim( (string) ( $hero['kicker'] ?? '' ) ) ) : ?>
 			<p class="taka-kicker"><?php echo esc_html( $hero['kicker'] ); ?></p>
 		<?php endif; ?>
