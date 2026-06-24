@@ -147,7 +147,7 @@ class TAKA_Platform_Translation_Packages {
 
 	/** Status counters for the admin overview. */
 	public static function status() {
-		$items = self::collect_items( array( 'include_existing_translations' => true, 'only_missing_translations' => false, 'use_object_source_languages' => true ) );
+		$items = self::collect_items( array( 'include_existing_translations' => true, 'only_missing_translations' => false, 'use_object_source_languages' => true, 'include_context' => false ) );
 		$langs = TAKA_Platform_I18n::instance()->get_all_languages();
 		$status = array_fill_keys( $langs, array( 'translated' => 0, 'missing' => 0 ) );
 		foreach ( $langs as $lang ) { $status[ $lang ] = array( 'translated' => 0, 'missing' => 0 ); }
@@ -174,7 +174,7 @@ class TAKA_Platform_Translation_Packages {
 		$include_context = array_key_exists( 'include_context', $args ) ? ! empty( $args['include_context'] ) : true;
 		$only_missing = ! empty( $args['only_missing_translations'] );
 		$items = array();
-		foreach ( self::object_definitions() as $definition ) {
+		foreach ( self::object_definitions( array(), $include_context ) as $definition ) {
 			foreach ( $definition['objects'] as $object_id => $object ) {
 				$object_source = $use_object_sources ? self::sanitize_language( $object['source_language'] ?? $source_language, $source_language ) : $source_language;
 				$item_targets = array_values( array_diff( $targets, array( $object_source ) ) );
@@ -247,7 +247,7 @@ class TAKA_Platform_Translation_Packages {
 		}
 		$overwrite = ! empty( $args['overwrite_existing'] );
 		$allow_changed = ! empty( $args['allow_changed_source'] );
-		$index = self::current_item_index();
+		$index = self::current_item_index( (array) ( $package['items'] ?? array() ) );
 		$changes = array();
 		foreach ( (array) ( $package['items'] ?? array() ) as $item ) {
 			if ( ! is_array( $item ) || empty( $item['id'] ) || empty( $item['translations'] ) || ! is_array( $item['translations'] ) ) {
@@ -340,88 +340,110 @@ class TAKA_Platform_Translation_Packages {
 		return is_array( $decoded ) ? $decoded : null;
 	}
 
-	private static function object_definitions() {
-		$sections = array();
-		foreach ( TAKA_Platform_Data::get_content_sections( false ) as $key => $section ) {
-			$sections[ $key ] = array(
-				'label' => self::value_for_language( $section['title'] ?? '', TAKA_Platform_Data::content_section_source_language( $section ) ) ?: (string) $key,
-				'source_language' => TAKA_Platform_Data::content_section_source_language( $section ),
-				'values' => array(
-					'kicker' => $section['translations'][ TAKA_Platform_Data::content_section_source_language( $section ) ]['kicker'] ?? ( $section['kicker'] ?? '' ),
-					'title' => $section['translations'][ TAKA_Platform_Data::content_section_source_language( $section ) ]['title'] ?? ( $section['title'] ?? '' ),
-					'subtitle' => $section['translations'][ TAKA_Platform_Data::content_section_source_language( $section ) ]['subtitle'] ?? ( $section['subtitle'] ?? '' ),
-					'body' => self::field_values_from_section( $section, 'body' ),
-					'button_label' => self::field_values_from_section( $section, 'button_label' ),
-				),
-			);
-			foreach ( array( 'kicker', 'title', 'subtitle', 'body', 'button_label' ) as $field ) {
-				$sections[ $key ]['values'][ $field ] = self::field_values_from_section( $section, $field );
-			}
-		}
+	private static function object_definitions( $types = array(), $include_contexts = true ) {
+		$types = array_values( array_filter( array_map( 'sanitize_key', (array) $types ) ) );
+		$include_all = empty( $types );
+		$wants = static function ( $type ) use ( $types, $include_all ) {
+			return $include_all || in_array( $type, $types, true );
+		};
+		$definitions = array();
 
-		$booking = TAKA_Platform_Data::get_booking_information_settings( null, false );
-		$tickets = TAKA_Platform_Data::get_ticket_section_settings( null, false );
-		$hero = TAKA_Platform_Data::get_hero_settings( false );
-		$content_blocks = self::content_block_objects();
-		$events = self::post_text_objects( TAKA_Platform_Data::get_events(), 'event' );
-		$organizers = self::post_text_objects( TAKA_Platform_Data::get_organizers(), 'organizer' );
-		$venues = self::post_text_objects( TAKA_Platform_Data::get_venues(), 'venue' );
-		return array(
-			array(
+		if ( $wants( 'option_list' ) ) {
+			$definitions[] = array(
 				'type' => 'option_list',
 				'context_prefix' => 'Option List',
 				'fields' => array( 'label' => 'Label' ),
 				'objects' => TAKA_Platform_Data::option_list_translation_objects(),
-			),
-			array(
+			);
+		}
+
+		if ( $wants( 'content_section' ) ) {
+			$sections = array();
+			foreach ( TAKA_Platform_Data::get_content_sections( false ) as $key => $section ) {
+				$sections[ $key ] = array(
+					'label' => self::value_for_language( $section['title'] ?? '', TAKA_Platform_Data::content_section_source_language( $section ) ) ?: (string) $key,
+					'source_language' => TAKA_Platform_Data::content_section_source_language( $section ),
+					'values' => array(),
+				);
+				foreach ( array( 'kicker', 'title', 'subtitle', 'body', 'button_label' ) as $field ) {
+					$sections[ $key ]['values'][ $field ] = self::field_values_from_section( $section, $field );
+				}
+			}
+			$definitions[] = array(
 				'type' => 'content_section',
 				'context_prefix' => 'Homepage / Content Section',
 				'fields' => array( 'kicker' => 'Kicker', 'title' => 'Title', 'subtitle' => 'Subtitle', 'body' => 'Body', 'button_label' => 'Button label' ),
 				'objects' => $sections,
-			),
-			array(
+			);
+		}
+
+		if ( $wants( 'content_block' ) ) {
+			$definitions[] = array(
 				'type' => 'content_block',
 				'context_prefix' => 'Content Block',
 				'fields' => TAKA_Platform_Data::content_block_text_fields(),
-				'objects' => $content_blocks,
-			),
-			array(
+				'objects' => self::content_block_objects( $include_contexts ),
+			);
+		}
+
+		if ( $wants( 'booking_information' ) ) {
+			$booking = TAKA_Platform_Data::get_booking_information_settings( null, false );
+			$definitions[] = array(
 				'type' => 'booking_information',
 				'context_prefix' => 'Booking Information',
 				'fields' => array( 'title' => 'Title', 'intro' => 'Intro', 'group_booking' => 'Group booking', 'multi_event_discount' => 'Multi-event discount', 'booking_process' => 'Booking process', 'payment_methods' => 'Payment methods', 'cancellation_policy' => 'Cancellation policy', 'additional_notes' => 'Additional notes' ),
 				'objects' => array( 'global' => array( 'label' => 'Global booking information', 'source_language' => self::sanitize_language( $booking['source_language'] ?? 'de' ), 'values' => $booking ) ),
-			),
-			array(
+			);
+		}
+
+		if ( $wants( 'ticket_section' ) ) {
+			$tickets = TAKA_Platform_Data::get_ticket_section_settings( null, false );
+			$definitions[] = array(
 				'type' => 'ticket_section',
 				'context_prefix' => 'Ticket Section',
 				'fields' => array( 'kicker' => 'Kicker', 'title' => 'Title', 'intro' => 'Intro' ),
 				'objects' => array( 'global' => array( 'label' => 'Global ticket section', 'source_language' => self::sanitize_language( $tickets['source_language'] ?? 'de' ), 'values' => array( 'kicker' => $tickets['kicker'] ?? '', 'title' => $tickets['heading'] ?? '', 'intro' => $tickets['intro'] ?? '' ) ) ),
-			),
-			array(
+			);
+		}
+
+		if ( $wants( 'hero' ) ) {
+			$hero = TAKA_Platform_Data::get_hero_settings( false );
+			$definitions[] = array(
 				'type' => 'hero',
 				'context_prefix' => 'Hero',
 				'fields' => array( 'kicker' => 'Kicker', 'title' => 'Title', 'subtitle' => 'Subtitle', 'primary_button_label' => 'Primary button label', 'secondary_button_label' => 'Secondary button label' ),
 				'objects' => array( 'global' => array( 'label' => 'Homepage hero', 'source_language' => self::sanitize_language( $hero['source_language'] ?? 'de' ), 'values' => array( 'kicker' => $hero['kicker'] ?? '', 'title' => $hero['title'] ?? '', 'subtitle' => $hero['description'] ?? '', 'primary_button_label' => $hero['primary_button_label'] ?? '', 'secondary_button_label' => $hero['secondary_button_label'] ?? '' ) ) ),
-			),
-			array(
+			);
+		}
+
+		if ( $wants( 'event' ) ) {
+			$definitions[] = array(
 				'type' => 'event',
 				'context_prefix' => 'Event',
 				'fields' => TAKA_Platform_Data::translatable_text_fields( 'event' ),
-				'objects' => $events,
-			),
-			array(
+				'objects' => self::post_text_objects( TAKA_Platform_Data::get_events(), 'event' ),
+			);
+		}
+
+		if ( $wants( 'organizer' ) ) {
+			$definitions[] = array(
 				'type' => 'organizer',
 				'context_prefix' => 'Organizer',
 				'fields' => TAKA_Platform_Data::translatable_text_fields( 'organizer' ),
-				'objects' => $organizers,
-			),
-			array(
+				'objects' => self::post_text_objects( TAKA_Platform_Data::get_organizers(), 'organizer' ),
+			);
+		}
+
+		if ( $wants( 'venue' ) ) {
+			$definitions[] = array(
 				'type' => 'venue',
 				'context_prefix' => 'Venue',
 				'fields' => TAKA_Platform_Data::translatable_text_fields( 'venue' ),
-				'objects' => $venues,
-			),
-		);
+				'objects' => self::post_text_objects( TAKA_Platform_Data::get_venues(), 'venue' ),
+			);
+		}
+
+		return $definitions;
 	}
 
 	private static function post_text_objects( $objects, $object_type ) {
@@ -441,9 +463,9 @@ class TAKA_Platform_Translation_Packages {
 		return $out;
 	}
 
-	private static function content_block_objects() {
+	private static function content_block_objects( $include_contexts = true ) {
 		$out = array();
-		$usage_contexts = TAKA_Platform_Data::content_block_usage_contexts();
+		$usage_contexts = $include_contexts ? TAKA_Platform_Data::content_block_usage_contexts() : array();
 		foreach ( TAKA_Platform_Data::get_content_blocks( false ) as $key => $block ) {
 			if ( ! is_array( $block ) || (string) ( $block['id'] ?? '' ) !== (string) $key ) { continue; }
 			$object_id = (string) ( $block['slug'] ?? '' );
@@ -463,23 +485,38 @@ class TAKA_Platform_Translation_Packages {
 		return $out;
 	}
 
-	private static function current_item_index() {
-		$items = self::collect_items( array( 'include_existing_translations' => true, 'only_missing_translations' => false, 'use_object_source_languages' => true ) );
+	private static function current_item_index( $package_items = array() ) {
+		$wanted_ids = array();
+		$wanted_types = array();
+		foreach ( (array) $package_items as $item ) {
+			if ( ! is_array( $item ) || empty( $item['id'] ) ) { continue; }
+			$id = (string) $item['id'];
+			$parts = explode( ':', $id, 3 );
+			if ( 3 !== count( $parts ) ) { continue; }
+			$wanted_ids[ $id ] = true;
+			$wanted_types[ sanitize_key( $parts[0] ) ] = true;
+		}
 		$index = array();
-		foreach ( $items as $item ) {
-			$index[ $item['id'] ] = array(
-				'object_type' => $item['object_type'],
-				'object_id' => $item['object_id'],
-				'field' => $item['field'],
-				'source_language' => $item['source_language'],
-				'value' => self::current_value_for_item( $item['object_type'], $item['object_id'], $item['field'] ),
-			);
+		foreach ( self::object_definitions( array_keys( $wanted_types ), false ) as $definition ) {
+			foreach ( $definition['objects'] as $object_id => $object ) {
+				foreach ( array_keys( $definition['fields'] ) as $field ) {
+					$id = $definition['type'] . ':' . $object_id . ':' . $field;
+					if ( ! empty( $wanted_ids ) && empty( $wanted_ids[ $id ] ) ) { continue; }
+					$index[ $id ] = array(
+						'object_type' => $definition['type'],
+						'object_id' => (string) $object_id,
+						'field' => $field,
+						'source_language' => $object['source_language'] ?? self::default_source_language(),
+						'value' => $object['values'][ $field ] ?? '',
+					);
+				}
+			}
 		}
 		return $index;
 	}
 
 	private static function current_value_for_item( $object_type, $object_id, $field ) {
-		foreach ( self::object_definitions() as $definition ) {
+		foreach ( self::object_definitions( array( $object_type ), false ) as $definition ) {
 			if ( $definition['type'] !== $object_type || empty( $definition['objects'][ $object_id ] ) ) { continue; }
 			return $definition['objects'][ $object_id ]['values'][ $field ] ?? '';
 		}
