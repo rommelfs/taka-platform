@@ -22,7 +22,27 @@ foreach ( $stops as $position => &$stop ) {
 }
 unset( $stop );
 
-$line_points = count( $stops ) > 1 ? implode( ' ', array_map( static fn( $stop ) => round( $stop['marker_x'], 2 ) . ',' . round( $stop['marker_y'], 2 ), $stops ) ) : '';
+$format_route_point = static fn( $stop ) => round( $stop['marker_x'], 2 ) . ',' . round( $stop['marker_y'], 2 );
+$route_points = array_map( $format_route_point, $stops );
+$line_points = count( $route_points ) > 1 ? implode( ' ', $route_points ) : '';
+$mobile_line_points = $line_points;
+
+if ( count( $stops ) > 1 ) {
+	$last_index = count( $stops ) - 1;
+	$last_stop = $stops[ $last_index ];
+	$reference_stop = $stops[ max( 0, $last_index - 2 ) ];
+	$route_dx = $last_stop['marker_x'] - $reference_stop['marker_x'];
+	$route_dy = $last_stop['marker_y'] - $reference_stop['marker_y'];
+	$route_length = sqrt( ( $route_dx * $route_dx ) + ( $route_dy * $route_dy ) );
+
+	if ( $route_length > 0 ) {
+		$mobile_extension = 7.0;
+		$mobile_edge_padding = 2.5;
+		$tail_x = max( $mobile_edge_padding, min( 100 - $mobile_edge_padding, $last_stop['marker_x'] + ( $route_dx / $route_length * $mobile_extension ) ) );
+		$tail_y = max( $mobile_edge_padding, min( 100 - $mobile_edge_padding, $last_stop['marker_y'] + ( $route_dy / $route_length * $mobile_extension ) ) );
+		$mobile_line_points .= ' ' . round( $tail_x, 2 ) . ',' . round( $tail_y, 2 );
+	}
+}
 ?>
 <div class="taka-hero-route-map" aria-label="<?php echo esc_attr( taka_tour_translate( 'hero.event_locations', 'Event locations' ) ); ?>">
 	<?php if ( ! empty( $stops ) ) : ?>
@@ -31,7 +51,8 @@ $line_points = count( $stops ) > 1 ? implode( ' ', array_map( static fn( $stop )
 				<path class="taka-hero-route-map__silhouette" d="M64 9 C75 12 82 23 79 34 C88 42 85 56 74 59 C70 70 58 75 48 70 C39 78 25 73 24 61 C13 55 14 39 25 34 C28 23 40 19 48 24 C51 14 57 9 64 9 Z" />
 				<path class="taka-hero-route-map__silhouette taka-hero-route-map__silhouette--south" d="M50 67 C60 66 69 72 70 82 C63 88 49 88 42 80 C39 74 43 69 50 67 Z" />
 				<?php if ( '' !== $line_points ) : ?>
-					<polyline class="taka-hero-route-map__line" points="<?php echo esc_attr( $line_points ); ?>" />
+					<polyline class="taka-hero-route-map__line taka-hero-route-map__line--desktop" points="<?php echo esc_attr( $line_points ); ?>" />
+					<polyline class="taka-hero-route-map__line taka-hero-route-map__line--mobile" points="<?php echo esc_attr( $mobile_line_points ); ?>" />
 				<?php endif; ?>
 			</svg>
 			<?php foreach ( $stops as $stop ) : ?>
