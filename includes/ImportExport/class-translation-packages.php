@@ -629,13 +629,23 @@ class TAKA_Platform_Translation_Packages {
 	}
 
 	private static function find_post_id( $post_type, $object_id ) {
+		$object_id = trim( (string) $object_id );
+		if ( '' === $object_id ) {
+			return 0;
+		}
 		if ( is_numeric( $object_id ) && get_post( (int) $object_id ) ) {
 			$post = get_post( (int) $object_id );
 			if ( $post && $post_type === $post->post_type ) { return (int) $post->ID; }
 		}
-		$posts = get_posts( array( 'post_type' => $post_type, 'post_status' => 'any', 'posts_per_page' => 1, 'fields' => 'ids', 'meta_key' => '_taka_config_id', 'meta_value' => (string) $object_id ) );
+		$posts = get_posts( array( 'post_type' => $post_type, 'post_status' => 'any', 'posts_per_page' => 1, 'fields' => 'ids', 'meta_key' => '_taka_config_id', 'meta_value' => $object_id ) );
 		if ( empty( $posts ) && defined( 'TAKA_PLATFORM_CPT_CONTENT_BLOCK' ) && TAKA_PLATFORM_CPT_CONTENT_BLOCK === $post_type ) {
-			$posts = get_posts( array( 'post_type' => $post_type, 'post_status' => 'any', 'posts_per_page' => 1, 'fields' => 'ids', 'meta_key' => '_taka_block_slug', 'meta_value' => (string) $object_id ) );
+			$posts = get_posts( array( 'post_type' => $post_type, 'post_status' => 'any', 'posts_per_page' => 1, 'fields' => 'ids', 'meta_key' => '_taka_block_slug', 'meta_value' => $object_id ) );
+		}
+		if ( empty( $posts ) ) {
+			$slug = sanitize_title( $object_id );
+			if ( '' !== $slug ) {
+				$posts = get_posts( array( 'post_type' => $post_type, 'post_status' => 'any', 'posts_per_page' => 1, 'fields' => 'ids', 'name' => $slug ) );
+			}
 		}
 		return ! empty( $posts ) ? (int) $posts[0] : 0;
 	}
