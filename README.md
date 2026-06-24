@@ -80,7 +80,7 @@ Version 1.2.0 adds the `taka_organizer` role. Administrators can assign users to
 
 ## Data model
 
-Events support tour/event concepts such as title, subtitle, description, organizer, venues, dates, times, doors-open, timezone, format, audience, level, ticket provider, ticket URL, action/group/gallery media, languages, notes, parking and sort order.
+Events support tour/event concepts such as title, subtitle, description, organizer, venues, dates, times, doors-open, timezone, format, audience, level, ticket provider, ticket URL, action/group/gallery media, optional promo videos, languages, notes, parking and sort order.
 
 Organizers support legal names, websites, logos, contact data, social links and repeatable co-organizers with their own logo, website, email, description and active/sort controls. Events can also use global or event-specific booking information for groups, multi-event discounts, payment and cancellation notes. Homepage content sections can be exported as portable config data and used as fallback/demo editorial content. Venues support addresses, websites, parking/accessibility notes, geo data and venue/parking images.
 
@@ -124,7 +124,7 @@ Media access is centralized in the data layer. Frontend image resolution priorit
 3. bundled config fallback
 4. render nothing
 
-The admin uses WordPress Media Library selection for global images, organizer logos, event images/galleries and venue images.
+The admin uses WordPress Media Library selection for global images, organizer logos, event images/galleries, event promo videos and venue images. Event promo videos are stored as repeatable structured event metadata and can point to uploaded video attachments, local video URLs or WordPress-supported oEmbed URLs such as YouTube and Vimeo.
 
 ## Ticket providers
 
@@ -174,6 +174,10 @@ The script checks PHP syntax for all `*.php` files with `php -l` and scans the r
 Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `taka_organizer`, `taka_venue`) continue to work. Existing constants such as `TAKA_TOUR_VERSION` map to the new platform constants. Existing class names such as `Taka_Tour_Data` are aliased to the new `TAKA_Platform_*` classes.
 
 ## Changelog
+
+### v2.2.10
+
+- Added optional structured event promo videos with admin fields for uploaded videos, oEmbed URLs and preview images, plus responsive ticket-page rendering without autoplay.
 
 ### v2.2.9
 

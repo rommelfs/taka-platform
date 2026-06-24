@@ -1406,6 +1406,7 @@ class TAKA_Platform_Data {
 				'gallery_image_ids' => self::csv_to_ints( get_post_meta( $post->ID, '_taka_gallery_image_ids', true ) ),
 				'gallery_urls' => self::attachment_urls( self::csv_to_ints( get_post_meta( $post->ID, '_taka_gallery_image_ids', true ) ) ),
 				'gallery' => self::attachment_urls( self::csv_to_ints( get_post_meta( $post->ID, '_taka_gallery_image_ids', true ) ) ),
+				'promo_videos' => self::normalize_event_videos( get_post_meta( $post->ID, '_taka_promo_videos', true ) ),
 				'photo_credit' => (string) get_post_meta( $post->ID, '_taka_photo_credit', true ),
 				'languages' => self::normalize_language_codes( get_post_meta( $post->ID, '_taka_languages', true ) ),
 				'notes' => (string) get_post_meta( $post->ID, '_taka_notes', true ),
@@ -1490,6 +1491,7 @@ class TAKA_Platform_Data {
 			$event['past_group_photo_url'] = $event['past_group_photo_url'] ?? $event['group_image_url'];
 			$event['gallery_image_ids'] = $event['gallery_image_ids'] ?? array();
 			$event['gallery_urls'] = $event['gallery'] ?? array();
+			$event['promo_videos'] = self::normalize_event_videos( $event['promo_videos'] ?? ( $event['videos'] ?? array() ) );
 			$event['booking_information'] = self::normalize_booking_information( $event['booking_information'] ?? array(), false );
 			$event['content_references'] = is_array( $event['content_references'] ?? null ) ? $event['content_references'] : array();
 			$event['content_references']['event_description'] = self::normalize_content_reference( $event['content_references']['event_description'] ?? array(), 'event_description' );
@@ -2086,6 +2088,49 @@ class TAKA_Platform_Data {
 		return apply_filters( 'taka_platform_gallery_images', array( array( 'id' => 'community', 'title' => 'Community', 'text' => 'Internationale Karate-Familie.', 'image' => $images['community_group'], 'wide' => true ), array( 'id' => 'kobudo', 'title' => 'Kobudo', 'text' => 'Bo-Arbeit, Distanz und Timing.', 'image' => $images['kobudo'] ), array( 'id' => 'softblock', 'title' => 'Soft Blocking', 'text' => 'Weiche Struktur statt roher Kraft.', 'image' => $images['softblock'] ), array( 'id' => 'together', 'title' => 'Gemeinsam üben', 'text' => 'Lernen durch Beobachten, Austausch und Wiederholung.', 'image' => $images['together_practice'] ), array( 'id' => 'kids', 'title' => 'Kinderseminar', 'text' => 'Kinderseminar Trier', 'image' => $images['kids_group'] ), array( 'id' => 'group', 'title' => 'Gruppenfoto', 'text' => 'Gemeinschaft über Dojo- und Landesgrenzen hinweg.', 'image' => $images['group_large'], 'wide' => true ) ), 'homepage' );
 	}
 
+	/** Normalize repeatable promo video entries for event admin, import/export and frontend rendering. */
+	public static function normalize_event_videos( $items ) {
+		if ( is_string( $items ) && '' !== trim( $items ) ) {
+			$items = array( array( 'video_url' => $items ) );
+		}
+		if ( ! is_array( $items ) ) { return array(); }
+
+		$normalized = array();
+		foreach ( $items as $index => $item ) {
+			if ( is_string( $item ) ) {
+				$item = array( 'video_url' => $item );
+			}
+			if ( ! is_array( $item ) ) { continue; }
+
+			$attachment_id = absint( $item['attachment_id'] ?? ( $item['video_id'] ?? 0 ) );
+			$video_url = self::event_video_url_without_autoplay( esc_url_raw( $item['video_url'] ?? ( $item['url'] ?? ( $item['external_url'] ?? '' ) ) ) );
+			$attachment_url = $attachment_id ? self::resolve_media_attachment_url( $attachment_id ) : '';
+			$resolved_url = $attachment_url ?: $video_url;
+			if ( '' === $resolved_url ) { continue; }
+
+			$thumbnail_id = absint( $item['thumbnail_id'] ?? ( $item['poster_id'] ?? 0 ) );
+			$thumbnail_url = esc_url_raw( $item['thumbnail_url'] ?? ( $item['poster_url'] ?? '' ) );
+			$poster = self::resolve_attachment_url( $thumbnail_id, 'large', $thumbnail_url );
+
+			$normalized[] = array(
+				'title' => sanitize_text_field( $item['title'] ?? '' ),
+				'caption' => sanitize_textarea_field( $item['caption'] ?? ( $item['description'] ?? '' ) ),
+				'attachment_id' => $attachment_id,
+				'video_url' => $video_url,
+				'url' => $resolved_url,
+				'source_type' => self::event_video_source_type( $resolved_url, $attachment_id ),
+				'mime_type' => self::event_video_mime_type( $attachment_id, $resolved_url ),
+				'thumbnail_id' => $thumbnail_id,
+				'thumbnail_url' => $thumbnail_url,
+				'poster' => $poster,
+				'sort_order' => (int) ( $item['sort_order'] ?? $index ),
+			);
+		}
+
+		usort( $normalized, static function ( $a, $b ) { return ( (int) ( $a['sort_order'] ?? 0 ) <=> (int) ( $b['sort_order'] ?? 0 ) ) ?: strcmp( (string) ( $a['title'] ?? '' ), (string) ( $b['title'] ?? '' ) ); } );
+		return $normalized;
+	}
+
 	/** Normalize flexible event program items with legacy date/time fallback. */
 	public static function normalize_program_items( $items, $event = array() ) {
 		if ( ! is_array( $items ) ) { $items = array(); }
@@ -2318,6 +2363,7 @@ class TAKA_Platform_Data {
 			$event['flag'] = $event['flag'] ?: self::flag_for_country_code( $event['country_code'] ?? '' );
 			$currency = trim( (string) ( $event['currency'] ?? '' ) );
 			$event['currency'] = self::normalize_event_option_value( 'currency', '' !== $currency ? $currency : self::currency_for_country( $event['country_code'] ?? $country_id ) );
+			$event['promo_videos'] = self::normalize_event_videos( $event['promo_videos'] ?? array() );
 			$event['program_items'] = self::normalize_program_items( $event['program_items'] ?? array(), $event );
 			if ( ! empty( $event['program_items'] ) ) {
 				$event['date_start'] = $event['date_start'] ?: ( $event['program_items'][0]['date'] ?? '' );
@@ -2926,6 +2972,10 @@ class TAKA_Platform_Data {
 
 	/** Helpers. */
 	private static function resolve_attachment_url( $attachment_id, $size = 'large', $fallback = '' ) { $url = $attachment_id && function_exists( 'wp_get_attachment_image_url' ) ? wp_get_attachment_image_url( $attachment_id, $size ) : ''; return $url ?: $fallback; }
+	private static function resolve_media_attachment_url( $attachment_id, $fallback = '' ) { $url = $attachment_id && function_exists( 'wp_get_attachment_url' ) ? wp_get_attachment_url( $attachment_id ) : ''; return $url ?: $fallback; }
+	private static function event_video_url_without_autoplay( $url ) { return '' !== (string) $url && function_exists( 'remove_query_arg' ) ? esc_url_raw( remove_query_arg( 'autoplay', (string) $url ) ) : (string) $url; }
+	private static function event_video_source_type( $url, $attachment_id = 0 ) { if ( $attachment_id ) { return 'local'; } $path = (string) wp_parse_url( (string) $url, PHP_URL_PATH ); $extension = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) ); return in_array( $extension, array( 'mp4', 'm4v', 'webm', 'ogv', 'ogg', 'mov' ), true ) ? 'local' : 'embed'; }
+	private static function event_video_mime_type( $attachment_id, $url ) { $mime = $attachment_id && function_exists( 'get_post_mime_type' ) ? (string) get_post_mime_type( $attachment_id ) : ''; if ( '' === $mime && function_exists( 'wp_check_filetype' ) ) { $filetype = wp_check_filetype( (string) $url ); $mime = (string) ( $filetype['type'] ?? '' ); } return $mime; }
 	private static function attachment_urls( $ids, $size = 'large' ) { return array_values( array_filter( array_map( static function ( $id ) use ( $size ) { return self::resolve_attachment_url( $id, $size ); }, (array) $ids ) ) ); }
 	private static function nullable_meta( $post_id, $key ) { $value = get_post_meta( $post_id, '_taka_' . $key, true ); return '' === $value ? null : $value; }
 	private static function lines_to_array( $value ) { return array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', (string) $value ) ) ) ); }

@@ -211,7 +211,9 @@
     "share_copied": "Link kopéiert",
     "copy_event_link_prompt": "Evenement-Link kopéieren",
     "copy_link": "Link kopéieren",
-    "qr_code": "QR-Code"
+    "qr_code": "QR-Code",
+    "videos": "Videoen",
+    "open_video": "Video opmaachen"
   },
   "country": {
     "france": "Frankräich"

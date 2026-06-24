@@ -98,12 +98,13 @@ $ticket_settings = TAKA_Platform_Data::get_ticket_section_settings();
 											<?php endforeach; ?>
 										</div></dd>
 									</div>
-								<?php elseif ( ! empty( $organizer['name'] ) ) : ?>
-									<div class="taka-ticket-meta-row taka-ticket-meta-row--wide taka-ticket-meta-row--organizer"><dt><?php echo esc_html( taka_tour_translate( 'event.organizer', 'Organizer' ) ); ?></dt><dd><?php if ( ! empty( $organizer['logo'] ) ) : ?><img src="<?php echo esc_url( $organizer['logo'] ); ?>" alt="<?php echo esc_attr( $organizer['name'] ); ?>" loading="lazy"><?php endif; ?><?php if ( '' !== $organizer_drawer ) : ?><button type="button" class="taka-ticket-meta-link" data-taka-info-modal-open="<?php echo esc_attr( $organizer_drawer ); ?>"><?php echo esc_html( $organizer['name'] ); ?><span aria-hidden="true">ⓘ</span></button><?php else : ?><span><?php echo esc_html( $organizer['name'] ); ?></span><?php endif; ?></dd></div>
-								<?php endif; ?>
-							</dl>
-							<?php if ( ! empty( $seminar['program_groups'] ) ) : ?>
-								<div class="taka-program-summary" aria-label="<?php echo esc_attr( taka_tour_translate( 'event.schedule', 'Schedule' ) ); ?>">
+									<?php elseif ( ! empty( $organizer['name'] ) ) : ?>
+										<div class="taka-ticket-meta-row taka-ticket-meta-row--wide taka-ticket-meta-row--organizer"><dt><?php echo esc_html( taka_tour_translate( 'event.organizer', 'Organizer' ) ); ?></dt><dd><?php if ( ! empty( $organizer['logo'] ) ) : ?><img src="<?php echo esc_url( $organizer['logo'] ); ?>" alt="<?php echo esc_attr( $organizer['name'] ); ?>" loading="lazy"><?php endif; ?><?php if ( '' !== $organizer_drawer ) : ?><button type="button" class="taka-ticket-meta-link" data-taka-info-modal-open="<?php echo esc_attr( $organizer_drawer ); ?>"><?php echo esc_html( $organizer['name'] ); ?><span aria-hidden="true">ⓘ</span></button><?php else : ?><span><?php echo esc_html( $organizer['name'] ); ?></span><?php endif; ?></dd></div>
+									<?php endif; ?>
+								</dl>
+								<?php echo taka_tour_render_template( 'partials/event-videos.php', array( 'seminar' => $seminar, 'videos' => $seminar['promo_videos'] ?? array() ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								<?php if ( ! empty( $seminar['program_groups'] ) ) : ?>
+									<div class="taka-program-summary" aria-label="<?php echo esc_attr( taka_tour_translate( 'event.schedule', 'Schedule' ) ); ?>">
 									<h4><?php echo esc_html( taka_tour_translate( 'event.seminar_plan', 'Seminar plan' ) ); ?></h4>
 									<?php foreach ( $seminar['program_groups'] as $program_group ) : ?>
 										<div class="taka-program-summary__day">

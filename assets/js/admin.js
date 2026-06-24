@@ -94,6 +94,36 @@ document.addEventListener('click', function (event) {
 });
 
 document.addEventListener('click', function (event) {
+  var addEventVideo = event.target.closest('[data-taka-event-video-add]');
+  var removeEventVideo = event.target.closest('[data-taka-event-video-remove]');
+
+  if (addEventVideo) {
+    event.preventDefault();
+    var root = addEventVideo.closest('[data-taka-event-videos]');
+    var list = root ? root.querySelector('[data-taka-event-video-list]') : null;
+    var template = root ? root.querySelector('[data-taka-event-video-template]') : null;
+    if (!list || !template) {
+      return;
+    }
+    var index = Date.now().toString();
+    var wrapper = document.createElement('div');
+    wrapper.innerHTML = template.innerHTML.replace(/__index__/g, index).trim();
+    while (wrapper.firstChild) {
+      list.appendChild(wrapper.firstChild);
+    }
+    return;
+  }
+
+  if (removeEventVideo) {
+    event.preventDefault();
+    var item = removeEventVideo.closest('[data-taka-event-video-item]');
+    if (item) {
+      item.remove();
+    }
+  }
+});
+
+document.addEventListener('click', function (event) {
   var copyButton = event.target.closest('[data-taka-copy-default-translations]');
 
   if (!copyButton) {

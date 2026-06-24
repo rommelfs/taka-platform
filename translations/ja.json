@@ -211,7 +211,9 @@
     "share_copied": "リンクをコピーしました",
     "copy_event_link_prompt": "イベントリンクをコピー",
     "copy_link": "リンクをコピー",
-    "qr_code": "QRコード"
+    "qr_code": "QRコード",
+    "videos": "動画",
+    "open_video": "動画を開く"
   },
   "country": {
     "france": "フランス"

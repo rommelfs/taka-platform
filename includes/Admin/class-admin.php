@@ -1620,6 +1620,7 @@ class TAKA_Platform_Admin {
 			'_taka_group_image_id' => (int) ( $item['group_image_id'] ?? 0 ),
 			'_taka_group_image_url' => $item['group_image_url'] ?? ( $item['group_image'] ?? '' ),
 			'_taka_gallery_image_ids' => implode( ',', $item['gallery_image_ids'] ?? array() ),
+			'_taka_promo_videos' => TAKA_Platform_Data::normalize_event_videos( $item['promo_videos'] ?? ( $item['videos'] ?? array() ) ),
 			'_taka_photo_credit' => $item['photo_credit'] ?? '',
 			'_taka_languages' => implode( ',', ! empty( $item['languages'] ) ? TAKA_Platform_Data::normalize_language_codes( $item['languages'] ) : TAKA_Platform_Data::languages_for_country( $country_code ) ),
 			'_taka_booking_info_override' => $booking['override'] ?? '',
@@ -1708,6 +1709,7 @@ class TAKA_Platform_Admin {
 		self::url( $post->ID, 'image_url', __( 'Fallback action photo URL', 'taka-platform' ) );
 		self::media_field( $post->ID, 'group_image_id', __( 'Past group photo', 'taka-platform' ), false, __( 'Select group photo', 'taka-platform' ) );
 		self::url( $post->ID, 'group_image_url', __( 'Fallback group photo URL', 'taka-platform' ) );
+		self::render_event_video_fields( $post->ID );
 		self::textarea_with_description( $post->ID, 'short_description', __( 'Seminar description', 'taka-platform' ), __( 'Canonical text shown on the public ticket page under “Seminar description”.', 'taka-platform' ) );
 		self::render_content_reference_fields( 'content_reference_event_description', get_post_meta( $post->ID, '_taka_content_reference_event_description', true ), 'event_description', __( 'Reusable seminar description block', 'taka-platform' ) );
 		self::text( $post->ID, 'ticket_tab_label', __( 'Ticket tab label', 'taka-platform' ) );
@@ -1791,6 +1793,7 @@ class TAKA_Platform_Admin {
 		self::save_object_text_translations( $post_id, 'event' );
 		self::save_event_organizer_relationships( $post_id, $posted_relationships );
 		self::save_event_program_items( $post_id );
+		self::save_event_videos( $post_id );
 		self::save_event_structured_meta( $post_id );
 	}
 
@@ -1863,6 +1866,55 @@ class TAKA_Platform_Admin {
 			<p><label><?php echo esc_html__( 'Title', 'taka-platform' ); ?> <input type="text" class="widefat" name="<?php echo esc_attr( $name ); ?>[title]" value="<?php echo esc_attr( $item['title'] ?? '' ); ?>"></label></p>
 			<p><label><?php echo esc_html__( 'Notes', 'taka-platform' ); ?> <textarea class="widefat" rows="2" name="<?php echo esc_attr( $name ); ?>[notes]"><?php echo esc_textarea( $item['notes'] ?? '' ); ?></textarea></label></p>
 		</div>
+			<?php
+	}
+
+	private static function render_event_video_fields( $post_id ) {
+		$items = TAKA_Platform_Data::normalize_event_videos( get_post_meta( $post_id, '_taka_promo_videos', true ) );
+		?>
+		<div class="taka-event-videos-admin" data-taka-event-videos>
+			<h3><?php echo esc_html__( 'Promo videos', 'taka-platform' ); ?></h3>
+			<p class="description"><?php echo esc_html__( 'Add optional local videos or YouTube/Vimeo/oEmbed links for this event. Videos are shown on the ticket detail page after the core event facts.', 'taka-platform' ); ?></p>
+			<div class="taka-event-video-list" data-taka-event-video-list>
+				<?php foreach ( array_values( $items ) as $index => $item ) : ?>
+					<?php self::event_video_row( $post_id, $index, $item ); ?>
+				<?php endforeach; ?>
+			</div>
+			<button type="button" class="button" data-taka-event-video-add><?php echo esc_html__( 'Add video', 'taka-platform' ); ?></button>
+			<template data-taka-event-video-template><?php self::event_video_row( $post_id, '__index__', array() ); ?></template>
+		</div>
+		<?php
+	}
+
+	private static function event_video_row( $post_id, $index, $item ) {
+		$index_attr = esc_attr( (string) $index );
+		$index_key = sanitize_key( (string) $index );
+		$name = 'taka_platform_event_videos[' . $index_attr . ']';
+		$video_input_id = 'taka_event_video_' . absint( $post_id ) . '_' . $index_key . '_attachment_id';
+		$thumbnail_input_id = 'taka_event_video_' . absint( $post_id ) . '_' . $index_key . '_thumbnail_id';
+		?>
+		<div class="taka-event-video-item" data-taka-event-video-item>
+			<div class="taka-event-video-item__header"><strong><?php echo esc_html__( 'Promo video', 'taka-platform' ); ?></strong> <button type="button" class="button-link-delete" data-taka-event-video-remove><?php echo esc_html__( 'Remove video', 'taka-platform' ); ?></button></div>
+			<p><label><?php echo esc_html__( 'Title', 'taka-platform' ); ?><br><input type="text" class="regular-text" name="<?php echo esc_attr( $name ); ?>[title]" value="<?php echo esc_attr( $item['title'] ?? '' ); ?>"></label></p>
+			<p><label><?php echo esc_html__( 'Caption', 'taka-platform' ); ?><br><textarea class="widefat" rows="2" name="<?php echo esc_attr( $name ); ?>[caption]"><?php echo esc_textarea( $item['caption'] ?? '' ); ?></textarea></label></p>
+			<p>
+				<label><?php echo esc_html__( 'Local video file', 'taka-platform' ); ?></label><br>
+				<input id="<?php echo esc_attr( $video_input_id ); ?>" type="hidden" name="<?php echo esc_attr( $name ); ?>[attachment_id]" value="<?php echo esc_attr( (string) absint( $item['attachment_id'] ?? 0 ) ); ?>">
+				<button type="button" class="button" data-taka-media-pick data-media-type="video" data-multiple="0" data-target="<?php echo esc_attr( $video_input_id ); ?>" data-preview="<?php echo esc_attr( $video_input_id . '_preview' ); ?>"><?php echo esc_html__( 'Select video', 'taka-platform' ); ?></button>
+				<button type="button" class="button" data-taka-media-remove data-target="<?php echo esc_attr( $video_input_id ); ?>" data-preview="<?php echo esc_attr( $video_input_id . '_preview' ); ?>"><?php echo esc_html__( 'Remove video', 'taka-platform' ); ?></button>
+				<span id="<?php echo esc_attr( $video_input_id . '_preview' ); ?>"><?php self::video_preview( absint( $item['attachment_id'] ?? 0 ), absint( $item['attachment_id'] ?? 0 ) ? (string) ( $item['url'] ?? '' ) : '' ); ?></span>
+			</p>
+			<p><label><?php echo esc_html__( 'Video/oEmbed URL', 'taka-platform' ); ?><br><input class="widefat" type="url" name="<?php echo esc_attr( $name ); ?>[video_url]" value="<?php echo esc_attr( $item['video_url'] ?? '' ); ?>" placeholder="https://www.youtube.com/watch?v=..."></label></p>
+			<p>
+				<label><?php echo esc_html__( 'Preview image', 'taka-platform' ); ?></label><br>
+				<input id="<?php echo esc_attr( $thumbnail_input_id ); ?>" type="hidden" name="<?php echo esc_attr( $name ); ?>[thumbnail_id]" value="<?php echo esc_attr( (string) absint( $item['thumbnail_id'] ?? 0 ) ); ?>">
+				<button type="button" class="button" data-taka-media-pick data-media-type="image" data-multiple="0" data-target="<?php echo esc_attr( $thumbnail_input_id ); ?>" data-preview="<?php echo esc_attr( $thumbnail_input_id . '_preview' ); ?>"><?php echo esc_html__( 'Select preview image', 'taka-platform' ); ?></button>
+				<button type="button" class="button" data-taka-media-remove data-target="<?php echo esc_attr( $thumbnail_input_id ); ?>" data-preview="<?php echo esc_attr( $thumbnail_input_id . '_preview' ); ?>"><?php echo esc_html__( 'Remove image', 'taka-platform' ); ?></button>
+				<span id="<?php echo esc_attr( $thumbnail_input_id . '_preview' ); ?>"><?php self::image_preview( absint( $item['thumbnail_id'] ?? 0 ), (string) ( $item['poster'] ?? ( $item['thumbnail_url'] ?? '' ) ) ); ?></span>
+			</p>
+			<p><label><?php echo esc_html__( 'Fallback preview image URL', 'taka-platform' ); ?><br><input class="widefat" type="url" name="<?php echo esc_attr( $name ); ?>[thumbnail_url]" value="<?php echo esc_attr( $item['thumbnail_url'] ?? '' ); ?>"></label></p>
+			<p><label><?php echo esc_html__( 'Sort order', 'taka-platform' ); ?><br><input type="number" name="<?php echo esc_attr( $name ); ?>[sort_order]" value="<?php echo esc_attr( (string) ( $item['sort_order'] ?? $index ) ); ?>" style="width:90px"></label></p>
+		</div>
 		<?php
 	}
 
@@ -1904,6 +1956,18 @@ class TAKA_Platform_Admin {
 		if ( ! isset( $_POST[ self::NONCE ] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE ] ) ), self::NONCE ) || ! current_user_can( 'edit_post', $post_id ) ) { return; }
 		$posted = isset( $_POST['taka_program_items'] ) && is_array( $_POST['taka_program_items'] ) ? wp_unslash( $_POST['taka_program_items'] ) : array();
 		update_post_meta( $post_id, '_taka_program_items', TAKA_Platform_Data::normalize_program_items( $posted ) );
+	}
+
+	private static function save_event_videos( $post_id ) {
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
+		if ( ! isset( $_POST[ self::NONCE ] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE ] ) ), self::NONCE ) || ! current_user_can( 'edit_post', $post_id ) ) { return; }
+		$posted = isset( $_POST['taka_platform_event_videos'] ) && is_array( $_POST['taka_platform_event_videos'] ) ? wp_unslash( $_POST['taka_platform_event_videos'] ) : array();
+		$videos = TAKA_Platform_Data::normalize_event_videos( $posted );
+		if ( empty( $videos ) ) {
+			delete_post_meta( $post_id, '_taka_promo_videos' );
+			return;
+		}
+		update_post_meta( $post_id, '_taka_promo_videos', $videos );
 	}
 
 	/** Save repeatable co-organizer entries for an organizer. */
@@ -2486,4 +2550,5 @@ class TAKA_Platform_Admin {
 	private static function relation( $post_id, $field, $label, $post_type ) { $current = (int) self::meta( $post_id, $field ); $posts = get_posts( array( 'post_type' => $post_type, 'post_status' => 'publish', 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC' ) ); $html = '<select name="_taka_' . esc_attr( $field ) . '"><option value="">—</option>'; foreach ( $posts as $post ) { $html .= '<option value="' . esc_attr( $post->ID ) . '" ' . selected( $current, $post->ID, false ) . '>' . esc_html( get_the_title( $post ) ) . '</option>'; } $html .= '</select>'; self::field( $label, $html ); }
 	private static function image_preview( $id, $fallback_url = '' ) { $url = $id && function_exists( 'wp_get_attachment_image_url' ) ? wp_get_attachment_image_url( $id, 'thumbnail' ) : $fallback_url; if ( $url ) { echo '<img src="' . esc_url( $url ) . '" style="max-width:180px;height:auto;display:block;margin-top:8px;" alt="">'; } }
 	private static function image_previews( $ids ) { foreach ( array_filter( array_map( 'absint', preg_split( '/\s*,\s*/', (string) $ids ) ) ) as $id ) { self::image_preview( $id ); } }
-}
+	private static function video_preview( $id, $fallback_url = '' ) { $url = $id && function_exists( 'wp_get_attachment_url' ) ? wp_get_attachment_url( $id ) : $fallback_url; if ( $url ) { $label = basename( (string) wp_parse_url( $url, PHP_URL_PATH ) ); echo '<span class="taka-admin-media-preview taka-admin-media-preview--video"><a href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $label ?: __( 'Selected video', 'taka-platform' ) ) . '</a></span>'; } }
+	}

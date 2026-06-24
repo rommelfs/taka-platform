@@ -60,7 +60,21 @@
 	margin: 12px 0;
 }
 
+.taka-event-video-list {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	margin: 12px 0;
+}
+
 .taka-event-organizer-item {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	box-sizing: border-box;
+	padding: 12px;
+}
+
+.taka-event-video-item {
 	background: #fff;
 	border: 1px solid #dcdcde;
 	box-sizing: border-box;
@@ -75,7 +89,19 @@
 	margin-bottom: 10px;
 }
 
+.taka-event-video-item__header {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+	margin-bottom: 10px;
+}
+
 .taka-event-organizer-item p {
+	margin: 0 0 10px;
+}
+
+.taka-event-video-item p {
 	margin: 0 0 10px;
 }
 
@@ -87,6 +113,28 @@
 	width: 100%;
 }
 
+.taka-event-video-item input.regular-text,
+.taka-event-video-item input[type="url"],
+.taka-event-video-item textarea {
+	box-sizing: border-box;
+	max-width: 100%;
+	width: 100%;
+}
+
+.taka-admin-media-preview {
+	display: inline-block;
+	margin: 8px 0 0 8px;
+}
+
+.taka-admin-media-preview--video a {
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	display: inline-block;
+	padding: 6px 8px;
+	text-decoration: none;
+}
+
 @media (max-width: 782px) {
 	.taka-content-section-tabs__tab {
 		box-sizing: border-box;
@@ -95,6 +143,10 @@
 	}
 
 	.taka-event-organizer-list {
+		grid-template-columns: 1fr;
+	}
+
+	.taka-event-video-list {
 		grid-template-columns: 1fr;
 	}
 }

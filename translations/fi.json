@@ -211,7 +211,9 @@
     "share_copied": "Linkki kopioitu",
     "copy_event_link_prompt": "Kopioi tapahtumalinkki",
     "copy_link": "Kopioi linkki",
-    "qr_code": "QR-koodi"
+    "qr_code": "QR-koodi",
+    "videos": "Videot",
+    "open_video": "Avaa video"
   },
   "country": {
     "france": "Ranska"

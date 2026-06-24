@@ -71,6 +71,42 @@ function taka_platform_allowed_html() {
 }
 
 /**
+ * Return allowed HTML for trusted WordPress oEmbed video output.
+ *
+ * @return array
+ */
+function taka_tour_video_embed_allowed_html() {
+	$allowed = taka_tour_allowed_html();
+	$allowed['iframe'] = array(
+		'allow'           => array(),
+		'allowfullscreen' => array(),
+		'class'           => array(),
+		'frameborder'     => array(),
+		'height'          => array(),
+		'loading'         => array(),
+		'referrerpolicy'  => array(),
+		'src'             => array(),
+		'title'           => array(),
+		'width'           => array(),
+	);
+	$allowed['div'] = array( 'class' => array(), 'style' => array() );
+	$allowed['figure'] = array( 'class' => array() );
+	$allowed['figcaption'] = array( 'class' => array() );
+	$allowed['p'] = array( 'class' => array() );
+	$allowed['blockquote'] = array( 'class' => array(), 'cite' => array() );
+	return $allowed;
+}
+
+/**
+ * Return allowed HTML for trusted TAKA Platform oEmbed video output.
+ *
+ * @return array
+ */
+function taka_platform_video_embed_allowed_html() {
+	return taka_tour_video_embed_allowed_html();
+}
+
+/**
  * Translate a plain-text value for the active TAKA Platform language.
  *
  * @param string      $key      Translation key.
