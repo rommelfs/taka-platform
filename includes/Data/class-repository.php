@@ -1374,6 +1374,7 @@ class TAKA_Platform_Data {
 				'map_y' => self::nullable_meta( $post->ID, 'map_y' ),
 				'route_map_label' => (string) get_post_meta( $post->ID, '_taka_route_map_label', true ),
 				'map_label' => (string) get_post_meta( $post->ID, '_taka_map_label', true ),
+				'tour_order' => self::nullable_meta( $post->ID, 'tour_order' ),
 				'route_order' => self::nullable_meta( $post->ID, 'route_order' ),
 				'city' => (string) get_post_meta( $post->ID, '_taka_city', true ),
 				'date_start' => (string) get_post_meta( $post->ID, '_taka_date_start', true ),
@@ -1479,6 +1480,7 @@ class TAKA_Platform_Data {
 			$event['route_map_x'] = $event['route_map_x'] ?? ( $event['map_x'] ?? null );
 			$event['route_map_y'] = $event['route_map_y'] ?? ( $event['map_y'] ?? null );
 			$event['route_map_label'] = $event['route_map_label'] ?? ( $event['map_label'] ?? '' );
+			$event['tour_order'] = $event['tour_order'] ?? null;
 			$event['route_order'] = $event['route_order'] ?? null;
 			$event['image_id'] = $event['image_id'] ?? 0;
 			$event['image_url'] = $event['image_url'] ?? ( $event['image'] ?? '' );
@@ -2284,6 +2286,136 @@ class TAKA_Platform_Data {
 		}, self::get_public_events() );
 	}
 
+	/** Build the ordered hero route stations from the same resolved events used by tickets and event lists. */
+	public static function hero_route_map_stations( $lang = null, $events = null ) {
+		$lang = $lang ?: taka_tour_current_language();
+		$events = null === $events ? self::events_for_language( $lang ) : array_values( is_array( $events ) ? $events : array() );
+		usort( $events, array( __CLASS__, 'compare_hero_route_map_events' ) );
+
+		$stations = array();
+		$count = max( 1, count( $events ) );
+		foreach ( $events as $index => $event ) {
+			$point = is_array( $event['hero_route_map'] ?? null ) ? $event['hero_route_map'] : self::resolve_event_route_map_point( $event, $event['venue_full'] ?? ( $event['venue_data'] ?? null ) );
+			$manual_x = isset( $point['x'] ) && is_numeric( $point['x'] ) ? max( 0, min( 100, (float) $point['x'] ) ) : null;
+			$manual_y = isset( $point['y'] ) && is_numeric( $point['y'] ) ? max( 0, min( 100, (float) $point['y'] ) ) : null;
+			$progress = 1 === $count ? 0 : $index / ( $count - 1 );
+			$auto_x = 72 - min( 42, $index * 5.4 ) + ( 0 === $index % 2 ? 0 : -4 );
+			$auto_y = 13 + $progress * 72;
+			$x = null !== $manual_x ? $manual_x : max( 18, min( 82, $auto_x ) );
+			$y = null !== $manual_y ? $manual_y : max( 12, min( 88, $auto_y ) );
+			$label = trim( (string) ( $point['label'] ?? '' ) );
+			if ( '' === $label ) { $label = self::hero_route_location_name( $event ); }
+			if ( '' === $label ) { continue; }
+
+			$stations[] = array(
+				'event' => $event,
+				'event_id' => (string) ( $event['id'] ?? ( $event['config_id'] ?? ( $event['wp_post_id'] ?? '' ) ) ),
+				'event_title' => (string) ( $event['title'] ?? '' ),
+				'location_name' => self::hero_route_location_name( $event ),
+				'country' => (string) ( $event['country_label'] ?? ( $event['country'] ?? '' ) ),
+				'start_datetime' => self::event_start_datetime( $event ),
+				'tour_order' => self::event_tour_order( $event ),
+				'x' => $x,
+				'y' => $y,
+				'coordinate_source' => (string) ( $point['coordinate_source'] ?? ( null !== $manual_x || null !== $manual_y ? 'event_or_venue' : 'auto' ) ),
+				'label' => $label,
+				'label_source' => (string) ( $point['label_source'] ?? 'event' ),
+				'sort_key' => self::hero_route_sort_key( $event ),
+				'index' => $index,
+			);
+		}
+
+		return $stations;
+	}
+
+	/** Diagnostics rows for the Admin -> Diagnostics route map section. */
+	public static function hero_route_map_diagnostics( $lang = null ) {
+		return array_map(
+			static function ( $station ) {
+				return array(
+					'event_id' => $station['event_id'] ?? '',
+					'event_title' => $station['event_title'] ?? '',
+					'location_name' => $station['location_name'] ?? '',
+					'country' => $station['country'] ?? '',
+					'start_datetime' => $station['start_datetime'] ?? '',
+					'coordinates' => round( (float) ( $station['x'] ?? 0 ), 2 ) . ', ' . round( (float) ( $station['y'] ?? 0 ), 2 ),
+					'coordinate_source' => $station['coordinate_source'] ?? '',
+					'final_map_label' => $station['label'] ?? '',
+					'label_source' => $station['label_source'] ?? '',
+					'sort_key' => $station['sort_key'] ?? '',
+				);
+			},
+			self::hero_route_map_stations( $lang )
+		);
+	}
+
+	/** Compare hero route stations chronologically, then by explicit tour order, then by display name. */
+	private static function compare_hero_route_map_events( $a, $b ) {
+		$a_start = self::event_start_datetime( $a );
+		$b_start = self::event_start_datetime( $b );
+		if ( '' !== $a_start || '' !== $b_start ) {
+			$start_compare = strcmp( '' !== $a_start ? $a_start : '9999-12-31T23:59', '' !== $b_start ? $b_start : '9999-12-31T23:59' );
+			if ( 0 !== $start_compare ) { return $start_compare; }
+		}
+
+		$a_order = self::event_tour_order( $a );
+		$b_order = self::event_tour_order( $b );
+		if ( null !== $a_order || null !== $b_order ) {
+			$order_compare = ( $a_order ?? 999999 ) <=> ( $b_order ?? 999999 );
+			if ( 0 !== $order_compare ) { return $order_compare; }
+		}
+
+		$label_compare = strcmp( self::hero_route_location_name( $a ) ?: (string) ( $a['title'] ?? '' ), self::hero_route_location_name( $b ) ?: (string) ( $b['title'] ?? '' ) );
+		if ( 0 !== $label_compare ) { return $label_compare; }
+		return strcmp( (string) ( $a['id'] ?? ( $a['wp_post_id'] ?? '' ) ), (string) ( $b['id'] ?? ( $b['wp_post_id'] ?? '' ) ) );
+	}
+
+	private static function event_start_datetime( $event ) {
+		$date = self::normalize_program_date( $event['date_start'] ?? '' );
+		if ( '' === $date ) {
+			$items = self::normalize_program_items( $event['program_items'] ?? array(), $event );
+			$date = (string) ( $items[0]['date'] ?? '' );
+		}
+		if ( '' === $date ) { return ''; }
+		return $date . 'T' . self::event_start_time_for_sort( $event );
+	}
+
+	private static function event_start_time_for_sort( $event ) {
+		$time = trim( (string) ( $event['time_start'] ?? '' ) );
+		if ( '' === $time ) {
+			$items = self::normalize_program_items( $event['program_items'] ?? array(), $event );
+			$time = trim( (string) ( $items[0]['time_start'] ?? '' ) );
+		}
+		if ( preg_match( '/^(\d{1,2}):(\d{2})/', $time, $matches ) ) {
+			return sprintf( '%02d:%02d', (int) $matches[1], (int) $matches[2] );
+		}
+		return '00:00';
+	}
+
+	private static function event_tour_order( $event ) {
+		foreach ( array( 'tour_order', 'route_order' ) as $field ) {
+			if ( isset( $event[ $field ] ) && '' !== (string) $event[ $field ] && is_numeric( $event[ $field ] ) ) {
+				return (float) $event[ $field ];
+			}
+		}
+		return null;
+	}
+
+	private static function hero_route_sort_key( $event ) {
+		$order = self::event_tour_order( $event );
+		return 'start=' . ( self::event_start_datetime( $event ) ?: 'none' ) . ';tour_order=' . ( null === $order ? 'none' : (string) $order ) . ';label=' . ( self::hero_route_location_name( $event ) ?: (string) ( $event['title'] ?? '' ) );
+	}
+
+	private static function hero_route_location_name( $event, $venue = null ) {
+		$venue = is_array( $venue ) ? $venue : ( is_array( $event['venue_full'] ?? null ) ? $event['venue_full'] : ( is_array( $event['venue_data'] ?? null ) ? $event['venue_data'] : array() ) );
+		$venue_address = is_array( $venue['address'] ?? null ) ? $venue['address'] : array();
+		foreach ( array( $event['city'] ?? '', $venue_address['city'] ?? '', $event['venue_name'] ?? '', $venue['name'] ?? '', $event['ticket_tab_label'] ?? '', $event['title'] ?? '' ) as $value ) {
+			$value = trim( (string) $value );
+			if ( '' !== $value ) { return $value; }
+		}
+		return '';
+	}
+
 	public static function seminars_for_language( $lang = null ) { return self::events_for_language( $lang ); }
 
 	/** Whether this normalized event came from the Event CPT instead of bundled config. */
@@ -2331,18 +2463,25 @@ class TAKA_Platform_Data {
 		$y = self::map_coordinate( $event['route_map_y'] ?? ( $event['map_y'] ?? null ) );
 		$venue_x = is_array( $venue ) ? self::map_coordinate( $venue['route_map_x'] ?? ( $venue['map_x'] ?? null ) ) : null;
 		$venue_y = is_array( $venue ) ? self::map_coordinate( $venue['route_map_y'] ?? ( $venue['map_y'] ?? null ) ) : null;
+		$coordinate_source = null !== $x || null !== $y ? 'event' : 'auto';
 		if ( null === $x && null !== $venue_x ) { $x = $venue_x; }
 		if ( null === $y && null !== $venue_y ) { $y = $venue_y; }
+		if ( 'auto' === $coordinate_source && ( null !== $venue_x || null !== $venue_y ) ) { $coordinate_source = 'venue'; }
 
-		$label = trim( (string) ( $event['route_map_label'] ?? ( $event['map_label'] ?? '' ) ) );
+		// Route labels intentionally come from current event/venue display fields.
+		// Legacy route_map_label/map_label fields are kept only as a last-resort fallback.
+		$label_source = 'event_location';
+		$label = self::hero_route_location_name( $event, $venue );
+		if ( '' === $label ) {
+			$label = trim( (string) ( $event['route_map_label'] ?? ( $event['map_label'] ?? '' ) ) );
+			$label_source = '' !== $label ? 'legacy_event_map_label' : $label_source;
+		}
 		if ( '' === $label && is_array( $venue ) ) {
 			$label = trim( (string) ( $venue['route_map_label'] ?? ( $venue['map_label'] ?? '' ) ) );
-		}
-		if ( '' === $label ) {
-			$label = trim( (string) ( $event['city'] ?? '' ) ) ?: trim( (string) ( $event['title'] ?? '' ) );
+			$label_source = '' !== $label ? 'legacy_venue_map_label' : $label_source;
 		}
 
-		return array( 'x' => $x, 'y' => $y, 'label' => $label );
+		return array( 'x' => $x, 'y' => $y, 'label' => $label, 'label_source' => $label_source, 'coordinate_source' => $coordinate_source );
 	}
 
 	private static function map_coordinate( $value ) {

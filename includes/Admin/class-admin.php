@@ -322,6 +322,7 @@ class TAKA_Platform_Admin {
 		$status = TAKA_Platform_Data::data_source_status();
 		$rows = TAKA_Platform_Data::event_diagnostics( $lang );
 		$section_rows = TAKA_Platform_Data::content_section_diagnostics( $lang );
+		$route_rows = TAKA_Platform_Data::hero_route_map_diagnostics( $lang );
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html__( 'TAKA Platform Diagnostics', 'taka-platform' ); ?></h1>
@@ -358,6 +359,39 @@ class TAKA_Platform_Admin {
 							<td><?php echo esc_html( $row['block_enabled'] ?? '' ); ?></td>
 							<td><?php echo esc_html( $row['final_title'] ?? '' ); ?></td>
 							<td><?php echo esc_html( $row['final_body_excerpt'] ?? '' ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<h2><?php echo esc_html__( 'Hero Route Map', 'taka-platform' ); ?></h2>
+			<table class="widefat striped">
+				<thead>
+					<tr>
+						<th><?php echo esc_html__( 'Event ID', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Event title', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Location name', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Country', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Start datetime', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Coordinates', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Coordinate source', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Final map label', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Label source', 'taka-platform' ); ?></th>
+						<th><?php echo esc_html__( 'Final sort key', 'taka-platform' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $route_rows as $row ) : ?>
+						<tr>
+							<td><code><?php echo esc_html( $row['event_id'] ?? '' ); ?></code></td>
+							<td><?php echo esc_html( $row['event_title'] ?? '' ); ?></td>
+							<td><?php echo esc_html( $row['location_name'] ?? '' ); ?></td>
+							<td><?php echo esc_html( $row['country'] ?? '' ); ?></td>
+							<td><code><?php echo esc_html( $row['start_datetime'] ?? '' ); ?></code></td>
+							<td><code><?php echo esc_html( $row['coordinates'] ?? '' ); ?></code></td>
+							<td><?php echo esc_html( $row['coordinate_source'] ?? '' ); ?></td>
+							<td><?php echo esc_html( $row['final_map_label'] ?? '' ); ?></td>
+							<td><?php echo esc_html( $row['label_source'] ?? '' ); ?></td>
+							<td><code><?php echo esc_html( $row['sort_key'] ?? '' ); ?></code></td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>
@@ -1542,6 +1576,7 @@ class TAKA_Platform_Admin {
 			'_taka_route_map_x' => $item['route_map_x'] ?? ( $item['map_x'] ?? '' ),
 			'_taka_route_map_y' => $item['route_map_y'] ?? ( $item['map_y'] ?? '' ),
 			'_taka_route_map_label' => $item['route_map_label'] ?? ( $item['map_label'] ?? '' ),
+			'_taka_tour_order' => $item['tour_order'] ?? '',
 			'_taka_route_order' => $item['route_order'] ?? '',
 			'_taka_city' => $item['city'] ?? '',
 			'_taka_date_start' => $item['date_start'] ?? '',
@@ -1630,7 +1665,7 @@ class TAKA_Platform_Admin {
 	public static function render_event_meta_box( $post ) {
 		self::nonce();
 		self::render_object_source_language_field( $post->ID );
-		foreach ( array( 'subtitle' => 'Subtitle', 'route_map_x' => 'Route map X (0–100)', 'route_map_y' => 'Route map Y (0–100)', 'route_map_label' => 'Route map label', 'route_order' => 'Route order', 'city' => 'City', 'doors_open' => 'Doors open' ) as $key => $label ) { self::text( $post->ID, $key, __( $label, 'taka-platform' ) ); }
+		foreach ( array( 'subtitle' => 'Subtitle', 'route_map_x' => 'Route map X (0–100)', 'route_map_y' => 'Route map Y (0–100)', 'route_map_label' => 'Route map label', 'tour_order' => 'Tour order', 'city' => 'City', 'doors_open' => 'Doors open' ) as $key => $label ) { self::text( $post->ID, $key, __( $label, 'taka-platform' ) ); }
 		self::event_option_select( $post->ID, 'country', __( 'Country', 'taka-platform' ) );
 		self::render_derived_country_fields( $post->ID );
 		self::text( $post->ID, 'timezone', __( 'Timezone override', 'taka-platform' ) );
@@ -1729,7 +1764,7 @@ class TAKA_Platform_Admin {
 			}
 			update_post_meta( $post_id, '_taka_organizer_id', $posted );
 		}
-		self::save( $post_id, array( 'subtitle', 'country', 'country_code', 'flag', 'route_map_x', 'route_map_y', 'route_map_label', 'route_order', 'city', 'doors_open', 'timezone', 'currency', 'format', 'audience', 'level', 'ticket_provider', 'ticket_status', 'photo_credit', 'languages', 'organizer_id', 'venue_id', 'venue_ids', 'ticket_shop_url', 'image_id', 'image_url', 'group_image_id', 'group_image_url', 'gallery_image_ids', 'short_description', 'long_description', 'ticket_card_text', 'ticket_tab_label', 'booking_info_override', 'booking_info_enabled', 'booking_info_title', 'booking_info_intro', 'booking_info_group_booking', 'booking_info_multi_event_discount', 'booking_info_contact_email', 'booking_info_booking_process', 'booking_info_payment_methods', 'booking_info_cancellation_policy', 'booking_info_additional_notes', 'accessibility', 'sort_order', 'notes', 'parking' ) );
+		self::save( $post_id, array( 'subtitle', 'country', 'country_code', 'flag', 'route_map_x', 'route_map_y', 'route_map_label', 'tour_order', 'city', 'doors_open', 'timezone', 'currency', 'format', 'audience', 'level', 'ticket_provider', 'ticket_status', 'photo_credit', 'languages', 'organizer_id', 'venue_id', 'venue_ids', 'ticket_shop_url', 'image_id', 'image_url', 'group_image_id', 'group_image_url', 'gallery_image_ids', 'short_description', 'long_description', 'ticket_card_text', 'ticket_tab_label', 'booking_info_override', 'booking_info_enabled', 'booking_info_title', 'booking_info_intro', 'booking_info_group_booking', 'booking_info_multi_event_discount', 'booking_info_contact_email', 'booking_info_booking_process', 'booking_info_payment_methods', 'booking_info_cancellation_policy', 'booking_info_additional_notes', 'accessibility', 'sort_order', 'notes', 'parking' ) );
 		self::save_content_reference_meta( $post_id, 'content_reference_event_description', 'event_description' );
 		self::save_object_text_translations( $post_id, 'event' );
 		self::save_event_organizer_relationships( $post_id, $posted_relationships );
@@ -1902,7 +1937,7 @@ class TAKA_Platform_Admin {
 			$key = '_taka_' . $field;
 			if ( ! isset( $_POST[ $key ] ) ) { delete_post_meta( $post_id, $key ); continue; }
 			$value = wp_unslash( $_POST[ $key ] );
-			if ( in_array( $field, array( 'logo_id', 'image_id', 'group_image_id', 'parking_image_id', 'organizer_id', 'venue_id', 'sort_order', 'route_order' ), true ) ) { $value = absint( $value ); }
+			if ( in_array( $field, array( 'logo_id', 'image_id', 'group_image_id', 'parking_image_id', 'organizer_id', 'venue_id', 'sort_order', 'tour_order', 'route_order' ), true ) ) { $value = absint( $value ); }
 			elseif ( in_array( $field, array( 'route_map_x', 'route_map_y' ), true ) ) { $value = is_numeric( $value ) ? (string) max( 0, min( 100, (float) $value ) ) : ''; }
 			elseif ( in_array( $field, array( 'website', 'ticket_shop_url', 'image_url', 'group_image_url', 'parking_image_url', 'logo_url', 'button_url' ), true ) ) { $value = esc_url_raw( $value ); }
 			elseif ( 'languages' === $field ) { $value = implode( ',', TAKA_Platform_Data::normalize_language_codes( $value ) ); }

@@ -5,47 +5,8 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$events = is_array( $events ?? null ) ? array_values( $events ) : array();
-
-usort(
-	$events,
-	static function ( $a, $b ) {
-		$a_route = isset( $a['route_order'] ) && '' !== (string) $a['route_order'] ? (float) $a['route_order'] : null;
-		$b_route = isset( $b['route_order'] ) && '' !== (string) $b['route_order'] ? (float) $b['route_order'] : null;
-		if ( null !== $a_route || null !== $b_route ) {
-			return ( $a_route ?? 99999 ) <=> ( $b_route ?? 99999 );
-		}
-		$a_date = (string) ( $a['date_start'] ?? ( $a['program_items'][0]['date'] ?? '' ) );
-		$b_date = (string) ( $b['date_start'] ?? ( $b['program_items'][0]['date'] ?? '' ) );
-		if ( $a_date !== $b_date ) { return strcmp( $a_date, $b_date ); }
-		$a_time = (string) ( $a['time_start'] ?? ( $a['program_items'][0]['time_start'] ?? '' ) );
-		$b_time = (string) ( $b['time_start'] ?? ( $b['program_items'][0]['time_start'] ?? '' ) );
-		if ( $a_time !== $b_time ) { return strcmp( $a_time, $b_time ); }
-		$a_sort = (int) ( $a['sort_order'] ?? 0 );
-		$b_sort = (int) ( $b['sort_order'] ?? 0 );
-		if ( $a_sort !== $b_sort ) { return $a_sort <=> $b_sort; }
-		return strcmp( (string) ( $a['title'] ?? '' ), (string) ( $b['title'] ?? '' ) );
-	}
-);
-
-$stops = array();
-$count = max( 1, count( $events ) );
-foreach ( $events as $index => $event ) {
-	$point = is_array( $event['hero_route_map'] ?? null ) ? $event['hero_route_map'] : array();
-	$manual_x = isset( $point['x'] ) && is_numeric( $point['x'] ) ? max( 0, min( 100, (float) $point['x'] ) ) : null;
-	$manual_y = isset( $point['y'] ) && is_numeric( $point['y'] ) ? max( 0, min( 100, (float) $point['y'] ) ) : null;
-	$progress = 1 === $count ? 0 : $index / ( $count - 1 );
-	$auto_x = 72 - min( 42, $index * 5.4 ) + ( 0 === $index % 2 ? 0 : -4 );
-	$auto_y = 13 + $progress * 72;
-	$x = null !== $manual_x ? $manual_x : max( 18, min( 82, $auto_x ) );
-	$y = null !== $manual_y ? $manual_y : max( 12, min( 88, $auto_y ) );
-	$label = trim( (string) ( $point['label'] ?? '' ) );
-	if ( '' === $label ) { $label = trim( (string) ( $event['city'] ?? '' ) ) ?: trim( (string) ( $event['title'] ?? '' ) ); }
-	if ( '' === $label ) { continue; }
-	$stops[] = array( 'event' => $event, 'x' => $x, 'y' => $y, 'label' => $label, 'index' => $index );
-}
-
-if ( empty( $events ) ) { return; }
+$stops = is_array( $stations ?? null ) ? array_values( $stations ) : TAKA_Platform_Data::hero_route_map_stations( null, $events ?? null );
+if ( empty( $stops ) ) { return; }
 
 $label_gap = 8.5;
 $last_label_y = 7;

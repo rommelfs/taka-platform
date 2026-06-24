@@ -7,7 +7,9 @@ defined( 'ABSPATH' ) || exit;
 
 $hero          = TAKA_Platform_Data::get_hero_settings();
 $hero_image    = $hero['image'] ?? '';
-$hero_events   = TAKA_Platform_Data::events_for_language();
+$hero_lang     = taka_tour_current_language();
+$hero_events   = TAKA_Platform_Data::events_for_language( $hero_lang );
+$hero_stations = TAKA_Platform_Data::hero_route_map_stations( $hero_lang, $hero_events );
 $text_position = in_array( $hero['text_position'] ?? 'left', array( 'left', 'center', 'right' ), true ) ? $hero['text_position'] : 'left';
 $vertical      = in_array( $hero['vertical_alignment'] ?? 'center', array( 'top', 'center', 'bottom' ), true ) ? $hero['vertical_alignment'] : 'center';
 $location_mode = TAKA_Platform_Data::normalize_hero_location_display_mode( $hero['location_display_mode'] ?? 'route_map_with_list' );
@@ -36,13 +38,14 @@ if ( '' !== $hero_image ) {
 			<p><?php echo esc_html( $hero['description'] ); ?></p>
 		<?php endif; ?>
 		<?php if ( $show_map ) : ?>
-			<?php echo taka_tour_render_template( 'partials/hero-route-map.php', array( 'events' => $hero_events, 'show_list' => 'route_map_with_list' === $location_mode ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+			<?php echo taka_tour_render_template( 'partials/hero-route-map.php', array( 'stations' => $hero_stations, 'show_list' => 'route_map_with_list' === $location_mode ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		<?php endif; ?>
 		<?php if ( $show_list && ! $show_map ) : ?>
 			<nav class="taka-tour-stations" aria-label="<?php echo esc_attr( taka_tour_translate( 'hero.stations_label', 'Tourstationen' ) ); ?>">
-				<?php foreach ( $hero_events as $event ) : ?>
-					<?php $label = 'trier-kinderseminar' === ( $event['slug'] ?? '' ) ? ( $event['city'] ?? $event['title'] ?? '' ) : ( $event['title'] ?? '' ); ?>
-					<a class="taka-tour-station-link" href="#tickets" data-taka-ticket-tab="<?php echo esc_attr( $event['slug'] ?? $event['id'] ?? '' ); ?>"><?php if ( $show_flags && '' !== trim( (string) ( $event['hero_flag'] ?? '' ) ) ) : ?><span class="taka-hero-location-flag" aria-hidden="true"><?php echo esc_html( $event['hero_flag'] ); ?></span><?php endif; ?><span><?php echo esc_html( $label ); ?></span></a>
+				<?php foreach ( $hero_stations as $station ) : ?>
+					<?php $event = $station['event'] ?? array(); $label = $station['label'] ?? ( $event['title'] ?? '' ); ?>
+					<?php $tab_key = TAKA_Platform_Data::event_panel_key( $event ); $share_url = TAKA_Platform_Data::event_share_url( $event, taka_tour_current_language() ) ?: '#tickets'; ?>
+					<a class="taka-tour-station-link" href="<?php echo esc_url( $share_url ); ?>" data-taka-ticket-tab="<?php echo esc_attr( $tab_key ); ?>"><?php if ( $show_flags && '' !== trim( (string) ( $event['hero_flag'] ?? '' ) ) ) : ?><span class="taka-hero-location-flag" aria-hidden="true"><?php echo esc_html( $event['hero_flag'] ); ?></span><?php endif; ?><span><?php echo esc_html( $label ); ?></span></a>
 				<?php endforeach; ?>
 			</nav>
 		<?php endif; ?>
