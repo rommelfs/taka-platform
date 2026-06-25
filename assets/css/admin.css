@@ -5,10 +5,12 @@
 }
 
 .taka-content-section-tabs {
+	align-items: flex-end;
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0;
 	margin-top: 0.75rem;
+	overflow-x: auto;
 }
 
 .taka-content-section-tabs__radio {
@@ -23,6 +25,7 @@
 	border-bottom: 0;
 	cursor: pointer;
 	margin: 0 0.25rem 0 0;
+	order: 1;
 	padding: 0.55rem 0.8rem;
 }
 
@@ -31,6 +34,7 @@
 	box-sizing: border-box;
 	display: none;
 	flex-basis: 100%;
+	order: 2;
 	padding: 1rem;
 	width: 100%;
 }
