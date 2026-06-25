@@ -43,6 +43,11 @@
 	z-index: 1;
 }
 
+.taka-content-section-tabs__tab.is-source-language,
+.taka-content-section-tabs__panel.is-source-language {
+	border-color: #72aee6;
+}
+
 .taka-content-section-tabs__radio:checked + .taka-content-section-tabs__tab + .taka-content-section-tabs__panel {
 	display: block;
 }
