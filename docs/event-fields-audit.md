@@ -13,14 +13,14 @@ The public ticket detail page primarily uses:
 - program item text (`title`, `notes`) in the seminar plan.
 - event-specific booking information fields in the booking-information panel when overrides are enabled.
 
-The largest potentially confusing fields are `short_description`, `long_description`, `ticket_card_text`, and the WordPress editor `post_content`. Today `short_description` is the active seminar description. `long_description` and `ticket_card_text` are saved and translatable but do not appear in the current public ticket/card templates.
+The largest potentially confusing fields are `short_description`, `long_description`, and `ticket_card_text`. Today `short_description` is the active seminar description. `long_description` and `ticket_card_text` are saved and translatable but do not appear in the current public ticket/card templates. Legacy `post_content` may still contain old seminar descriptions, but the Event CPT no longer exposes the default WordPress editor and new imports/dashboard saves use `_taka_short_description`.
 
 ## Event Admin Text Fields
 
 | Field label in admin UI | Internal field name | Type | Saved? | Used on ticket page? | Used elsewhere? | Translatable? | Recommendation |
 |---|---|---:|---:|---:|---:|---:|---|
 | WordPress title | `post_title` / `title` | single-line | yes | yes | yes, cards, route/map labels, exports | no object translation yet | keep |
-| WordPress editor body | `post_content` | rich text | yes | fallback only if `short_description` is empty | import/export config source content; fallback source for description | indirectly via `description` fallback | rename/clarify later; avoid using alongside seminar description without guidance |
+| Legacy WordPress body | `post_content` | rich text | legacy only | fallback only if `short_description` is empty | fallback source for old events | indirectly via `description` fallback | keep as read-only legacy fallback; do not expose the default editor |
 | Source language | `_taka_source_language` / `source_language` | single-line select | yes | no direct render | translation package source selection | yes, controls object translations | keep |
 | Subtitle | `_taka_subtitle` / `subtitle` | single-line | yes | yes, event panel header | yes, cards and event details drawer | yes | keep |
 | Country | `_taka_country` / `country` | single-line | yes | yes, venue/location line | yes, cards, hero flags, route/list labels | no | keep |
@@ -61,7 +61,7 @@ The largest potentially confusing fields are `short_description`, `long_descript
 
 ## Confusing Or Redundant Fields
 
-- `short_description` versus `post_content`: `short_description` is now labeled “Seminar description” and is the canonical field for the ticket page. `post_content` still exists because the CPT supports the WordPress editor and is used as a fallback when `short_description` is empty.
+- `short_description` versus `post_content`: `short_description` is labeled “Seminar description” and is the canonical field for the ticket page. `post_content` remains only as a legacy fallback for older events that have not yet saved `_taka_short_description`.
 - `long_description`: saved and translatable, but not rendered in the current ticket page or cards. It is a likely candidate to hide until a clear frontend placement exists.
 - `ticket_card_text`: saved and translatable, but not used by `templates/partials/seminar-card.php`. Either wire it into card summaries later or remove after migration.
 - `gallery_image_ids`: saved/exported, but no current public gallery rendering was found in the event ticket/detail templates.
@@ -71,7 +71,7 @@ The largest potentially confusing fields are `short_description`, `long_descript
 
 The public event/ticket detail data flows through `TAKA_Platform_Data::events_for_language()`.
 
-- `description` is resolved from `_taka_short_description`, falling back to `post_content`.
+- `description` is resolved from `_taka_short_description`, falling back to legacy `post_content`.
 - object text translations are resolved before rendering.
 - `templates/tickets.php` renders `description` under “Seminar description” only when non-empty.
 - practical event text (`parking`, `accessibility`, `notes`) is shown through venue/practical info drawers.
@@ -81,4 +81,4 @@ The public event/ticket detail data flows through `TAKA_Platform_Data::events_fo
 1. Keep `short_description` as the canonical seminar description and consider renaming the internal label/documentation consistently.
 2. Hide `long_description` and `ticket_card_text` from the Event UI unless a frontend placement is added.
 3. Decide whether `format`, `audience`, `level`, and program item text should join the translation package workflow.
-4. Consider disabling or relabeling the WordPress editor body for Events to avoid editors entering the same description twice.
+4. Keep the Event, Organizer and Venue CPTs on structured fields only; the default WordPress editor should remain disabled unless a field becomes the canonical content source.

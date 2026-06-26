@@ -138,7 +138,7 @@ Current WordPress representation:
 
 - CPT: `taka_organizer`
 
-Organizers include name, legal name, website, logos, emails, contact persons, social links, description and active state.
+Organizers include name, legal name, website, logos, emails, contact persons, social links, description and active state. The organizer description is structured translation-aware content stored in `_taka_description`; legacy `post_content` is read only as a fallback for older records and the Organizer CPT does not expose the default WordPress editor.
 
 Events do not duplicate organizer profile data. They reference Organizer CPT entries through event-level organizer relationships.
 

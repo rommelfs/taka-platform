@@ -137,12 +137,16 @@ class TAKA_Platform_Organizer_Dashboard {
 			return taka_tour_translate( 'dashboard.validation_error', 'Validation error.' );
 		}
 		$event = get_post( $event_id );
-		$new_id = wp_insert_post( array( 'post_type' => TAKA_PLATFORM_CPT_EVENT, 'post_status' => 'draft', 'post_title' => sprintf( __( 'Copy of %s', 'taka-platform' ), get_the_title( $event ) ), 'post_content' => $event->post_content, 'post_author' => get_current_user_id() ), true );
+		$new_id = wp_insert_post( array( 'post_type' => TAKA_PLATFORM_CPT_EVENT, 'post_status' => 'draft', 'post_title' => sprintf( __( 'Copy of %s', 'taka-platform' ), get_the_title( $event ) ), 'post_author' => get_current_user_id() ), true );
 		if ( is_wp_error( $new_id ) ) {
 			return $new_id->get_error_message();
 		}
 		foreach ( self::event_meta_fields() as $field ) {
-			update_post_meta( $new_id, '_taka_' . $field, get_post_meta( $event_id, '_taka_' . $field, true ) );
+			$value = get_post_meta( $event_id, '_taka_' . $field, true );
+			if ( 'short_description' === $field && '' === trim( (string) $value ) ) {
+				$value = (string) $event->post_content;
+			}
+			update_post_meta( $new_id, '_taka_' . $field, $value );
 		}
 		return taka_tour_translate( 'dashboard.event_saved', 'Event saved.' );
 	}
@@ -158,7 +162,7 @@ class TAKA_Platform_Organizer_Dashboard {
 			return taka_tour_translate( 'dashboard.validation_error', 'Validation error.' );
 		}
 		$status = in_array( sanitize_key( $_POST['event_status'] ?? 'draft' ), array( 'draft', 'publish' ), true ) ? sanitize_key( $_POST['event_status'] ) : 'draft';
-		$post_data = array( 'post_type' => TAKA_PLATFORM_CPT_EVENT, 'post_status' => $status, 'post_title' => sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) ), 'post_content' => sanitize_textarea_field( wp_unslash( $_POST['short_description'] ?? '' ) ), 'post_author' => get_current_user_id() );
+		$post_data = array( 'post_type' => TAKA_PLATFORM_CPT_EVENT, 'post_status' => $status, 'post_title' => sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) ), 'post_author' => get_current_user_id() );
 		if ( '' === $post_data['post_title'] ) {
 			return taka_tour_translate( 'dashboard.validation_error', 'Validation error.' );
 		}

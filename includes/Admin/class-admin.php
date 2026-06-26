@@ -126,7 +126,7 @@ class TAKA_Platform_Admin {
 			'show_ui'      => true,
 			'show_in_menu' => 'taka-platform',
 			'menu_icon'    => $icon,
-			'supports'     => array( 'title', 'editor' ),
+			'supports'     => array( 'title' ),
 			'capability_type' => 'post',
 		);
 
@@ -137,9 +137,6 @@ class TAKA_Platform_Admin {
 
 		if ( TAKA_PLATFORM_CPT_EVENT === $post_type ) {
 			$args['supports'] = array( 'title' );
-		}
-
-		if ( TAKA_PLATFORM_CPT_ORGANIZER === $post_type ) {
 		}
 
 		if ( TAKA_PLATFORM_CPT_CONTENT_BLOCK === $post_type ) {
@@ -1846,7 +1843,10 @@ class TAKA_Platform_Admin {
 		$existing = self::find_post_id_by_config_id( $post_type, $config_id );
 		if ( $existing && 'missing' === $mode ) { $summary['skipped']++; return $existing; }
 		if ( $dry_run ) { $summary[ $existing ? 'updated' : 'created' ]++; return $existing; }
-		$post_data = array( 'post_type' => $post_type, 'post_title' => sanitize_text_field( $title ), 'post_content' => wp_kses_post( $content ), 'post_status' => 'publish' );
+		$post_data = array( 'post_type' => $post_type, 'post_title' => sanitize_text_field( $title ), 'post_status' => 'publish' );
+		if ( self::post_type_uses_default_content_editor( $post_type ) ) {
+			$post_data['post_content'] = wp_kses_post( $content );
+		}
 		if ( '' !== $slug ) { $post_data['post_name'] = sanitize_title( $slug ); }
 		if ( $existing ) {
 			if ( 'overwrite' === $mode ) {
@@ -1876,6 +1876,10 @@ class TAKA_Platform_Admin {
 		return trim( (string) $value );
 	}
 
+	private static function post_type_uses_default_content_editor( $post_type ) {
+		return TAKA_PLATFORM_CPT_CONTENT_BLOCK === $post_type;
+	}
+
 
 	private static function event_organizer_relationships_from_config( $item ) {
 		$relationships = is_array( $item['organizers'] ?? null ) ? $item['organizers'] : array();
@@ -1897,6 +1901,7 @@ class TAKA_Platform_Admin {
 			'_taka_flag' => TAKA_Platform_Data::flag_for_country_code( $country_code ) ?: ( $item['flag'] ?? '' ),
 			'_taka_logo_id' => (int) ( $item['logo_id'] ?? 0 ),
 			'_taka_logo_url' => $item['logo_url'] ?? ( $item['logo'] ?? '' ),
+			'_taka_description' => $item['description'] ?? '',
 			'_taka_emails' => implode( "\n", $item['emails'] ?? array() ),
 			'_taka_contact_persons' => self::contact_persons_to_lines( $item['contact_persons'] ?? array() ),
 			'_taka_instagram' => $social['instagram'] ?? '',
@@ -1953,6 +1958,7 @@ class TAKA_Platform_Admin {
 		$country_code = TAKA_Platform_Data::country_code_for_value( $country );
 		return array(
 			'_taka_subtitle' => $item['subtitle'] ?? '',
+			'_taka_short_description' => $item['description'] ?? '',
 			'_taka_country' => $country,
 			'_taka_country_code' => $country_code,
 			'_taka_flag' => TAKA_Platform_Data::flag_for_country_code( $country_code ),
@@ -2017,7 +2023,6 @@ class TAKA_Platform_Admin {
 	public static function render_organizer_meta_box( $post ) {
 		self::nonce();
 		self::render_object_source_language_field( $post->ID );
-		self::render_main_editor_source_text_notice( __( 'Description', 'taka-platform' ) );
 		self::text( $post->ID, 'legal_name', __( 'Legal name', 'taka-platform' ) );
 		self::url( $post->ID, 'website', __( 'Website', 'taka-platform' ) );
 		self::event_option_select( $post->ID, 'country', __( 'Country', 'taka-platform' ), __( 'organizer', 'taka-platform' ) );
@@ -2030,7 +2035,7 @@ class TAKA_Platform_Admin {
 		self::text( $post->ID, 'facebook', __( 'Facebook', 'taka-platform' ) );
 		self::text( $post->ID, 'youtube', __( 'YouTube', 'taka-platform' ) );
 		self::checkbox( $post->ID, 'active', __( 'Active', 'taka-platform' ) );
-		self::render_object_text_translation_fields( $post->ID, 'organizer', array( 'description' => $post->post_content ) );
+		self::render_object_text_translation_fields( $post->ID, 'organizer', array( 'description' => self::organizer_description_source_text( $post ) ) );
 		self::render_co_organizers( $post->ID );
 	}
 
@@ -2136,6 +2141,14 @@ class TAKA_Platform_Admin {
 		self::save_object_country_meta( $post_id );
 		self::save_object_text_translations( $post_id, 'organizer' );
 		self::save_co_organizers( $post_id );
+	}
+
+	private static function organizer_description_source_text( $post ) {
+		$description = (string) get_post_meta( $post->ID, '_taka_description', true );
+		if ( '' !== trim( $description ) ) {
+			return $description;
+		}
+		return (string) ( $post->post_content ?? '' );
 	}
 	public static function save_venue( $post_id ) { self::save_access_fields( $post_id ); self::save( $post_id, array( 'street', 'postal_code', 'city', 'country', 'country_code', 'flag', 'route_map_x', 'route_map_y', 'route_map_label', 'route_map_label_x', 'route_map_label_y', 'route_map_label_anchor', 'route_map_label_width', 'route_map_leader_line', 'timezone', 'lat', 'lng', 'website', 'image_id', 'image_url', 'parking_image_id', 'parking_image_url', 'gallery_image_ids', 'parking', 'accessibility', 'notes' ) ); self::save_object_country_meta( $post_id, true ); self::save_object_text_translations( $post_id, 'venue' ); }
 	public static function save_content_block( $post_id ) {
@@ -3026,7 +3039,6 @@ class TAKA_Platform_Admin {
 
 	private static function update_object_source_text_field( $post_id, $object_type, $field, $value ) {
 		$post_content_fields = array(
-			'organizer' => array( 'description' => true ),
 			'content_block' => array( 'body' => true ),
 		);
 		if ( ! empty( $post_content_fields[ $object_type ][ $field ] ) ) {
@@ -3050,6 +3062,9 @@ class TAKA_Platform_Admin {
 				'accessibility' => 'accessibility',
 				'notes' => 'notes',
 			),
+			'organizer' => array(
+				'description' => 'description',
+			),
 			'content_block' => array(
 				'kicker' => 'kicker',
 				'title' => 'block_title',
@@ -3060,7 +3075,11 @@ class TAKA_Platform_Admin {
 		);
 		if ( empty( $meta_fields[ $object_type ][ $field ] ) ) { return; }
 		$meta_field = $meta_fields[ $object_type ][ $field ];
-		$clean = 'button_url' === $field ? esc_url_raw( $value ) : ( in_array( $field, array( 'subtitle', 'ticket_tab_label', 'kicker', 'title', 'button_label' ), true ) ? sanitize_text_field( $value ) : sanitize_textarea_field( $value ) );
+		if ( 'organizer' === $object_type && 'description' === $field ) {
+			$clean = wp_kses_post( $value );
+		} else {
+			$clean = 'button_url' === $field ? esc_url_raw( $value ) : ( in_array( $field, array( 'subtitle', 'ticket_tab_label', 'kicker', 'title', 'button_label' ), true ) ? sanitize_text_field( $value ) : sanitize_textarea_field( $value ) );
+		}
 		update_post_meta( $post_id, '_taka_' . $meta_field, $clean );
 	}
 

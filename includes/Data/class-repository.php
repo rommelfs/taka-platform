@@ -1276,7 +1276,7 @@ class TAKA_Platform_Data {
 				'contact_persons' => self::lines_to_array( get_post_meta( $post->ID, '_taka_contact_persons', true ) ),
 				'social_links' => array( 'instagram' => (string) get_post_meta( $post->ID, '_taka_instagram', true ), 'facebook' => (string) get_post_meta( $post->ID, '_taka_facebook', true ), 'youtube' => (string) get_post_meta( $post->ID, '_taka_youtube', true ) ),
 				'social' => array( 'instagram' => (string) get_post_meta( $post->ID, '_taka_instagram', true ), 'facebook' => (string) get_post_meta( $post->ID, '_taka_facebook', true ), 'youtube' => (string) get_post_meta( $post->ID, '_taka_youtube', true ) ),
-				'description' => $post->post_content,
+				'description' => self::organizer_description_source_text( $post ),
 				'co_organizers' => self::normalize_co_organizers( get_post_meta( $post->ID, '_taka_platform_co_organizers', true ) ),
 				'active' => '' === (string) get_post_meta( $post->ID, '_taka_active', true ) || '1' === (string) get_post_meta( $post->ID, '_taka_active', true ),
 			);
@@ -1284,6 +1284,14 @@ class TAKA_Platform_Data {
 			if ( '' !== $config_id ) { $items[ $config_id ] = $item; }
 		}
 		return $items;
+	}
+
+	private static function organizer_description_source_text( $post ) {
+		$description = (string) get_post_meta( $post->ID, '_taka_description', true );
+		if ( '' !== trim( $description ) ) {
+			return $description;
+		}
+		return (string) ( $post->post_content ?? '' );
 	}
 
 	/** Load venues from WordPress. */
