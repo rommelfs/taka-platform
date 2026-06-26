@@ -15,7 +15,7 @@ class TAKA_Platform_Admin {
 		add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
 		add_action( 'admin_menu', array( __CLASS__, 'limit_organizer_admin_menu' ), 999 );
 		add_action( 'admin_init', array( __CLASS__, 'ensure_capabilities' ) );
-		add_action( 'admin_init', array( __CLASS__, 'guard_event_edit_screen' ) );
+		add_action( 'admin_init', array( __CLASS__, 'guard_content_edit_screen' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'render_data_source_notice' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'add_meta_boxes' ) );
@@ -24,6 +24,7 @@ class TAKA_Platform_Admin {
 		add_action( 'personal_options_update', array( __CLASS__, 'save_user_organizer_fields' ) );
 		add_action( 'edit_user_profile_update', array( __CLASS__, 'save_user_organizer_fields' ) );
 		add_action( 'pre_get_posts', array( __CLASS__, 'filter_event_admin_query' ) );
+		add_filter( 'ajax_query_attachments_args', array( __CLASS__, 'filter_media_library_args' ) );
 		add_filter( 'map_meta_cap', array( __CLASS__, 'map_event_meta_caps' ), 10, 4 );
 		add_action( 'save_post_taka_organizer', array( __CLASS__, 'save_organizer' ) );
 		add_action( 'save_post_taka_venue', array( __CLASS__, 'save_venue' ) );
@@ -49,38 +50,57 @@ class TAKA_Platform_Admin {
 	/** Ensure platform roles and capabilities are available. */
 	public static function ensure_capabilities() {
 		if ( ! function_exists( 'get_role' ) ) { return; }
-		$organizer_caps = array(
+		$editor_caps = array(
 			'read',
 			'upload_files',
-			'edit_taka_events',
-			'edit_taka_event',
-			'read_taka_event',
-			'publish_taka_events',
-			'edit_published_taka_events',
-			'edit_taka_organizer_profile',
 		);
+		foreach ( self::managed_post_type_cap_bases() as $base ) {
+			$editor_caps = array_merge(
+				$editor_caps,
+				array(
+					'edit_' . $base['plural'],
+					'edit_' . $base['singular'],
+					'edit_assigned_' . $base['plural'],
+					'read_' . $base['singular'],
+					'publish_' . $base['plural'],
+					'edit_published_' . $base['plural'],
+					'delete_' . $base['plural'],
+					'delete_' . $base['singular'],
+				)
+			);
+		}
+		$editor_caps[] = 'edit_taka_organizer_profile';
+		$editor_caps = array_values( array_unique( $editor_caps ) );
 
 		if ( ! get_role( 'taka_organizer' ) && function_exists( 'add_role' ) ) {
 			add_role(
 				'taka_organizer',
 				__( 'TAKA Organizer', 'taka-platform' ),
-				array_fill_keys( $organizer_caps, true )
+				array_fill_keys( $editor_caps, true )
+			);
+		}
+		if ( ! get_role( 'taka_editor' ) && function_exists( 'add_role' ) ) {
+			add_role(
+				'taka_editor',
+				__( 'TAKA Editor', 'taka-platform' ),
+				array_fill_keys( $editor_caps, true )
 			);
 		}
 
-		$organizer_role = get_role( 'taka_organizer' );
-		if ( $organizer_role ) {
-			foreach ( $organizer_caps as $cap ) {
-				$organizer_role->add_cap( $cap );
+		foreach ( array( 'taka_organizer', 'taka_editor' ) as $role_name ) {
+			$editor_role = get_role( $role_name );
+			if ( ! $editor_role ) { continue; }
+			foreach ( $editor_caps as $cap ) {
+				$editor_role->add_cap( $cap );
 			}
-			foreach ( array( 'manage_options', 'edit_users', 'activate_plugins', 'switch_themes', 'delete_users', 'edit_others_taka_events', 'delete_taka_event', 'delete_taka_events', 'delete_others_taka_events', 'read_private_taka_events' ) as $cap ) {
-				$organizer_role->remove_cap( $cap );
+			foreach ( self::restricted_editor_caps() as $cap ) {
+				$editor_role->remove_cap( $cap );
 			}
 		}
 
 		$role = get_role( 'administrator' );
 		if ( ! $role ) { return; }
-		foreach ( array( 'manage_taka_tour', 'edit_taka_events', 'edit_taka_event', 'edit_others_taka_events', 'publish_taka_events', 'edit_published_taka_events', 'read_taka_event', 'read_private_taka_events', 'delete_taka_event', 'delete_taka_events', 'delete_others_taka_events', 'edit_taka_organizers', 'edit_taka_venues', 'edit_taka_organizer_profile' ) as $cap ) {
+		foreach ( array_merge( array( 'manage_taka_tour', 'edit_taka_organizer_profile', 'upload_files' ), self::administrator_caps() ) as $cap ) {
 			$role->add_cap( $cap );
 		}
 	}
@@ -110,75 +130,24 @@ class TAKA_Platform_Admin {
 			'capability_type' => 'post',
 		);
 
+		if ( isset( self::managed_post_types()[ $post_type ] ) ) {
+			$args['map_meta_cap'] = true;
+			$args['capabilities'] = self::post_type_capabilities( $post_type );
+		}
+
 		if ( TAKA_PLATFORM_CPT_EVENT === $post_type ) {
 			$args['supports'] = array( 'title' );
-			$args['map_meta_cap'] = true;
-			$args['capabilities'] = array(
-				'edit_post'              => 'edit_taka_event',
-				'read_post'              => 'read_taka_event',
-				'delete_post'            => 'delete_taka_event',
-				'edit_posts'             => 'edit_taka_events',
-				'edit_others_posts'      => 'edit_others_taka_events',
-				'publish_posts'          => 'publish_taka_events',
-				'edit_published_posts'   => 'edit_published_taka_events',
-				'read_private_posts'     => 'read_private_taka_events',
-				'delete_posts'           => 'delete_taka_events',
-				'delete_others_posts'    => 'delete_others_taka_events',
-				'create_posts'           => 'edit_taka_events',
-			);
 		}
 
 		if ( TAKA_PLATFORM_CPT_ORGANIZER === $post_type ) {
-			$args['map_meta_cap'] = true;
-			$args['capabilities'] = array(
-				'edit_post'              => 'edit_taka_organizer_profile',
-				'read_post'              => 'edit_taka_organizer_profile',
-				'delete_post'            => 'manage_options',
-				'edit_posts'             => 'edit_taka_organizer_profile',
-				'edit_others_posts'      => 'manage_options',
-				'publish_posts'          => 'manage_options',
-				'edit_published_posts'   => 'edit_taka_organizer_profile',
-				'read_private_posts'     => 'manage_options',
-				'delete_posts'           => 'manage_options',
-				'delete_others_posts'    => 'manage_options',
-				'create_posts'           => 'manage_options',
-			);
 		}
 
 		if ( TAKA_PLATFORM_CPT_CONTENT_BLOCK === $post_type ) {
 			$args['supports'] = array( 'title', 'editor' );
-			$args['map_meta_cap'] = true;
-			$args['capabilities'] = array(
-				'edit_post'              => 'manage_options',
-				'read_post'              => 'manage_options',
-				'delete_post'            => 'manage_options',
-				'edit_posts'             => 'manage_options',
-				'edit_others_posts'      => 'manage_options',
-				'publish_posts'          => 'manage_options',
-				'edit_published_posts'   => 'manage_options',
-				'read_private_posts'     => 'manage_options',
-				'delete_posts'           => 'manage_options',
-				'delete_others_posts'    => 'manage_options',
-				'create_posts'           => 'manage_options',
-			);
 		}
 
 		if ( TAKA_PLATFORM_CPT_VENUE === $post_type ) {
 			$args['supports'] = array( 'title' );
-			$args['map_meta_cap'] = true;
-			$args['capabilities'] = array(
-				'edit_post'              => 'edit_taka_venues',
-				'read_post'              => 'edit_taka_venues',
-				'delete_post'            => 'manage_options',
-				'edit_posts'             => 'edit_taka_venues',
-				'edit_others_posts'      => 'manage_options',
-				'publish_posts'          => 'manage_options',
-				'edit_published_posts'   => 'edit_taka_venues',
-				'read_private_posts'     => 'manage_options',
-				'delete_posts'           => 'manage_options',
-				'delete_others_posts'    => 'manage_options',
-				'create_posts'           => 'manage_options',
-			);
 		}
 
 		register_post_type(
@@ -250,6 +219,86 @@ class TAKA_Platform_Admin {
 		add_meta_box( 'taka_venue_details', __( 'Venue details', 'taka-platform' ), array( __CLASS__, 'render_venue_meta_box' ), TAKA_PLATFORM_CPT_VENUE, 'normal', 'high' );
 		add_meta_box( 'taka_event_details', __( 'Event details', 'taka-platform' ), array( __CLASS__, 'render_event_meta_box' ), TAKA_PLATFORM_CPT_EVENT, 'normal', 'high' );
 		add_meta_box( 'taka_content_block_details', __( 'Reusable content', 'taka-platform' ), array( __CLASS__, 'render_content_block_meta_box' ), TAKA_PLATFORM_CPT_CONTENT_BLOCK, 'normal', 'high' );
+		foreach ( array_keys( self::managed_post_types() ) as $post_type ) {
+			add_meta_box( 'taka_content_access', __( 'TAKA access', 'taka-platform' ), array( __CLASS__, 'render_access_meta_box' ), $post_type, 'side', 'default' );
+		}
+	}
+
+	/** Render object-level access controls. */
+	public static function render_access_meta_box( $post ) {
+		$owner_id               = (int) $post->post_author;
+		$assigned_user_ids      = self::get_post_assigned_user_ids( $post->ID );
+		$assigned_organizer_ids = self::get_post_assigned_organizer_ids( $post->ID );
+		$mode                   = self::post_permission_mode( $post->ID );
+		$owner                  = $owner_id ? get_user_by( 'id', $owner_id ) : null;
+		$can_manage_access      = self::current_user_is_platform_admin();
+
+		if ( ! $can_manage_access ) {
+			?>
+			<p><strong><?php echo esc_html__( 'Owner', 'taka-platform' ); ?></strong><br><?php echo esc_html( $owner ? $owner->display_name : __( 'Unknown user', 'taka-platform' ) ); ?></p>
+			<p><strong><?php echo esc_html__( 'Permission mode', 'taka-platform' ); ?></strong><br><?php echo esc_html( self::access_modes()[ $mode ] ?? self::access_modes()['owner'] ); ?></p>
+			<?php if ( ! empty( $assigned_user_ids ) ) : ?>
+				<p><strong><?php echo esc_html__( 'Assigned users', 'taka-platform' ); ?></strong><br><?php echo esc_html( self::user_names_list( $assigned_user_ids ) ); ?></p>
+			<?php endif; ?>
+			<?php if ( ! empty( $assigned_organizer_ids ) ) : ?>
+				<p><strong><?php echo esc_html__( 'Assigned organizers', 'taka-platform' ); ?></strong><br><?php echo esc_html( self::post_titles_list( $assigned_organizer_ids ) ); ?></p>
+			<?php endif; ?>
+			<p class="description"><?php echo esc_html__( 'Administrators manage access assignments. Your edit access comes from ownership or an explicit assignment.', 'taka-platform' ); ?></p>
+			<?php
+			return;
+		}
+
+		$users = get_users(
+			array(
+				'orderby' => 'display_name',
+				'order'   => 'ASC',
+				'fields'  => array( 'ID', 'display_name', 'user_login' ),
+			)
+		);
+		$organizers = get_posts(
+			array(
+				'post_type'      => TAKA_PLATFORM_CPT_ORGANIZER,
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+		?>
+		<p>
+			<label for="taka-access-owner-user-id"><strong><?php echo esc_html__( 'Owner', 'taka-platform' ); ?></strong></label><br>
+			<select id="taka-access-owner-user-id" name="taka_access_owner_user_id" style="width:100%;">
+				<?php foreach ( $users as $user ) : ?>
+					<option value="<?php echo esc_attr( (string) $user->ID ); ?>" <?php selected( $owner_id, (int) $user->ID ); ?>><?php echo esc_html( $user->display_name ?: $user->user_login ); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</p>
+		<p>
+			<label for="taka-access-permission-mode"><strong><?php echo esc_html__( 'Permission mode', 'taka-platform' ); ?></strong></label><br>
+			<select id="taka-access-permission-mode" name="taka_access_permission_mode" style="width:100%;">
+				<?php foreach ( self::access_modes() as $value => $label ) : ?>
+					<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $mode, $value ); ?>><?php echo esc_html( $label ); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</p>
+		<p>
+			<label for="taka-access-assigned-user-ids"><strong><?php echo esc_html__( 'Assigned users', 'taka-platform' ); ?></strong></label><br>
+			<select id="taka-access-assigned-user-ids" name="taka_access_assigned_user_ids[]" multiple size="6" style="width:100%;">
+				<?php foreach ( $users as $user ) : ?>
+					<option value="<?php echo esc_attr( (string) $user->ID ); ?>" <?php selected( in_array( (int) $user->ID, $assigned_user_ids, true ) ); ?>><?php echo esc_html( $user->display_name ?: $user->user_login ); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</p>
+		<p>
+			<label for="taka-access-assigned-organizer-ids"><strong><?php echo esc_html__( 'Assigned organizer members', 'taka-platform' ); ?></strong></label><br>
+			<select id="taka-access-assigned-organizer-ids" name="taka_access_assigned_organizer_ids[]" multiple size="6" style="width:100%;">
+				<?php foreach ( $organizers as $organizer ) : ?>
+					<option value="<?php echo esc_attr( (string) $organizer->ID ); ?>" <?php selected( in_array( (int) $organizer->ID, $assigned_organizer_ids, true ) ); ?>><?php echo esc_html( get_the_title( $organizer ) ); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</p>
+		<p class="description"><?php echo esc_html__( 'Object access is enforced server-side. Non-admin editors see their own content by default; assigned users or organizer members need a matching permission mode.', 'taka-platform' ); ?></p>
+		<?php
 	}
 
 	/** Render dashboard. */
@@ -257,7 +306,8 @@ class TAKA_Platform_Admin {
 		if ( ! current_user_can( 'edit_taka_events' ) ) { return; }
 		if ( ! current_user_can( 'manage_options' ) ) {
 			$organizers = self::get_current_user_organizer_ids();
-			$events     = self::get_events_for_organizers( $organizers );
+			$event_ids  = self::accessible_post_ids_for_user( TAKA_PLATFORM_CPT_EVENT, get_current_user_id(), 'edit' );
+			$events     = empty( $event_ids ) ? array() : get_posts( array( 'post_type' => TAKA_PLATFORM_CPT_EVENT, 'post_status' => array( 'publish', 'draft', 'pending', 'future', 'private' ), 'posts_per_page' => -1, 'post__in' => $event_ids ) );
 			?>
 			<div class="wrap">
 				<h1><?php echo esc_html__( 'TAKA Platform Dashboard', 'taka-platform' ); ?></h1>
@@ -569,19 +619,204 @@ class TAKA_Platform_Admin {
 		return current_user_can( 'manage_options' );
 	}
 
-	/** Whether a user can access an organizer-owned event. */
-	private static function user_can_access_event( $user_id, $post_id ) {
-		if ( user_can( $user_id, 'manage_options' ) ) {
+	/** Managed object types and their capability bases. */
+	private static function managed_post_types() {
+		return array(
+			TAKA_PLATFORM_CPT_EVENT => array( 'singular' => 'taka_event', 'plural' => 'taka_events' ),
+			TAKA_PLATFORM_CPT_VENUE => array( 'singular' => 'taka_venue', 'plural' => 'taka_venues' ),
+			TAKA_PLATFORM_CPT_ORGANIZER => array( 'singular' => 'taka_organizer', 'plural' => 'taka_organizers' ),
+			TAKA_PLATFORM_CPT_CONTENT_BLOCK => array( 'singular' => 'taka_content_block', 'plural' => 'taka_content_blocks' ),
+		);
+	}
+
+	private static function managed_post_type_cap_bases() {
+		return array_values( self::managed_post_types() );
+	}
+
+	private static function post_type_capabilities( $post_type ) {
+		$base = self::managed_post_types()[ $post_type ] ?? null;
+		if ( ! $base ) { return array(); }
+		return array(
+			'edit_post'              => 'edit_' . $base['singular'],
+			'read_post'              => 'read_' . $base['singular'],
+			'delete_post'            => 'delete_' . $base['singular'],
+			'edit_posts'             => 'edit_' . $base['plural'],
+			'edit_others_posts'      => 'edit_others_' . $base['plural'],
+			'publish_posts'          => 'publish_' . $base['plural'],
+			'edit_published_posts'   => 'edit_published_' . $base['plural'],
+			'read_private_posts'     => 'read_private_' . $base['plural'],
+			'delete_posts'           => 'delete_' . $base['plural'],
+			'delete_others_posts'    => 'delete_others_' . $base['plural'],
+			'delete_published_posts' => 'delete_published_' . $base['plural'],
+			'create_posts'           => 'edit_' . $base['plural'],
+		);
+	}
+
+	private static function administrator_caps() {
+		$caps = array();
+		foreach ( self::managed_post_type_cap_bases() as $base ) {
+			$caps = array_merge(
+				$caps,
+				array(
+					'edit_' . $base['plural'],
+					'edit_' . $base['singular'],
+					'edit_assigned_' . $base['plural'],
+					'edit_others_' . $base['plural'],
+					'edit_all_' . $base['plural'],
+					'publish_' . $base['plural'],
+					'edit_published_' . $base['plural'],
+					'read_' . $base['singular'],
+					'read_private_' . $base['plural'],
+					'delete_' . $base['plural'],
+					'delete_' . $base['singular'],
+					'delete_assigned_' . $base['plural'],
+					'delete_others_' . $base['plural'],
+					'delete_all_' . $base['plural'],
+					'delete_published_' . $base['plural'],
+				)
+			);
+		}
+		return array_values( array_unique( $caps ) );
+	}
+
+	private static function restricted_editor_caps() {
+		$caps = array( 'manage_options', 'edit_users', 'activate_plugins', 'switch_themes', 'delete_users' );
+		foreach ( self::managed_post_type_cap_bases() as $base ) {
+			$caps = array_merge(
+				$caps,
+				array(
+					'edit_others_' . $base['plural'],
+					'edit_all_' . $base['plural'],
+					'read_private_' . $base['plural'],
+					'delete_assigned_' . $base['plural'],
+					'delete_others_' . $base['plural'],
+					'delete_all_' . $base['plural'],
+					'delete_published_' . $base['plural'],
+				)
+			);
+		}
+		return array_values( array_unique( $caps ) );
+	}
+
+	private static function access_modes() {
+		return array(
+			'owner' => __( 'Owner only', 'taka-platform' ),
+			'assigned_users' => __( 'Owner and assigned users', 'taka-platform' ),
+			'organizer_members' => __( 'Owner, assigned users and assigned organizer members', 'taka-platform' ),
+			'all_editors' => __( 'All TAKA editors', 'taka-platform' ),
+			'admin_only' => __( 'Admin only', 'taka-platform' ),
+		);
+	}
+
+	private static function post_permission_mode( $post_id ) {
+		$mode = sanitize_key( (string) get_post_meta( $post_id, '_taka_permission_mode', true ) );
+		return isset( self::access_modes()[ $mode ] ) ? $mode : 'owner';
+	}
+
+	private static function get_post_assigned_user_ids( $post_id ) {
+		$ids = get_post_meta( $post_id, '_taka_assigned_user_ids', true );
+		if ( ! is_array( $ids ) ) {
+			$ids = array_filter( preg_split( '/\s*,\s*/', (string) $ids ) );
+		}
+		return array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) );
+	}
+
+	private static function get_post_assigned_organizer_ids( $post_id ) {
+		$ids = get_post_meta( $post_id, '_taka_assigned_organizer_ids', true );
+		if ( ! is_array( $ids ) ) {
+			$ids = array_filter( preg_split( '/\s*,\s*/', (string) $ids ) );
+		}
+		return array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) );
+	}
+
+	private static function user_names_list( $user_ids ) {
+		$names = array();
+		foreach ( array_filter( array_map( 'absint', (array) $user_ids ) ) as $user_id ) {
+			$user = get_user_by( 'id', $user_id );
+			if ( $user ) {
+				$names[] = $user->display_name ?: $user->user_login;
+			}
+		}
+		return implode( ', ', $names );
+	}
+
+	private static function post_titles_list( $post_ids ) {
+		$titles = array();
+		foreach ( array_filter( array_map( 'absint', (array) $post_ids ) ) as $post_id ) {
+			$title = get_the_title( $post_id );
+			if ( '' !== trim( (string) $title ) ) {
+				$titles[] = $title;
+			}
+		}
+		return implode( ', ', $titles );
+	}
+
+	private static function get_post_related_organizer_ids( $post_id ) {
+		$post = get_post( $post_id );
+		if ( ! $post ) { return array(); }
+		$ids = self::get_post_assigned_organizer_ids( $post_id );
+		if ( TAKA_PLATFORM_CPT_ORGANIZER === $post->post_type ) {
+			$ids[] = (int) $post_id;
+		}
+		if ( TAKA_PLATFORM_CPT_EVENT === $post->post_type ) {
+			$legacy = absint( get_post_meta( $post_id, '_taka_organizer_id', true ) );
+			if ( $legacy ) { $ids[] = $legacy; }
+			foreach ( TAKA_Platform_Data::normalize_event_organizer_relationships( get_post_meta( $post_id, '_taka_event_organizers', true ), $legacy ) as $relationship ) {
+				$ids[] = absint( $relationship['organizer_id'] ?? 0 );
+			}
+		}
+		return array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) );
+	}
+
+	private static function user_has_organizer_overlap( $user_id, $post_id ) {
+		return ! empty( array_intersect( self::get_user_organizer_ids( $user_id ), self::get_post_related_organizer_ids( $post_id ) ) );
+	}
+
+	private static function user_can_access_post_action( $user_id, $post_id, $action = 'edit' ) {
+		$post = get_post( $post_id );
+		if ( ! $post || ! isset( self::managed_post_types()[ $post->post_type ] ) ) { return false; }
+		if ( user_can( $user_id, 'manage_options' ) ) { return true; }
+
+		$base = self::managed_post_types()[ $post->post_type ];
+		$mode = self::post_permission_mode( $post_id );
+		if ( 'admin_only' === $mode ) { return false; }
+
+		$is_delete = 'delete' === $action;
+		$own_cap = ( $is_delete ? 'delete_' : 'edit_' ) . $base['plural'];
+		$assigned_cap = ( $is_delete ? 'delete_assigned_' : 'edit_assigned_' ) . $base['plural'];
+		$all_cap = ( $is_delete ? 'delete_all_' : 'edit_all_' ) . $base['plural'];
+		$base_cap = ( $is_delete ? 'delete_' : 'edit_' ) . $base['plural'];
+
+		$others_cap = $is_delete ? 'delete_others_' . $base['plural'] : 'edit_others_' . $base['plural'];
+		if ( user_can( $user_id, $all_cap ) || user_can( $user_id, $others_cap ) ) {
 			return true;
 		}
-		$assigned = self::get_user_organizer_ids( $user_id );
-		if ( empty( $assigned ) ) { return false; }
-		$organizer_id = absint( get_post_meta( $post_id, '_taka_organizer_id', true ) );
-		if ( $organizer_id && in_array( $organizer_id, $assigned, true ) ) { return true; }
-		foreach ( TAKA_Platform_Data::normalize_event_organizer_relationships( get_post_meta( $post_id, '_taka_event_organizers', true ), $organizer_id ) as $relationship ) {
-			if ( in_array( absint( $relationship['organizer_id'] ?? 0 ), $assigned, true ) ) { return true; }
+		if ( 'read' === $action && (int) $post->post_author === (int) $user_id && user_can( $user_id, 'read_' . $base['singular'] ) ) {
+			return true;
+		}
+		if ( (int) $post->post_author === (int) $user_id && user_can( $user_id, $own_cap ) ) {
+			return true;
+		}
+		if ( 'all_editors' === $mode && ! $is_delete && user_can( $user_id, $base_cap ) ) {
+			return true;
+		}
+		if ( in_array( $mode, array( 'assigned_users', 'organizer_members', 'all_editors' ), true ) && in_array( (int) $user_id, self::get_post_assigned_user_ids( $post_id ), true ) && user_can( $user_id, $assigned_cap ) ) {
+			return true;
+		}
+		if ( in_array( $mode, array( 'organizer_members', 'all_editors' ), true ) && self::user_has_organizer_overlap( $user_id, $post_id ) && user_can( $user_id, $assigned_cap ) ) {
+			return true;
 		}
 		return false;
+	}
+
+	/** Public permission check for frontend dashboards and integrations. */
+	public static function user_can_access_content( $user_id, $post_id, $action = 'edit' ) {
+		return self::user_can_access_post_action( $user_id, $post_id, $action );
+	}
+
+	/** Whether a user can access an organizer-owned event. */
+	private static function user_can_access_event( $user_id, $post_id ) {
+		return self::user_can_access_post_action( $user_id, $post_id, 'edit' );
 	}
 
 	/** Load event posts for assigned organizer IDs. */
@@ -635,7 +870,7 @@ class TAKA_Platform_Admin {
 							<option value="<?php echo esc_attr( (string) $organizer->ID ); ?>" <?php selected( in_array( (int) $organizer->ID, $selected, true ) ); ?>><?php echo esc_html( get_the_title( $organizer ) ); ?></option>
 						<?php endforeach; ?>
 					</select>
-					<p class="description"><?php echo esc_html__( 'TAKA Organizer users may create and edit events only for these organizers.', 'taka-platform' ); ?></p>
+					<p class="description"><?php echo esc_html__( 'Organizer membership can grant access to Events, Venues, Organizers and Content Blocks when the object permission mode allows assigned organizer members.', 'taka-platform' ); ?></p>
 				</td>
 			</tr>
 		</table>
@@ -654,61 +889,85 @@ class TAKA_Platform_Admin {
 		update_user_meta( $user_id, '_taka_platform_organizer_ids', array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) ) );
 	}
 
-	/** Limit event list table to assigned organizers for non-admin organizer users. */
+	private static function accessible_post_ids_for_user( $post_type, $user_id, $action = 'edit' ) {
+		if ( ! isset( self::managed_post_types()[ $post_type ] ) ) { return array(); }
+		if ( user_can( $user_id, 'manage_options' ) ) {
+			return get_posts( array( 'post_type' => $post_type, 'post_status' => 'any', 'posts_per_page' => -1, 'fields' => 'ids' ) );
+		}
+		$ids = get_posts( array( 'post_type' => $post_type, 'post_status' => 'any', 'posts_per_page' => -1, 'fields' => 'ids' ) );
+		$out = array();
+		foreach ( $ids as $post_id ) {
+			if ( self::user_can_access_post_action( $user_id, (int) $post_id, $action ) ) {
+				$out[] = (int) $post_id;
+			}
+		}
+		return $out;
+	}
+
+	/** Limit managed admin list tables to own/assigned objects for non-admin users. */
 	public static function filter_event_admin_query( $query ) {
 		if ( ! is_admin() || ! $query->is_main_query() || self::current_user_is_platform_admin() ) {
 			return;
 		}
 		$post_type = $query->get( 'post_type' ) ?: '';
-		if ( ! in_array( $post_type, array( TAKA_PLATFORM_CPT_EVENT, TAKA_PLATFORM_CPT_ORGANIZER ), true ) ) {
+		if ( 'attachment' === $post_type || ( empty( $post_type ) && 'upload.php' === ( $GLOBALS['pagenow'] ?? '' ) ) ) {
+			$query->set( 'author', get_current_user_id() );
 			return;
 		}
-		$organizer_ids = self::get_current_user_organizer_ids();
-		if ( TAKA_PLATFORM_CPT_ORGANIZER === $post_type ) {
-			$query->set( 'post__in', ! empty( $organizer_ids ) ? $organizer_ids : array( 0 ) );
+		if ( ! isset( self::managed_post_types()[ $post_type ] ) ) {
 			return;
 		}
-		if ( empty( $organizer_ids ) ) {
-			$query->set( 'post__in', array( 0 ) );
-			return;
-		}
-		$event_ids = self::get_event_ids_for_organizers( $organizer_ids );
-		$query->set( 'post__in', ! empty( $event_ids ) ? $event_ids : array( 0 ) );
+		$ids = self::accessible_post_ids_for_user( $post_type, get_current_user_id(), 'edit' );
+		$query->set( 'post__in', ! empty( $ids ) ? $ids : array( 0 ) );
 	}
 
-	/** Enforce organizer-scoped event editing at capability level. */
+	/** Limit media modal attachment choices for non-admin editors to their uploads. */
+	public static function filter_media_library_args( $args ) {
+		if ( self::current_user_is_platform_admin() ) {
+			return $args;
+		}
+		$args['author'] = get_current_user_id();
+		return $args;
+	}
+
+	/** Enforce granular object access at capability level. */
 	public static function map_event_meta_caps( $caps, $cap, $user_id, $args ) {
 		if ( ! in_array( $cap, array( 'edit_post', 'delete_post', 'read_post' ), true ) || empty( $args[0] ) ) {
 			return $caps;
 		}
 		$post = get_post( (int) $args[0] );
-		if ( ! $post || ! in_array( $post->post_type, array( TAKA_PLATFORM_CPT_EVENT, TAKA_PLATFORM_CPT_ORGANIZER ), true ) ) {
+		if ( ! $post ) {
 			return $caps;
 		}
 		if ( user_can( $user_id, 'manage_options' ) ) {
 			return $caps;
 		}
-		if ( 'delete_post' === $cap ) {
+		if ( 'attachment' === $post->post_type ) {
+			if ( 'read_post' === $cap ) { return $caps; }
+			return (int) $post->post_author === (int) $user_id && user_can( $user_id, 'upload_files' ) ? array( 'upload_files' ) : array( 'do_not_allow' );
+		}
+		if ( ! isset( self::managed_post_types()[ $post->post_type ] ) ) {
+			return $caps;
+		}
+		$action = 'delete_post' === $cap ? 'delete' : ( 'read_post' === $cap ? 'read' : 'edit' );
+		if ( ! self::user_can_access_post_action( $user_id, $post->ID, $action ) ) {
 			return array( 'do_not_allow' );
 		}
-		if ( TAKA_PLATFORM_CPT_ORGANIZER === $post->post_type ) {
-			return in_array( (int) $post->ID, self::get_user_organizer_ids( $user_id ), true ) ? array( 'edit_taka_organizer_profile' ) : array( 'do_not_allow' );
-		}
-		return self::user_can_access_event( $user_id, $post->ID ) ? array( 'edit_taka_events' ) : array( 'do_not_allow' );
+		$base = self::managed_post_types()[ $post->post_type ];
+		if ( 'delete' === $action ) { return array( 'delete_' . $base['plural'] ); }
+		if ( 'read' === $action ) { return array( 'read_' . $base['singular'] ); }
+		return array( 'edit_' . $base['plural'] );
 	}
 
-	/** Block direct access to foreign event edit screens for organizer users. */
-	public static function guard_event_edit_screen() {
+	/** Block direct access to foreign managed-content edit screens for non-admin users. */
+	public static function guard_content_edit_screen() {
 		if ( self::current_user_is_platform_admin() || empty( $_GET['post'] ) ) {
 			return;
 		}
 		$post_id = absint( $_GET['post'] );
 		$post    = get_post( $post_id );
-		if ( $post && TAKA_PLATFORM_CPT_EVENT === $post->post_type && ! self::user_can_access_event( get_current_user_id(), $post_id ) ) {
-			wp_die( esc_html__( 'You are not allowed to edit this event.', 'taka-platform' ) );
-		}
-		if ( $post && TAKA_PLATFORM_CPT_ORGANIZER === $post->post_type && ! in_array( $post_id, self::get_current_user_organizer_ids(), true ) ) {
-			wp_die( esc_html__( 'You are not allowed to edit this organizer.', 'taka-platform' ) );
+		if ( $post && isset( self::managed_post_types()[ $post->post_type ] ) && ! self::user_can_access_post_action( get_current_user_id(), $post_id, 'edit' ) ) {
+			wp_die( esc_html__( 'You are not allowed to edit this TAKA content item.', 'taka-platform' ) );
 		}
 	}
 
@@ -1872,13 +2131,15 @@ class TAKA_Platform_Admin {
 	}
 
 	public static function save_organizer( $post_id ) {
+		self::save_access_fields( $post_id );
 		self::save( $post_id, array( 'legal_name', 'website', 'country', 'country_code', 'flag', 'logo_id', 'logo_url', 'emails', 'contact_persons', 'instagram', 'facebook', 'youtube', 'active' ) );
 		self::save_object_country_meta( $post_id );
 		self::save_object_text_translations( $post_id, 'organizer' );
 		self::save_co_organizers( $post_id );
 	}
-	public static function save_venue( $post_id ) { self::save( $post_id, array( 'street', 'postal_code', 'city', 'country', 'country_code', 'flag', 'route_map_x', 'route_map_y', 'route_map_label', 'route_map_label_x', 'route_map_label_y', 'route_map_label_anchor', 'route_map_label_width', 'route_map_leader_line', 'timezone', 'lat', 'lng', 'website', 'image_id', 'image_url', 'parking_image_id', 'parking_image_url', 'gallery_image_ids', 'parking', 'accessibility', 'notes' ) ); self::save_object_country_meta( $post_id, true ); self::save_object_text_translations( $post_id, 'venue' ); }
+	public static function save_venue( $post_id ) { self::save_access_fields( $post_id ); self::save( $post_id, array( 'street', 'postal_code', 'city', 'country', 'country_code', 'flag', 'route_map_x', 'route_map_y', 'route_map_label', 'route_map_label_x', 'route_map_label_y', 'route_map_label_anchor', 'route_map_label_width', 'route_map_leader_line', 'timezone', 'lat', 'lng', 'website', 'image_id', 'image_url', 'parking_image_id', 'parking_image_url', 'gallery_image_ids', 'parking', 'accessibility', 'notes' ) ); self::save_object_country_meta( $post_id, true ); self::save_object_text_translations( $post_id, 'venue' ); }
 	public static function save_content_block( $post_id ) {
+		self::save_access_fields( $post_id );
 		self::save( $post_id, array( 'block_slug', 'block_type', 'category', 'enabled', 'kicker', 'block_title', 'subtitle', 'button_label', 'button_url', 'image_id', 'image_url', 'gallery_image_ids', 'gallery_image_urls', 'notes' ) );
 		self::save_object_text_translations( $post_id, 'content_block' );
 		if ( isset( $_POST[ self::NONCE ], $_POST['_taka_block_slug'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE ] ) ), self::NONCE ) && current_user_can( 'edit_post', $post_id ) ) {
@@ -1890,6 +2151,7 @@ class TAKA_Platform_Admin {
 	}
 	public static function save_event( $post_id ) {
 		if ( ! self::can_save_post_meta( $post_id ) ) { return; }
+		self::save_access_fields( $post_id );
 		$posted_relationships = self::sanitize_event_organizer_relationships( $_POST['taka_platform_event_organizers'] ?? array() );
 		if ( ! empty( $posted_relationships ) ) {
 			$_POST['_taka_organizer_id'] = (string) absint( $posted_relationships[0]['organizer_id'] ?? 0 );
@@ -1898,14 +2160,29 @@ class TAKA_Platform_Admin {
 			$assigned = self::get_current_user_organizer_ids();
 			$existing = absint( get_post_meta( $post_id, '_taka_organizer_id', true ) );
 			$posted   = isset( $_POST['_taka_organizer_id'] ) ? absint( wp_unslash( $_POST['_taka_organizer_id'] ) ) : 0;
+			if ( $posted && ! in_array( $posted, $assigned, true ) ) {
+				$posted = $existing;
+			}
+			if ( 0 === $posted && $existing ) {
+				$posted = $existing;
+			}
 			if ( 0 === $posted && 1 === count( $assigned ) ) {
 				$posted = (int) $assigned[0];
-				$_POST['_taka_organizer_id'] = (string) $posted;
 			}
-			if ( empty( $assigned ) || ( $existing && ! in_array( $existing, $assigned, true ) ) || ! in_array( $posted, $assigned, true ) ) {
-				return;
+			$_POST['_taka_organizer_id'] = (string) $posted;
+			if ( ! empty( $posted_relationships ) ) {
+				$posted_relationships = array_values(
+					array_filter(
+						$posted_relationships,
+						static function ( $relationship ) use ( $assigned ) {
+							return in_array( absint( $relationship['organizer_id'] ?? 0 ), $assigned, true );
+						}
+					)
+				);
 			}
-			update_post_meta( $post_id, '_taka_organizer_id', $posted );
+			if ( empty( $posted_relationships ) ) {
+				$posted_relationships = TAKA_Platform_Data::normalize_event_organizer_relationships( get_post_meta( $post_id, '_taka_event_organizers', true ), $existing );
+			}
 		}
 		self::save( $post_id, array( 'subtitle', 'country', 'country_code', 'flag', 'route_map_x', 'route_map_y', 'route_map_label', 'route_map_label_x', 'route_map_label_y', 'route_map_label_anchor', 'route_map_label_width', 'route_map_leader_line', 'tour_order', 'city', 'doors_open', 'timezone', 'currency', 'format', 'audience', 'level', 'ticket_provider', 'ticket_status', 'photo_credit', 'languages', 'organizer_id', 'venue_id', 'venue_ids', 'ticket_shop_url', 'image_id', 'image_url', 'group_image_id', 'group_image_url', 'gallery_image_ids', 'short_description', 'long_description', 'ticket_card_text', 'ticket_tab_label', 'booking_info_override', 'booking_info_enabled', 'booking_info_title', 'booking_info_intro', 'booking_info_group_booking', 'booking_info_multi_event_discount', 'booking_info_contact_email', 'booking_info_booking_process', 'booking_info_payment_methods', 'booking_info_cancellation_policy', 'booking_info_additional_notes', 'accessibility', 'sort_order', 'notes', 'parking' ) );
 		self::save_content_reference_meta( $post_id, 'content_reference_event_description', 'event_description' );
@@ -1914,6 +2191,55 @@ class TAKA_Platform_Admin {
 		self::save_event_program_items( $post_id );
 		self::save_event_videos( $post_id );
 		self::save_event_structured_meta( $post_id );
+	}
+
+	private static function save_access_fields( $post_id ) {
+		if ( ! self::can_save_post_meta( $post_id ) ) { return; }
+		$post = get_post( $post_id );
+		if ( ! $post || ! isset( self::managed_post_types()[ $post->post_type ] ) ) { return; }
+
+		if ( ! self::current_user_is_platform_admin() ) {
+			if ( '' === (string) get_post_meta( $post_id, '_taka_permission_mode', true ) ) {
+				update_post_meta( $post_id, '_taka_permission_mode', 'owner' );
+			}
+			if ( ! metadata_exists( 'post', $post_id, '_taka_assigned_organizer_ids' ) ) {
+				$organizer_ids = self::get_current_user_organizer_ids();
+				if ( ! empty( $organizer_ids ) ) {
+					update_post_meta( $post_id, '_taka_assigned_organizer_ids', $organizer_ids );
+				}
+			}
+			return;
+		}
+
+		$mode = sanitize_key( wp_unslash( $_POST['taka_access_permission_mode'] ?? 'owner' ) );
+		update_post_meta( $post_id, '_taka_permission_mode', isset( self::access_modes()[ $mode ] ) ? $mode : 'owner' );
+		update_post_meta( $post_id, '_taka_assigned_user_ids', self::sanitize_posted_id_list( $_POST['taka_access_assigned_user_ids'] ?? array() ) );
+		update_post_meta( $post_id, '_taka_assigned_organizer_ids', self::sanitize_posted_id_list( $_POST['taka_access_assigned_organizer_ids'] ?? array() ) );
+
+		$owner_id = absint( wp_unslash( $_POST['taka_access_owner_user_id'] ?? 0 ) );
+		if ( $owner_id && get_user_by( 'id', $owner_id ) && (int) $post->post_author !== $owner_id ) {
+			self::update_post_author_without_recursion( $post_id, $post->post_type, $owner_id );
+		}
+	}
+
+	private static function sanitize_posted_id_list( $value ) {
+		if ( ! is_array( $value ) ) {
+			$value = array_filter( preg_split( '/\s*,\s*/', (string) $value ) );
+		}
+		return array_values( array_unique( array_filter( array_map( 'absint', wp_unslash( $value ) ) ) ) );
+	}
+
+	private static function update_post_author_without_recursion( $post_id, $post_type, $author_id ) {
+		$callbacks = array(
+			TAKA_PLATFORM_CPT_EVENT         => 'save_event',
+			TAKA_PLATFORM_CPT_VENUE         => 'save_venue',
+			TAKA_PLATFORM_CPT_ORGANIZER     => 'save_organizer',
+			TAKA_PLATFORM_CPT_CONTENT_BLOCK => 'save_content_block',
+		);
+		if ( empty( $callbacks[ $post_type ] ) ) { return; }
+		remove_action( 'save_post_' . $post_type, array( __CLASS__, $callbacks[ $post_type ] ) );
+		wp_update_post( array( 'ID' => $post_id, 'post_author' => $author_id ) );
+		add_action( 'save_post_' . $post_type, array( __CLASS__, $callbacks[ $post_type ] ) );
 	}
 
 	private static function render_event_organizer_relationship_fields( $post_id ) {

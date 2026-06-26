@@ -43,11 +43,11 @@ class TAKA_Platform_Organizer_Dashboard {
 	private static function render_event_list( $message = '' ) {
 		$is_admin   = current_user_can( 'manage_options' );
 		$organizers = self::current_user_organizers();
-		if ( ! $is_admin && empty( $organizers ) ) {
+		$events = self::dashboard_events();
+		if ( ! $is_admin && empty( $organizers ) && empty( $events ) ) {
 			return self::notice( taka_tour_translate( 'dashboard.no_organizer_assigned', 'No organizer profile is assigned to your user account. Please contact an administrator.' ), 'warning' );
 		}
 
-		$events = self::dashboard_events();
 		$out  = self::notice( $message, 'success' );
 		$out .= $is_admin ? '<p class="taka-dashboard-notice">' . esc_html__( 'Admin mode: showing all organizers and events.', 'taka-platform' ) . '</p>' : '';
 		$out .= '<h2>' . esc_html( taka_tour_translate( 'dashboard.organizer_dashboard', 'Organizer dashboard' ) ) . '</h2>';
@@ -154,7 +154,7 @@ class TAKA_Platform_Organizer_Dashboard {
 		}
 		$allowed = self::current_user_organizer_ids();
 		$organizer_id = current_user_can( 'manage_options' ) ? absint( $_POST['organizer_id'] ?? 0 ) : ( 1 === count( $allowed ) ? (int) $allowed[0] : absint( $_POST['organizer_id'] ?? 0 ) );
-		if ( ! current_user_can( 'manage_options' ) && ! in_array( $organizer_id, $allowed, true ) ) {
+		if ( ! current_user_can( 'manage_options' ) && $organizer_id && ! in_array( $organizer_id, $allowed, true ) ) {
 			return taka_tour_translate( 'dashboard.validation_error', 'Validation error.' );
 		}
 		$status = in_array( sanitize_key( $_POST['event_status'] ?? 'draft' ), array( 'draft', 'publish' ), true ) ? sanitize_key( $_POST['event_status'] ) : 'draft';
@@ -179,14 +179,25 @@ class TAKA_Platform_Organizer_Dashboard {
 	}
 
 	private static function event_meta_fields() { return array( 'subtitle', 'organizer_id', 'venue_id', 'date_start', 'date_end', 'time_start', 'time_end', 'doors_open', 'format', 'audience', 'level', 'ticket_provider', 'ticket_shop_url', 'ticket_status', 'image_id', 'group_image_id', 'gallery_image_ids', 'short_description', 'long_description', 'ticket_card_text', 'notes', 'parking', 'accessibility' ); }
-	private static function dashboard_events() { $args = array( 'post_type' => TAKA_PLATFORM_CPT_EVENT, 'post_status' => array( 'publish', 'draft', 'pending', 'future', 'private' ), 'posts_per_page' => -1, 'orderby' => 'modified', 'order' => 'DESC' ); if ( ! current_user_can( 'manage_options' ) ) { $ids = self::current_user_organizer_ids(); if ( empty( $ids ) ) { return array(); } $args['meta_query'] = array( array( 'key' => '_taka_organizer_id', 'value' => array_map( 'strval', $ids ), 'compare' => 'IN' ) ); } return get_posts( $args ); }
+	private static function dashboard_events() {
+		$args = array( 'post_type' => TAKA_PLATFORM_CPT_EVENT, 'post_status' => array( 'publish', 'draft', 'pending', 'future', 'private' ), 'posts_per_page' => -1, 'orderby' => 'modified', 'order' => 'DESC' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			$ids = get_posts( array( 'post_type' => TAKA_PLATFORM_CPT_EVENT, 'post_status' => 'any', 'posts_per_page' => -1, 'fields' => 'ids' ) );
+			$ids = array_values( array_filter( array_map( 'absint', $ids ), static function ( $event_id ) { return TAKA_Platform_Admin::user_can_access_content( get_current_user_id(), $event_id, 'edit' ); } ) );
+			if ( empty( $ids ) ) {
+				return array();
+			}
+			$args['post__in'] = $ids;
+		}
+		return get_posts( $args );
+	}
 	private static function current_user_organizer_ids() { $ids = get_user_meta( get_current_user_id(), '_taka_platform_organizer_ids', true ); if ( ! is_array( $ids ) ) { $ids = array_filter( preg_split( '/\s*,\s*/', (string) $ids ) ); } return array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) ); }
 	private static function current_user_organizers() { $args = array( 'post_type' => TAKA_PLATFORM_CPT_ORGANIZER, 'post_status' => 'publish', 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC' ); if ( ! current_user_can( 'manage_options' ) ) { $ids = self::current_user_organizer_ids(); if ( empty( $ids ) ) { return array(); } $args['post__in'] = $ids; } return get_posts( $args ); }
-	private static function current_user_can_manage_event( $event_id ) { if ( current_user_can( 'manage_options' ) ) { return true; } $organizer_id = absint( get_post_meta( $event_id, '_taka_organizer_id', true ) ); return $organizer_id && in_array( $organizer_id, self::current_user_organizer_ids(), true ); }
+	private static function current_user_can_manage_event( $event_id ) { return TAKA_Platform_Admin::user_can_access_content( get_current_user_id(), $event_id, 'edit' ); }
 	private static function meta_value( $event_id, $field ) { return $event_id ? (string) get_post_meta( $event_id, '_taka_' . $field, true ) : ''; }
 	private static function input( $name, $label, $value, $required = false ) { return '<p><label>' . esc_html( $label ) . '<br><input class="widefat" type="text" name="' . esc_attr( $name ) . '" value="' . esc_attr( (string) $value ) . '" ' . ( $required ? 'required' : '' ) . '></label></p>'; }
 	private static function textarea_input( $name, $label, $value ) { return '<p><label>' . esc_html( $label ) . '<br><textarea class="widefat" rows="4" name="' . esc_attr( $name ) . '">' . esc_textarea( (string) $value ) . '</textarea></label></p>'; }
-	private static function organizer_select( $organizers, $selected ) { $out = '<p><label>' . esc_html__( 'Organizer', 'taka-platform' ) . '<br><select name="organizer_id">'; foreach ( $organizers as $organizer ) { $out .= '<option value="' . esc_attr( (string) $organizer->ID ) . '" ' . selected( $selected, $organizer->ID, false ) . '>' . esc_html( get_the_title( $organizer ) ) . '</option>'; } return $out . '</select></label></p>'; }
+	private static function organizer_select( $organizers, $selected ) { $out = '<p><label>' . esc_html__( 'Organizer', 'taka-platform' ) . '<br><select name="organizer_id"><option value="0">—</option>'; foreach ( $organizers as $organizer ) { $out .= '<option value="' . esc_attr( (string) $organizer->ID ) . '" ' . selected( $selected, $organizer->ID, false ) . '>' . esc_html( get_the_title( $organizer ) ) . '</option>'; } return $out . '</select></label></p>'; }
 	private static function venue_select( $venues, $selected ) { $out = '<p><label>' . esc_html__( 'Venue', 'taka-platform' ) . '<br><select name="venue_id"><option value="0">—</option>'; foreach ( $venues as $venue ) { $out .= '<option value="' . esc_attr( (string) $venue->ID ) . '" ' . selected( $selected, $venue->ID, false ) . '>' . esc_html( get_the_title( $venue ) ) . '</option>'; } return $out . '</select></label></p>'; }
 	private static function media_field( $name, $label, $value, $multiple ) { $input_id = 'taka_dashboard_' . sanitize_key( $name ); $preview = ''; foreach ( array_filter( array_map( 'absint', preg_split( '/\s*,\s*/', (string) $value ) ) ) as $id ) { $url = wp_get_attachment_image_url( $id, 'thumbnail' ); if ( $url ) { $preview .= '<img src="' . esc_url( $url ) . '" alt="" style="max-width:90px;height:auto;margin:4px;">'; } } return '<p><label>' . esc_html( $label ) . '</label><br><input id="' . esc_attr( $input_id ) . '" type="hidden" name="' . esc_attr( $name ) . '" value="' . esc_attr( (string) $value ) . '"> <button type="button" class="button" data-taka-media-pick data-multiple="' . ( $multiple ? '1' : '0' ) . '" data-target="' . esc_attr( $input_id ) . '" data-preview="' . esc_attr( $input_id . '_preview' ) . '">' . esc_html__( 'Select image', 'taka-platform' ) . '</button> <button type="button" class="button" data-taka-media-remove data-target="' . esc_attr( $input_id ) . '" data-preview="' . esc_attr( $input_id . '_preview' ) . '">' . esc_html__( 'Remove image', 'taka-platform' ) . '</button><span id="' . esc_attr( $input_id . '_preview' ) . '">' . $preview . '</span></p>'; }
 	private static function dashboard_url() { $page_id = absint( get_option( self::DASHBOARD_PAGE_OPTION, 0 ) ); if ( $page_id && function_exists( 'get_permalink' ) ) { $url = get_permalink( $page_id ); if ( $url ) { return $url; } } return self::current_url(); }
