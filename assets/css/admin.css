@@ -80,6 +80,15 @@
 	margin: 8px 0 16px;
 }
 
+#taka_event_details .handlediv {
+	display: none;
+}
+
+#taka_event_details .hndle,
+#taka_event_details .postbox-header {
+	cursor: default;
+}
+
 .taka-event-assistant__intro {
 	max-width: 880px;
 }

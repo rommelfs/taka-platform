@@ -16,6 +16,7 @@ class TAKA_Platform_Admin {
 		add_action( 'admin_menu', array( __CLASS__, 'limit_organizer_admin_menu' ), 999 );
 		add_action( 'admin_init', array( __CLASS__, 'ensure_capabilities' ) );
 		add_action( 'admin_init', array( __CLASS__, 'guard_content_edit_screen' ) );
+		add_action( 'current_screen', array( __CLASS__, 'repair_event_editor_postbox_preferences' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'render_data_source_notice' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'add_meta_boxes' ) );
@@ -26,6 +27,8 @@ class TAKA_Platform_Admin {
 		add_action( 'pre_get_posts', array( __CLASS__, 'filter_event_admin_query' ) );
 		add_filter( 'ajax_query_attachments_args', array( __CLASS__, 'filter_media_library_args' ) );
 		add_filter( 'map_meta_cap', array( __CLASS__, 'map_event_meta_caps' ), 10, 4 );
+		add_filter( 'get_user_option_closedpostboxes_' . TAKA_PLATFORM_CPT_EVENT, array( __CLASS__, 'keep_event_editor_postbox_visible' ) );
+		add_filter( 'get_user_option_metaboxhidden_' . TAKA_PLATFORM_CPT_EVENT, array( __CLASS__, 'keep_event_editor_postbox_visible' ) );
 		add_action( 'save_post_taka_organizer', array( __CLASS__, 'save_organizer' ) );
 		add_action( 'save_post_taka_venue', array( __CLASS__, 'save_venue' ) );
 		add_action( 'save_post_taka_event', array( __CLASS__, 'save_event' ) );
@@ -46,6 +49,30 @@ class TAKA_Platform_Admin {
 		add_action( 'admin_post_taka_platform_save_translation_glossary', array( __CLASS__, 'handle_save_translation_glossary' ) );
 		if ( class_exists( 'TAKA_Platform_Admin_Event_Assistant' ) ) {
 			TAKA_Platform_Admin_Event_Assistant::init();
+		}
+	}
+
+
+	/** Never let WordPress user preferences hide the primary structured Event editor. */
+	public static function keep_event_editor_postbox_visible( $value ) {
+		if ( ! is_array( $value ) ) { return $value; }
+		return array_values( array_diff( $value, array( 'taka_event_details' ) ) );
+	}
+
+	/** Remove corrupted WordPress postbox preferences that hide the structured Event editor. */
+	public static function repair_event_editor_postbox_preferences( $screen ) {
+		if ( ! $screen || TAKA_PLATFORM_CPT_EVENT !== ( $screen->post_type ?? '' ) || 'post' !== ( $screen->base ?? '' ) ) {
+			return;
+		}
+
+		$user_id = get_current_user_id();
+		if ( ! $user_id ) { return; }
+
+		foreach ( array( 'closedpostboxes_' . TAKA_PLATFORM_CPT_EVENT, 'metaboxhidden_' . TAKA_PLATFORM_CPT_EVENT ) as $option ) {
+			$value = get_user_option( $option, $user_id );
+			if ( is_array( $value ) ) {
+				update_user_option( $user_id, $option, self::keep_event_editor_postbox_visible( $value ) );
+			}
 		}
 	}
 

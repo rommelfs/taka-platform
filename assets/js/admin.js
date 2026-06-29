@@ -35,8 +35,10 @@ document.addEventListener('click', function (event) {
 (function () {
   var i18n = window.takaPlatformAdminI18n || {};
   var storagePrefix = 'taka-platform:admin-layout:v2';
+  var legacyStoragePrefixes = ['taka-platform:admin-layout:v1'];
   var suppressedStorageSections = [];
   var sectionStorageKeys = [];
+  var protectedPostboxSelector = '#taka_event_details';
 
   function storageAvailable() {
     try {
@@ -72,6 +74,10 @@ document.addEventListener('click', function (event) {
     return storagePrefix + ':' + screenKey() + ':' + key + ':' + index;
   }
 
+  function validStoredState(value) {
+    return value === 'open' || value === 'closed';
+  }
+
   function rememberPreference(section) {
     return section.getAttribute('data-taka-admin-section-remember-preference') !== '0';
   }
@@ -90,7 +96,12 @@ document.addEventListener('click', function (event) {
     }
 
     try {
-      return window.localStorage.getItem(key);
+      var value = window.localStorage.getItem(key);
+      if (value === null || validStoredState(value)) {
+        return value;
+      }
+      window.localStorage.removeItem(key);
+      return null;
     } catch (error) {
       return null;
     }
@@ -115,6 +126,33 @@ document.addEventListener('click', function (event) {
 
     try {
       window.localStorage.removeItem(key);
+    } catch (error) {
+      return;
+    }
+  }
+
+  function removeCurrentScreenStoredStates() {
+    var prefixes = [storagePrefix].concat(legacyStoragePrefixes);
+    var currentScreen = screenKey();
+    var index;
+    var key;
+
+    if (!storageAvailable()) {
+      return;
+    }
+
+    try {
+      for (index = window.localStorage.length - 1; index >= 0; index--) {
+        key = window.localStorage.key(index);
+        if (!key) {
+          continue;
+        }
+        prefixes.forEach(function (prefix) {
+          if (key.indexOf(prefix + ':' + currentScreen + ':') === 0) {
+            window.localStorage.removeItem(key);
+          }
+        });
+      }
     } catch (error) {
       return;
     }
@@ -177,6 +215,92 @@ document.addEventListener('click', function (event) {
     setSectionOpen(section, true);
   }
 
+  function isEventEditorScreen() {
+    return !!(document.body && document.body.classList.contains('post-type-taka_event'));
+  }
+
+  function isTopLevelSection(section) {
+    return !section.parentElement || !section.parentElement.closest('[data-taka-admin-section]');
+  }
+
+  function sectionHasEditableFields(section) {
+    return !!section.querySelector('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])');
+  }
+
+  function ensureOneEditableSectionVisible(sections) {
+    var candidates;
+    var fallback;
+
+    if (!isEventEditorScreen()) {
+      return;
+    }
+
+    candidates = sections.filter(function (section) {
+      return isTopLevelSection(section) && sectionHasEditableFields(section);
+    });
+
+    if (!candidates.length || candidates.some(function (section) { return section.open; })) {
+      return;
+    }
+
+    fallback = candidates.find(defaultOpen) || candidates[0];
+    openWithoutStoring(fallback);
+    if (fallback.takaAdminLayoutStorageKey) {
+      writeStoredState(fallback.takaAdminLayoutStorageKey, 'open');
+    }
+  }
+
+  function protectedPostboxes() {
+    return Array.prototype.slice.call(document.querySelectorAll(protectedPostboxSelector));
+  }
+
+  function openProtectedPostbox(postbox) {
+    var inside;
+    var toggle;
+    var childIndex;
+
+    if (!postbox) {
+      return;
+    }
+
+    postbox.classList.remove('closed');
+    for (childIndex = 0; childIndex < postbox.children.length; childIndex++) {
+      if (postbox.children[childIndex].classList.contains('inside')) {
+        inside = postbox.children[childIndex];
+        break;
+      }
+    }
+
+    if (inside) {
+      inside.removeAttribute('hidden');
+      inside.style.display = '';
+    }
+
+    toggle = postbox.querySelector('.handlediv[aria-expanded]');
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', 'true');
+    }
+  }
+
+  function recoverProtectedPostboxes() {
+    protectedPostboxes().forEach(openProtectedPostbox);
+  }
+
+  function observeProtectedPostboxes() {
+    if (typeof window.MutationObserver === 'undefined') {
+      return;
+    }
+
+    protectedPostboxes().forEach(function (postbox) {
+      var observer = new window.MutationObserver(function () {
+        if (postbox.classList.contains('closed')) {
+          openProtectedPostbox(postbox);
+        }
+      });
+      observer.observe(postbox, { attributes: true, attributeFilter: ['class'] });
+    });
+  }
+
   function isStorageSuppressed(section) {
     return suppressedStorageSections.indexOf(section) !== -1;
   }
@@ -187,10 +311,11 @@ document.addEventListener('click', function (event) {
 
   function addResetControl(sections) {
     var heading = document.querySelector('.wrap > h1');
+    var fallbackAnchor = document.querySelector('#poststuff') || document.querySelector('[data-taka-admin-section]');
     var resetWrap;
     var button;
 
-    if (!heading || !sections.length) {
+    if ((!heading && !fallbackAnchor) || !sections.length) {
       return;
     }
 
@@ -204,12 +329,19 @@ document.addEventListener('click', function (event) {
     button.title = i18n.resetAdminLayoutDescription || 'Restore the default expanded and collapsed admin sections on this screen.';
 
     button.addEventListener('click', function () {
+      removeCurrentScreenStoredStates();
       sectionStorageKeys.forEach(removeStoredState);
       sections.forEach(applyDefaultState);
+      recoverProtectedPostboxes();
+      ensureOneEditableSectionVisible(sections);
     });
 
     resetWrap.appendChild(button);
-    heading.insertAdjacentElement('afterend', resetWrap);
+    if (heading) {
+      heading.insertAdjacentElement('afterend', resetWrap);
+    } else if (fallbackAnchor.parentNode) {
+      fallbackAnchor.parentNode.insertBefore(resetWrap, fallbackAnchor);
+    }
   }
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -219,6 +351,7 @@ document.addEventListener('click', function (event) {
       var key = storageKey(section, index);
       var storedState = rememberPreference(section) ? readStoredState(key) : null;
 
+      section.takaAdminLayoutStorageKey = key;
       sectionStorageKeys.push(key);
 
       if (sectionNeedsAttention(section)) {
@@ -235,11 +368,35 @@ document.addEventListener('click', function (event) {
         }
 
         writeStoredState(key, section.open ? 'open' : 'closed');
+        window.setTimeout(function () {
+          ensureOneEditableSectionVisible(sections);
+        }, 0);
       });
     });
 
+    recoverProtectedPostboxes();
+    observeProtectedPostboxes();
+    ensureOneEditableSectionVisible(sections);
     addResetControl(sections);
   });
+
+  document.addEventListener('click', function (event) {
+    var postbox = event.target.closest(protectedPostboxSelector);
+    var toggle;
+
+    if (!postbox) {
+      return;
+    }
+
+    toggle = event.target.closest('.handlediv, .hndle, .postbox-header');
+    if (!toggle || event.target.closest('[data-taka-admin-section]')) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openProtectedPostbox(postbox);
+  }, true);
 
   document.addEventListener('invalid', function (event) {
     var section = event.target.closest('[data-taka-admin-section]');
