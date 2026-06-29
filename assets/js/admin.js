@@ -293,6 +293,32 @@ document.addEventListener('click', function (event) {
   });
 })();
 
+(function () {
+  function updateInlineCreatePanel(name) {
+    var checked = document.querySelector('[data-taka-inline-create-toggle="' + name + '"] input[type="radio"]:checked');
+    var panels = document.querySelectorAll('[data-taka-inline-create-panel="' + name + '"]');
+    var showCreate = checked && checked.value === 'create';
+
+    panels.forEach(function (panel) {
+      panel.hidden = !showCreate;
+    });
+  }
+
+  document.addEventListener('change', function (event) {
+    var group = event.target.closest('[data-taka-inline-create-toggle]');
+    if (!group) {
+      return;
+    }
+    updateInlineCreatePanel(group.getAttribute('data-taka-inline-create-toggle'));
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-taka-inline-create-toggle]').forEach(function (group) {
+      updateInlineCreatePanel(group.getAttribute('data-taka-inline-create-toggle'));
+    });
+  });
+})();
+
 document.addEventListener('click', function (event) {
   var addProgram = event.target.closest('[data-taka-program-add]');
   var removeProgram = event.target.closest('[data-taka-program-remove]');

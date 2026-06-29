@@ -280,6 +280,60 @@
 	max-width: 1120px;
 }
 
+.taka-event-assistant-choice {
+	border: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin: 8px 0 12px;
+	padding: 0;
+}
+
+.taka-event-assistant-choice legend {
+	font-weight: 600;
+	margin-bottom: 6px;
+	width: 100%;
+}
+
+.taka-event-assistant-inline-create {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	box-sizing: border-box;
+	margin: 12px 0;
+	max-width: 920px;
+	padding: 12px;
+}
+
+.taka-event-assistant-inline-create h3 {
+	font-size: 14px;
+	margin: 0 0 8px;
+}
+
+.taka-event-assistant-inline-create__grid {
+	display: grid;
+	gap: 10px 12px;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.taka-event-assistant-inline-create__grid p {
+	margin: 0;
+}
+
+.taka-event-assistant-inline-create__grid input.widefat,
+.taka-event-assistant-inline-create__grid select.widefat,
+.taka-event-assistant-inline-create__grid textarea.widefat {
+	max-width: 100%;
+	width: 100%;
+}
+
+.taka-event-assistant-inline-create__actions {
+	margin: 12px 0 0;
+}
+
+.taka-event-assistant-inline-create__message {
+	margin-top: 8px;
+}
+
 .taka-event-assistant-section__status {
 	margin: 10px 0 12px;
 }

@@ -237,6 +237,7 @@ class TAKA_Platform_Admin_Event_Assistant {
 			<?php if ( ! empty( $_GET['saved'] ) ) : ?>
 				<div class="notice notice-success is-dismissible"><p><?php echo esc_html__( 'Event saved. Completeness has been updated from the current saved state.', 'taka-platform' ); ?></p></div>
 			<?php endif; ?>
+			<?php self::render_inline_object_notices(); ?>
 			<p class="description taka-event-assistant__intro">
 				<?php echo esc_html__( 'Use this checklist editor to create and maintain events throughout their lifecycle. You can save early, return later and jump between sections at any time.', 'taka-platform' ); ?>
 			</p>
@@ -320,16 +321,327 @@ class TAKA_Platform_Admin_Event_Assistant {
 		}
 
 		$event_id = absint( $result );
+		$inline_results = self::process_inline_object_creates( $event_id );
 		TAKA_Platform_Admin::save_event( $event_id );
 		self::remember_recent_settings( $event_id );
+		$redirect_args = array_merge( array( 'saved' => '1' ), self::inline_redirect_args( $inline_results ) );
 
 		if ( 'continue_later' === $assistant_action ) {
 			wp_safe_redirect( add_query_arg( 'event_assistant_saved', '1', admin_url( 'edit.php?post_type=' . TAKA_PLATFORM_CPT_EVENT ) ) );
 			exit;
 		}
 
-		wp_safe_redirect( self::assistant_url( $event_id, array( 'saved' => '1' ) ) );
+		wp_safe_redirect( self::assistant_url( $event_id, $redirect_args ) );
 		exit;
+	}
+
+	private static function process_inline_object_creates( $event_id ) {
+		$results = array(
+			'notices' => array(),
+			'errors'  => array(),
+		);
+
+		if ( self::should_create_inline_object( 'taka_event_assistant_venue_mode', 'create_venue', 'taka_event_assistant_new_venue' ) ) {
+			$venue = self::create_inline_venue( self::posted_array( 'taka_event_assistant_new_venue' ) );
+			self::record_inline_result( $results, $venue );
+			if ( ! empty( $venue['id'] ) ) {
+				$_POST['_taka_venue_id'] = (string) absint( $venue['id'] );
+			}
+		}
+
+		if ( self::should_create_inline_object( 'taka_event_assistant_organizer_mode', 'create_organizer', 'taka_event_assistant_new_organizer' ) ) {
+			$organizer = self::create_inline_organizer( self::posted_array( 'taka_event_assistant_new_organizer' ), 'organizer' );
+			self::record_inline_result( $results, $organizer );
+			if ( ! empty( $organizer['id'] ) ) {
+				$organizer_id = absint( $organizer['id'] );
+				$_POST['_taka_organizer_id'] = (string) $organizer_id;
+				self::ensure_posted_event_organizer_relationship( $organizer_id, 'organizer' );
+			}
+		}
+
+		$co_organizer_payload = self::posted_array( 'taka_event_assistant_new_co_organizer' );
+		if ( self::has_named_payload( $co_organizer_payload ) || self::inline_action_is( 'create_co_organizer' ) ) {
+			$co_organizer = self::create_inline_organizer( $co_organizer_payload, 'co_organizer' );
+			self::record_inline_result( $results, $co_organizer );
+			if ( ! empty( $co_organizer['id'] ) ) {
+				self::ensure_posted_event_organizer_relationship( absint( $co_organizer['id'] ), 'co_organizer' );
+			}
+		}
+
+		return $results;
+	}
+
+	private static function create_inline_venue( $posted ) {
+		if ( ! current_user_can( 'edit_taka_venues' ) ) {
+			return array( 'error' => 'venue_forbidden' );
+		}
+
+		$name = sanitize_text_field( $posted['name'] ?? '' );
+		if ( '' === trim( $name ) ) {
+			return array( 'error' => 'venue_missing_name' );
+		}
+
+		$existing_id = self::find_similar_post_id( TAKA_PLATFORM_CPT_VENUE, $name );
+		if ( $existing_id ) {
+			return array(
+				'id'     => $existing_id,
+				'notice' => 'venue_existing',
+			);
+		}
+
+		$venue_id = self::insert_inline_object_post( TAKA_PLATFORM_CPT_VENUE, $name );
+		if ( is_wp_error( $venue_id ) ) {
+			return array( 'error' => 'venue_create_failed' );
+		}
+
+		self::save_inline_venue_meta( absint( $venue_id ), $posted );
+		return array(
+			'id'     => absint( $venue_id ),
+			'notice' => 'venue_created',
+		);
+	}
+
+	private static function create_inline_organizer( $posted, $role ) {
+		if ( ! current_user_can( 'edit_taka_organizers' ) ) {
+			return array( 'error' => 'co_organizer' === $role ? 'co_organizer_forbidden' : 'organizer_forbidden' );
+		}
+
+		$name = sanitize_text_field( $posted['name'] ?? '' );
+		if ( '' === trim( $name ) ) {
+			return array( 'error' => 'co_organizer' === $role ? 'co_organizer_missing_name' : 'organizer_missing_name' );
+		}
+
+		$existing_id = self::find_similar_post_id( TAKA_PLATFORM_CPT_ORGANIZER, $name );
+		if ( $existing_id ) {
+			return array(
+				'id'     => $existing_id,
+				'notice' => 'co_organizer' === $role ? 'co_organizer_existing' : 'organizer_existing',
+			);
+		}
+
+		$organizer_id = self::insert_inline_object_post( TAKA_PLATFORM_CPT_ORGANIZER, $name );
+		if ( is_wp_error( $organizer_id ) ) {
+			return array( 'error' => 'co_organizer' === $role ? 'co_organizer_create_failed' : 'organizer_create_failed' );
+		}
+
+		self::save_inline_organizer_meta( absint( $organizer_id ), $posted );
+		return array(
+			'id'     => absint( $organizer_id ),
+			'notice' => 'co_organizer' === $role ? 'co_organizer_created' : 'organizer_created',
+		);
+	}
+
+	private static function save_inline_venue_meta( $venue_id, $posted ) {
+		$source_language = self::posted_source_language( $posted );
+		$temp_post = array(
+			TAKA_Platform_Admin::NONCE => sanitize_text_field( wp_unslash( $_POST[ TAKA_Platform_Admin::NONCE ] ?? '' ) ),
+			'_taka_source_language'    => $source_language,
+			'_taka_street'             => sanitize_text_field( $posted['street'] ?? '' ),
+			'_taka_postal_code'        => sanitize_text_field( $posted['postal_code'] ?? '' ),
+			'_taka_city'               => sanitize_text_field( $posted['city'] ?? '' ),
+			'_taka_country'            => sanitize_text_field( $posted['country'] ?? '' ),
+			'_taka_website'            => esc_url_raw( $posted['website'] ?? '' ),
+			'taka_platform_text_translations' => array(
+				'parking'       => array( $source_language => sanitize_textarea_field( $posted['parking'] ?? '' ) ),
+				'accessibility' => array( $source_language => sanitize_textarea_field( $posted['accessibility'] ?? '' ) ),
+			),
+			'taka_platform_text_source_previous' => array(),
+		);
+
+		self::with_temporary_post( $temp_post, static function () use ( $venue_id ) {
+			TAKA_Platform_Admin::save_venue( $venue_id );
+		} );
+	}
+
+	private static function save_inline_organizer_meta( $organizer_id, $posted ) {
+		$source_language = self::posted_source_language( $posted );
+		$temp_post = array(
+			TAKA_Platform_Admin::NONCE => sanitize_text_field( wp_unslash( $_POST[ TAKA_Platform_Admin::NONCE ] ?? '' ) ),
+			'_taka_source_language'    => $source_language,
+			'_taka_website'            => esc_url_raw( $posted['website'] ?? '' ),
+			'_taka_emails'             => sanitize_email( $posted['email'] ?? '' ),
+			'_taka_logo_id'            => absint( $posted['logo_id'] ?? 0 ),
+			'_taka_logo_url'           => '',
+			'_taka_active'             => '1',
+			'taka_platform_text_translations' => array(
+				'description' => array( $source_language => '' ),
+			),
+			'taka_platform_text_source_previous' => array(),
+		);
+
+		self::with_temporary_post( $temp_post, static function () use ( $organizer_id ) {
+			TAKA_Platform_Admin::save_organizer( $organizer_id );
+		} );
+	}
+
+	private static function insert_inline_object_post( $post_type, $title ) {
+		$callback = TAKA_PLATFORM_CPT_VENUE === $post_type ? 'save_venue' : 'save_organizer';
+		remove_action( 'save_post_' . $post_type, array( 'TAKA_Platform_Admin', $callback ) );
+		$result = wp_insert_post(
+			array(
+				'post_type'   => $post_type,
+				'post_title'  => sanitize_text_field( $title ),
+				'post_status' => self::new_inline_object_status( $post_type ),
+				'post_author' => get_current_user_id(),
+			),
+			true
+		);
+		add_action( 'save_post_' . $post_type, array( 'TAKA_Platform_Admin', $callback ) );
+		return $result;
+	}
+
+	private static function new_inline_object_status( $post_type ) {
+		$publish_cap = TAKA_PLATFORM_CPT_VENUE === $post_type ? 'publish_taka_venues' : 'publish_taka_organizers';
+		return current_user_can( $publish_cap ) ? 'publish' : 'draft';
+	}
+
+	private static function find_similar_post_id( $post_type, $title ) {
+		$needle = self::normalized_match_name( $title );
+		if ( '' === $needle ) {
+			return 0;
+		}
+
+		$posts = get_posts(
+			array(
+				'post_type'      => $post_type,
+				'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+
+		foreach ( $posts as $post ) {
+			if ( ! current_user_can( 'edit_post', $post->ID ) ) {
+				continue;
+			}
+			if ( $needle === self::normalized_match_name( get_the_title( $post ) ) ) {
+				return absint( $post->ID );
+			}
+		}
+		return 0;
+	}
+
+	private static function normalized_match_name( $title ) {
+		return sanitize_title( remove_accents( trim( (string) $title ) ) );
+	}
+
+	private static function ensure_posted_event_organizer_relationship( $organizer_id, $relationship_type ) {
+		if ( ! $organizer_id ) {
+			return;
+		}
+
+		$items = isset( $_POST['taka_platform_event_organizers'] ) && is_array( $_POST['taka_platform_event_organizers'] ) ? wp_unslash( $_POST['taka_platform_event_organizers'] ) : array();
+		foreach ( $items as $item ) {
+			if ( absint( $item['organizer_id'] ?? 0 ) === $organizer_id && (string) ( $item['relationship_type'] ?? 'organizer' ) === $relationship_type ) {
+				return;
+			}
+		}
+
+		$items[] = array(
+			'organizer_id'      => (string) $organizer_id,
+			'relationship_type' => $relationship_type,
+			'custom_label'      => '',
+			'visible'           => 1,
+			'sort_order'        => 'co_organizer' === $relationship_type ? 20 : 10,
+		);
+		$_POST['taka_platform_event_organizers'] = wp_slash( $items );
+	}
+
+	private static function with_temporary_post( $post, $callback ) {
+		$original_post = $_POST;
+		$_POST = $post;
+		try {
+			call_user_func( $callback );
+		} finally {
+			$_POST = $original_post;
+		}
+	}
+
+	private static function should_create_inline_object( $mode_key, $action, $payload_key ) {
+		$mode = sanitize_key( wp_unslash( $_POST[ $mode_key ] ?? 'select' ) );
+		if ( 'create' === $mode || self::inline_action_is( $action ) ) {
+			return true;
+		}
+		return self::has_named_payload( self::posted_array( $payload_key ) );
+	}
+
+	private static function inline_action_is( $action ) {
+		return $action === sanitize_key( wp_unslash( $_POST['assistant_inline_action'] ?? '' ) );
+	}
+
+	private static function has_named_payload( $payload ) {
+		return '' !== trim( (string) ( $payload['name'] ?? '' ) );
+	}
+
+	private static function posted_array( $key ) {
+		$value = $_POST[ $key ] ?? array();
+		$value = is_array( $value ) ? wp_unslash( $value ) : array();
+		return $value;
+	}
+
+	private static function posted_source_language( $posted ) {
+		$fallback = TAKA_Platform_Translation_Packages::sanitize_language( wp_unslash( $_POST['_taka_source_language'] ?? 'de' ) );
+		return TAKA_Platform_Translation_Packages::sanitize_language( $posted['source_language'] ?? $fallback );
+	}
+
+	private static function record_inline_result( &$results, $result ) {
+		if ( ! empty( $result['notice'] ) ) {
+			$results['notices'][] = sanitize_key( $result['notice'] );
+		}
+		if ( ! empty( $result['error'] ) ) {
+			$results['errors'][] = sanitize_key( $result['error'] );
+		}
+	}
+
+	private static function inline_redirect_args( $results ) {
+		$args = array();
+		if ( ! empty( $results['notices'] ) ) {
+			$args['assistant_notice'] = implode( ',', array_unique( array_map( 'sanitize_key', $results['notices'] ) ) );
+		}
+		if ( ! empty( $results['errors'] ) ) {
+			$args['assistant_error'] = implode( ',', array_unique( array_map( 'sanitize_key', $results['errors'] ) ) );
+		}
+		return $args;
+	}
+
+	private static function render_inline_object_notices() {
+		$notice_messages = array(
+			'venue_created'         => __( 'New venue created and selected for this event.', 'taka-platform' ),
+			'venue_existing'        => __( 'A matching existing venue was selected instead of creating a duplicate.', 'taka-platform' ),
+			'organizer_created'     => __( 'New organizer created and selected for this event.', 'taka-platform' ),
+			'organizer_existing'    => __( 'A matching existing organizer was selected instead of creating a duplicate.', 'taka-platform' ),
+			'co_organizer_created'  => __( 'New co-organizer created and added to this event.', 'taka-platform' ),
+			'co_organizer_existing' => __( 'A matching existing co-organizer was added instead of creating a duplicate.', 'taka-platform' ),
+		);
+		$error_messages = array(
+			'venue_forbidden'             => __( 'You do not have permission to create venues. Select an existing venue instead.', 'taka-platform' ),
+			'venue_missing_name'          => __( 'Venue name is required before a new venue can be created.', 'taka-platform' ),
+			'venue_create_failed'         => __( 'The new venue could not be created. Please try again or select an existing venue.', 'taka-platform' ),
+			'organizer_forbidden'         => __( 'You do not have permission to create organizers. Select an existing organizer instead.', 'taka-platform' ),
+			'organizer_missing_name'      => __( 'Organizer name is required before a new organizer can be created.', 'taka-platform' ),
+			'organizer_create_failed'     => __( 'The new organizer could not be created. Please try again or select an existing organizer.', 'taka-platform' ),
+			'co_organizer_forbidden'      => __( 'You do not have permission to create co-organizers. Select an existing organizer instead.', 'taka-platform' ),
+			'co_organizer_missing_name'   => __( 'Co-organizer name is required before a new co-organizer can be created.', 'taka-platform' ),
+			'co_organizer_create_failed'  => __( 'The new co-organizer could not be created. Please try again or select an existing organizer.', 'taka-platform' ),
+		);
+
+		self::render_inline_messages_from_query( 'assistant_notice', $notice_messages, 'success' );
+		self::render_inline_messages_from_query( 'assistant_error', $error_messages, 'error' );
+	}
+
+	private static function render_inline_messages_from_query( $query_key, $messages, $type ) {
+		$raw = sanitize_text_field( wp_unslash( $_GET[ $query_key ] ?? '' ) );
+		if ( '' === $raw ) {
+			return;
+		}
+		foreach ( array_filter( array_map( 'sanitize_key', explode( ',', $raw ) ) ) as $key ) {
+			if ( empty( $messages[ $key ] ) ) {
+				continue;
+			}
+			$class = 'error' === $type ? 'notice notice-error is-dismissible' : 'notice notice-success is-dismissible';
+			echo '<div class="' . esc_attr( $class ) . '"><p>' . esc_html( $messages[ $key ] ) . '</p></div>';
+		}
 	}
 
 	public static function sections() {
@@ -597,20 +909,27 @@ class TAKA_Platform_Admin_Event_Assistant {
 	}
 
 	public static function render_venue_section( $context ) {
+		self::inline_choice_radios( 'taka_event_assistant_venue_mode', self::default_inline_mode( $context, TAKA_PLATFORM_CPT_VENUE, 'venue_id' ), __( 'Venue workflow', 'taka-platform' ) );
 		self::relation_select( $context, 'venue_id', __( 'Primary venue', 'taka-platform' ), TAKA_PLATFORM_CPT_VENUE );
 		self::text_field( $context, 'venue_ids', __( 'Additional venue IDs, comma-separated', 'taka-platform' ) );
+		self::selected_object_later_link( absint( self::value( $context, 'venue_id' ) ), __( 'Edit full venue details later', 'taka-platform' ) );
+		self::render_inline_venue_create_form( $context );
 	}
 
 	public static function render_organizer_section( $context ) {
+		self::inline_choice_radios( 'taka_event_assistant_organizer_mode', self::default_inline_mode( $context, TAKA_PLATFORM_CPT_ORGANIZER, 'organizer_id' ), __( 'Organizer workflow', 'taka-platform' ) );
 		self::organizer_relation_select( $context, 'organizer_id', __( 'Primary organizer', 'taka-platform' ) );
+		self::selected_object_later_link( absint( self::value( $context, 'organizer_id' ) ), __( 'Edit full organizer details later', 'taka-platform' ) );
 		?>
 		<p class="description"><?php echo esc_html__( 'Primary organizer is kept for backwards compatibility. The visible event organizer list below controls current frontend display.', 'taka-platform' ); ?></p>
 		<?php
 		self::render_organizer_relationships( $context, true );
+		self::render_inline_organizer_create_form( $context, 'primary' );
 	}
 
 	public static function render_co_organizers_section( $context ) {
 		self::render_organizer_relationships( $context, false );
+		self::render_inline_organizer_create_form( $context, 'co_organizer' );
 	}
 
 	public static function render_description_section( $context ) {
@@ -913,6 +1232,123 @@ class TAKA_Platform_Admin_Event_Assistant {
 		<?php
 	}
 
+	private static function render_inline_venue_create_form( $context ) {
+		if ( ! current_user_can( 'edit_taka_venues' ) ) {
+			echo '<p class="description taka-event-assistant-inline-create__message">' . esc_html__( 'You do not have permission to create venues from here. Select an existing venue.', 'taka-platform' ) . '</p>';
+			return;
+		}
+		$prefix = 'taka_event_assistant_new_venue';
+		?>
+		<div class="taka-event-assistant-inline-create" data-taka-inline-create-panel="taka_event_assistant_venue_mode">
+			<h3><?php echo esc_html__( 'Create new venue', 'taka-platform' ); ?></h3>
+			<p class="description"><?php echo esc_html__( 'Enter only the essentials now. Full venue details can be completed later.', 'taka-platform' ); ?></p>
+			<p class="description"><?php echo esc_html__( 'Matching existing venue names are reused automatically to avoid duplicates.', 'taka-platform' ); ?></p>
+			<div class="taka-event-assistant-inline-create__grid">
+				<?php self::inline_text_input( $prefix . '[name]', __( 'Venue name', 'taka-platform' ), '' ); ?>
+				<?php self::inline_language_select( $prefix . '[source_language]', __( 'Source language', 'taka-platform' ), $context['source_language'] ); ?>
+				<?php self::inline_text_input( $prefix . '[street]', __( 'Street/address', 'taka-platform' ), '' ); ?>
+				<?php self::inline_text_input( $prefix . '[postal_code]', __( 'ZIP/postal code', 'taka-platform' ), '' ); ?>
+				<?php self::inline_text_input( $prefix . '[city]', __( 'City', 'taka-platform' ), '' ); ?>
+				<?php self::inline_option_select( $prefix . '[country]', __( 'Country', 'taka-platform' ), 'country', self::value( $context, 'country' ) ); ?>
+				<?php self::inline_url_input( $prefix . '[website]', __( 'Website', 'taka-platform' ), '' ); ?>
+				<?php self::inline_textarea( $prefix . '[parking]', __( 'Parking notes', 'taka-platform' ), '' ); ?>
+				<?php self::inline_textarea( $prefix . '[accessibility]', __( 'Accessibility notes', 'taka-platform' ), '' ); ?>
+			</div>
+			<p class="taka-event-assistant-inline-create__actions"><button type="submit" class="button" name="assistant_inline_action" value="create_venue"><?php echo esc_html__( 'Create and select', 'taka-platform' ); ?></button></p>
+		</div>
+		<?php
+	}
+
+	private static function render_inline_organizer_create_form( $context, $role ) {
+		if ( ! current_user_can( 'edit_taka_organizers' ) ) {
+			echo '<p class="description taka-event-assistant-inline-create__message">' . esc_html__( 'You do not have permission to create organizers from here. Select an existing organizer.', 'taka-platform' ) . '</p>';
+			return;
+		}
+		$is_co_organizer = 'co_organizer' === $role;
+		$prefix = $is_co_organizer ? 'taka_event_assistant_new_co_organizer' : 'taka_event_assistant_new_organizer';
+		$button_value = $is_co_organizer ? 'create_co_organizer' : 'create_organizer';
+		?>
+		<div class="taka-event-assistant-inline-create" <?php echo $is_co_organizer ? '' : 'data-taka-inline-create-panel="taka_event_assistant_organizer_mode"'; ?>>
+			<h3><?php echo esc_html( $is_co_organizer ? __( 'Create new co-organizer', 'taka-platform' ) : __( 'Create new organizer', 'taka-platform' ) ); ?></h3>
+			<p class="description"><?php echo esc_html__( 'Create a reusable organizer profile with essentials only. Advanced organizer details can be completed later.', 'taka-platform' ); ?></p>
+			<p class="description"><?php echo esc_html__( 'Matching existing organizer names are reused automatically to avoid duplicates.', 'taka-platform' ); ?></p>
+			<div class="taka-event-assistant-inline-create__grid">
+				<?php self::inline_text_input( $prefix . '[name]', __( 'Organizer name', 'taka-platform' ), '' ); ?>
+				<?php self::inline_language_select( $prefix . '[source_language]', __( 'Source language', 'taka-platform' ), $context['source_language'] ); ?>
+				<?php self::inline_email_input( $prefix . '[email]', __( 'Contact email', 'taka-platform' ), '' ); ?>
+				<?php self::inline_url_input( $prefix . '[website]', __( 'Website', 'taka-platform' ), '' ); ?>
+				<?php self::inline_media_input( $prefix . '[logo_id]', $is_co_organizer ? 'taka_event_assistant_new_co_organizer_logo_id' : 'taka_event_assistant_new_organizer_logo_id', __( 'Logo', 'taka-platform' ), __( 'Select logo', 'taka-platform' ) ); ?>
+			</div>
+			<p class="taka-event-assistant-inline-create__actions"><button type="submit" class="button" name="assistant_inline_action" value="<?php echo esc_attr( $button_value ); ?>"><?php echo esc_html( $is_co_organizer ? __( 'Create and add', 'taka-platform' ) : __( 'Create and select', 'taka-platform' ) ); ?></button></p>
+		</div>
+		<?php
+	}
+
+	private static function inline_choice_radios( $name, $current, $label ) {
+		?>
+		<fieldset class="taka-event-assistant-choice" data-taka-inline-create-toggle="<?php echo esc_attr( $name ); ?>">
+			<legend><?php echo esc_html( $label ); ?></legend>
+			<label><input type="radio" name="<?php echo esc_attr( $name ); ?>" value="select" <?php checked( 'select', $current ); ?>> <?php echo esc_html__( 'Select existing', 'taka-platform' ); ?></label>
+			<label><input type="radio" name="<?php echo esc_attr( $name ); ?>" value="create" <?php checked( 'create', $current ); ?>> <?php echo esc_html__( 'Create new', 'taka-platform' ); ?></label>
+		</fieldset>
+		<?php
+	}
+
+	private static function default_inline_mode( $context, $post_type, $field ) {
+		if ( absint( self::value( $context, $field ) ) ) {
+			return 'select';
+		}
+		$create_cap = TAKA_PLATFORM_CPT_VENUE === $post_type ? 'edit_taka_venues' : 'edit_taka_organizers';
+		return current_user_can( $create_cap ) && empty( self::posts( $post_type ) ) ? 'create' : 'select';
+	}
+
+	private static function selected_object_later_link( $post_id, $label ) {
+		if ( ! $post_id || ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+		$url = get_edit_post_link( $post_id, '' );
+		if ( ! $url ) {
+			return;
+		}
+		echo '<p class="description taka-event-assistant-inline-create__message"><a href="' . esc_url( $url ) . '">' . esc_html( $label ) . '</a></p>';
+	}
+
+	private static function inline_text_input( $name, $label, $value ) {
+		echo '<p><label><strong>' . esc_html( $label ) . '</strong><br><input class="widefat" type="text" name="' . esc_attr( $name ) . '" value="' . esc_attr( (string) $value ) . '"></label></p>';
+	}
+
+	private static function inline_email_input( $name, $label, $value ) {
+		echo '<p><label><strong>' . esc_html( $label ) . '</strong><br><input class="widefat" type="email" name="' . esc_attr( $name ) . '" value="' . esc_attr( (string) $value ) . '"></label></p>';
+	}
+
+	private static function inline_url_input( $name, $label, $value ) {
+		echo '<p><label><strong>' . esc_html( $label ) . '</strong><br><input class="widefat" type="url" name="' . esc_attr( $name ) . '" value="' . esc_attr( (string) $value ) . '"></label></p>';
+	}
+
+	private static function inline_textarea( $name, $label, $value ) {
+		echo '<p><label><strong>' . esc_html( $label ) . '</strong><br><textarea class="widefat" rows="2" name="' . esc_attr( $name ) . '">' . esc_textarea( (string) $value ) . '</textarea></label></p>';
+	}
+
+	private static function inline_language_select( $name, $label, $current ) {
+		self::select_field( $name, $label, $current, TAKA_Platform_Translation_Packages::language_labels() );
+	}
+
+	private static function inline_option_select( $name, $label, $field, $current ) {
+		$raw = (string) $current;
+		$matched_key = TAKA_Platform_Data::option_key_for_value( $field, $raw );
+		$current = '' !== $matched_key ? $matched_key : $raw;
+		$choices = array( '' => __( '- Select -', 'taka-platform' ) ) + TAKA_Platform_Data::option_list_choices( $field, TAKA_Platform_Data::platform_fallback_language() );
+		self::select_field( $name, $label, $current, $choices );
+	}
+
+	private static function inline_media_input( $name, $input_id, $label, $button_label ) {
+		$html = '<input id="' . esc_attr( $input_id ) . '" type="hidden" name="' . esc_attr( $name ) . '" value=""> ';
+		$html .= '<button type="button" class="button" data-taka-media-pick data-multiple="0" data-target="' . esc_attr( $input_id ) . '" data-preview="' . esc_attr( $input_id . '_preview' ) . '">' . esc_html( $button_label ) . '</button> ';
+		$html .= '<button type="button" class="button" data-taka-media-remove data-target="' . esc_attr( $input_id ) . '" data-preview="' . esc_attr( $input_id . '_preview' ) . '">' . esc_html__( 'Remove image', 'taka-platform' ) . '</button>';
+		$html .= '<div id="' . esc_attr( $input_id . '_preview' ) . '"></div>';
+		self::field( $label, $html );
+	}
+
 	private static function remember_recent_settings( $event_id ) {
 		$settings = array( 'source_language' => TAKA_Platform_Translation_Packages::sanitize_language( wp_unslash( $_POST['_taka_source_language'] ?? 'de' ) ) );
 		foreach ( self::recent_setting_fields() as $field ) {
@@ -1043,7 +1479,7 @@ class TAKA_Platform_Admin_Event_Assistant {
 	private static function relation_select( $context, $field, $label, $post_type ) {
 		$current = absint( self::value( $context, $field ) );
 		$html = '<select class="widefat" name="_taka_' . esc_attr( $field ) . '"><option value="">-</option>';
-		foreach ( self::posts( $post_type ) as $post ) {
+		foreach ( self::posts_with_current( $post_type, $current ) as $post ) {
 			$html .= '<option value="' . esc_attr( (string) $post->ID ) . '" ' . selected( $current, (int) $post->ID, false ) . '>' . esc_html( get_the_title( $post ) ) . '</option>';
 		}
 		$html .= '</select>';
@@ -1067,7 +1503,7 @@ class TAKA_Platform_Admin_Event_Assistant {
 			}
 		}
 		$html = '<select class="widefat" name="_taka_' . esc_attr( $field ) . '"><option value="">-</option>';
-		foreach ( get_posts( $args ) as $post ) {
+		foreach ( self::append_current_post( get_posts( $args ), $current, TAKA_PLATFORM_CPT_ORGANIZER ) as $post ) {
 			$html .= '<option value="' . esc_attr( (string) $post->ID ) . '" ' . selected( $current, (int) $post->ID, false ) . '>' . esc_html( get_the_title( $post ) ) . '</option>';
 		}
 		$html .= '</select>';
@@ -1348,6 +1784,27 @@ class TAKA_Platform_Admin_Event_Assistant {
 				'order'          => 'ASC',
 			)
 		);
+	}
+
+	private static function posts_with_current( $post_type, $current ) {
+		return self::append_current_post( self::posts( $post_type ), $current, $post_type );
+	}
+
+	private static function append_current_post( $posts, $current, $post_type ) {
+		$current = absint( $current );
+		if ( ! $current ) {
+			return $posts;
+		}
+		foreach ( $posts as $post ) {
+			if ( (int) $post->ID === $current ) {
+				return $posts;
+			}
+		}
+		$current_post = get_post( $current );
+		if ( $current_post && $post_type === $current_post->post_type ) {
+			$posts[] = $current_post;
+		}
+		return $posts;
 	}
 
 	private static function organizer_posts_for_current_user() {
