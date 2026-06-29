@@ -33,8 +33,10 @@ document.addEventListener('click', function (event) {
 });
 
 (function () {
-  var storagePrefix = 'taka-platform:admin-section';
+  var i18n = window.takaPlatformAdminI18n || {};
+  var storagePrefix = 'taka-platform:admin-layout:v2';
   var suppressedStorageSections = [];
+  var sectionStorageKeys = [];
 
   function storageAvailable() {
     try {
@@ -47,7 +49,8 @@ document.addEventListener('click', function (event) {
   function screenKey() {
     var bodyClass = document.body ? document.body.className : '';
     var postType = bodyClass.match(/\bpost-type-([a-z0-9_-]+)/);
-    var adminPage = bodyClass.match(/\b(?:toplevel_page|taka-platform_page|settings_page|admin_page)-([a-z0-9_-]+)/);
+    var adminPage = bodyClass.match(/\b(?:toplevel_page|taka-platform_page|settings_page|admin_page)[_-]([a-z0-9_-]+)/);
+    var pageParam = new window.URLSearchParams(window.location.search).get('page');
 
     if (postType) {
       return 'post-type-' + postType[1];
@@ -57,12 +60,28 @@ document.addEventListener('click', function (event) {
       return adminPage[0];
     }
 
-    return window.location.pathname;
+    if (pageParam) {
+      return 'admin-page-' + pageParam;
+    }
+
+    return window.location.pathname + window.location.search;
   }
 
   function storageKey(section, index) {
     var key = section.getAttribute('data-taka-admin-section-key') || 'section';
     return storagePrefix + ':' + screenKey() + ':' + key + ':' + index;
+  }
+
+  function rememberPreference(section) {
+    return section.getAttribute('data-taka-admin-section-remember-preference') !== '0';
+  }
+
+  function defaultOpen(section) {
+    return section.getAttribute('data-taka-admin-section-default-state') === 'expanded';
+  }
+
+  function autoExpandOnError(section) {
+    return section.getAttribute('data-taka-admin-section-auto-expand-error') !== '0';
   }
 
   function readStoredState(key) {
@@ -89,6 +108,18 @@ document.addEventListener('click', function (event) {
     }
   }
 
+  function removeStoredState(key) {
+    if (!storageAvailable()) {
+      return;
+    }
+
+    try {
+      window.localStorage.removeItem(key);
+    } catch (error) {
+      return;
+    }
+  }
+
   function shouldSkipField(field) {
     return field.disabled
       || field.type === 'hidden'
@@ -101,6 +132,10 @@ document.addEventListener('click', function (event) {
     var attentionSelector = '.notice-error, .error, .form-invalid, .is-error, [aria-invalid="true"]';
     var fields = section.querySelectorAll('input, select, textarea');
     var index;
+
+    if (!autoExpandOnError(section)) {
+      return false;
+    }
 
     if (section.querySelector(attentionSelector)) {
       return true;
@@ -129,17 +164,52 @@ document.addEventListener('click', function (event) {
     }, 100);
   }
 
-  function openWithoutStoring(section) {
-    if (section.open) {
+  function setSectionOpen(section, isOpen) {
+    if (section.open === isOpen) {
       return;
     }
 
     suppressNextStoredToggle(section);
-    section.open = true;
+    section.open = isOpen;
+  }
+
+  function openWithoutStoring(section) {
+    setSectionOpen(section, true);
   }
 
   function isStorageSuppressed(section) {
     return suppressedStorageSections.indexOf(section) !== -1;
+  }
+
+  function applyDefaultState(section) {
+    setSectionOpen(section, sectionNeedsAttention(section) || defaultOpen(section));
+  }
+
+  function addResetControl(sections) {
+    var heading = document.querySelector('.wrap > h1');
+    var resetWrap;
+    var button;
+
+    if (!heading || !sections.length) {
+      return;
+    }
+
+    resetWrap = document.createElement('p');
+    resetWrap.className = 'taka-admin-layout-reset';
+
+    button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'button';
+    button.textContent = i18n.resetAdminLayout || 'Reset layout';
+    button.title = i18n.resetAdminLayoutDescription || 'Restore the default expanded and collapsed admin sections on this screen.';
+
+    button.addEventListener('click', function () {
+      sectionStorageKeys.forEach(removeStoredState);
+      sections.forEach(applyDefaultState);
+    });
+
+    resetWrap.appendChild(button);
+    heading.insertAdjacentElement('afterend', resetWrap);
   }
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -147,31 +217,36 @@ document.addEventListener('click', function (event) {
 
     sections.forEach(function (section, index) {
       var key = storageKey(section, index);
-      var storedState = readStoredState(key);
+      var storedState = rememberPreference(section) ? readStoredState(key) : null;
+
+      sectionStorageKeys.push(key);
 
       if (sectionNeedsAttention(section)) {
         openWithoutStoring(section);
       } else if (storedState === 'open') {
-        section.open = true;
+        setSectionOpen(section, true);
       } else if (storedState === 'closed') {
-        section.open = false;
+        setSectionOpen(section, false);
       }
 
       section.addEventListener('toggle', function () {
-        if (isStorageSuppressed(section)) {
+        if (!rememberPreference(section) || isStorageSuppressed(section)) {
           return;
         }
 
         writeStoredState(key, section.open ? 'open' : 'closed');
       });
     });
+
+    addResetControl(sections);
   });
 
   document.addEventListener('invalid', function (event) {
     var section = event.target.closest('[data-taka-admin-section]');
 
-    if (section) {
+    while (section) {
       openWithoutStoring(section);
+      section = section.parentElement ? section.parentElement.closest('[data-taka-admin-section]') : null;
     }
   }, true);
 })();

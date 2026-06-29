@@ -70,6 +70,8 @@ The WordPress admin menu is branded **TAKA Platform** and includes:
 
 The dashboard explains the long form: **TAKA – Ticketing, Attendance, Knowledge & Administration**. Settings expose editable hero copy, hero image/layout controls, overlay strength, readable text-box options, ticket section headings and configurable booking information. Content Sections expose fully configurable homepage editorial blocks with add/delete controls, visibility, sort order, multilingual kicker/title/subtitle/body/button fields, layout/background styles, main/secondary images, galleries, image fit and image focus controls. Homepage rendering uses a generic section pipeline, so administrator-created Content Section keys render through the shared content-section partial without adding PHP templates.
 
+Admin screens use the shared `TAKA_Platform_Admin_Collapsible_Section` renderer for collapsible UI sections. Essential editorial sections open by default; advanced, media, diagnostic, legacy and technical sections stay collapsed unless they contain validation issues or the current user has manually changed the layout.
+
 ## Content Blocks
 
 Reusable Content Blocks provide a single source of truth for editorial content that can appear in multiple places. Blocks have a source language, translated kicker/title/subtitle/body/button fields, optional media and an enabled flag. Homepage Content Sections and Event seminar descriptions can reference an existing block while preserving their local content as a fallback. TAKA Translation Packages export referenced blocks once with usage contexts, so shared copy is translated once instead of repeatedly. See [docs/content-blocks.md](docs/content-blocks.md).

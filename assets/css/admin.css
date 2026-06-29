@@ -7,16 +7,50 @@
 	margin: 0 0 14px;
 }
 
-.taka-admin-section > summary {
+.taka-admin-section--nested {
+	background: #f6f7f7;
+	margin-top: 10px;
+	max-width: 920px;
+}
+
+.taka-admin-section__summary {
 	align-items: center;
 	cursor: pointer;
 	display: flex;
 	gap: 8px;
+	list-style: none;
 	padding: 12px 14px;
 }
 
-.taka-admin-section > summary:hover {
+.taka-admin-section__summary::-webkit-details-marker {
+	display: none;
+}
+
+.taka-admin-section__summary:hover {
 	background: #f6f7f7;
+}
+
+.taka-admin-section__chevron {
+	border-bottom: 2px solid #50575e;
+	border-right: 2px solid #50575e;
+	box-sizing: border-box;
+	display: inline-block;
+	flex: 0 0 auto;
+	height: 8px;
+	margin-left: 2px;
+	transform: rotate(-45deg);
+	transition: transform 120ms ease-in-out;
+	width: 8px;
+}
+
+.taka-admin-section[open] > .taka-admin-section__summary .taka-admin-section__chevron {
+	transform: rotate(45deg);
+}
+
+.taka-admin-section__icon {
+	color: #50575e;
+	flex: 0 0 auto;
+	line-height: 1;
 }
 
 .taka-admin-section__title {
@@ -34,27 +68,27 @@
 	padding: 2px 14px 14px;
 }
 
+.taka-admin-section[open] > .taka-admin-section__body {
+	animation: taka-admin-section-open 120ms ease-out;
+}
+
 .taka-admin-section__body > :last-child {
 	margin-bottom: 0;
 }
 
-.taka-admin-subsection {
-	background: #f6f7f7;
-	border: 1px solid #dcdcde;
-	border-radius: 4px;
-	max-width: 880px;
-	padding: 10px 12px;
+.taka-admin-layout-reset {
+	margin: 8px 0 16px;
 }
 
-.taka-admin-subsection > summary {
-	cursor: pointer;
-	margin: -10px -12px 0;
-	padding: 10px 12px;
-}
-
-.taka-admin-subsection[open] > summary {
-	border-bottom: 1px solid #dcdcde;
-	margin-bottom: 10px;
+@keyframes taka-admin-section-open {
+	from {
+		opacity: 0;
+		transform: translateY(-2px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 .taka-settings-multilingual-control {

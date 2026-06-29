@@ -43,6 +43,7 @@ require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Integrations/EventsManager/cla
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Frontend/class-organizer-dashboard.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Frontend/class-renderer.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Core/class-plugin.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Admin/class-collapsible-section.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Admin/class-admin.php';
 
 add_action( 'init', array( 'TAKA_Platform_Admin', 'register_post_types' ), 0 );
