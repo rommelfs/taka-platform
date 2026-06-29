@@ -29,6 +29,7 @@ class TAKA_Platform_Admin {
 		add_filter( 'map_meta_cap', array( __CLASS__, 'map_event_meta_caps' ), 10, 4 );
 		add_filter( 'get_user_option_closedpostboxes_' . TAKA_PLATFORM_CPT_EVENT, array( __CLASS__, 'keep_event_editor_postbox_visible' ) );
 		add_filter( 'get_user_option_metaboxhidden_' . TAKA_PLATFORM_CPT_EVENT, array( __CLASS__, 'keep_event_editor_postbox_visible' ) );
+		add_filter( 'get_user_option_meta-box-order_' . TAKA_PLATFORM_CPT_EVENT, array( __CLASS__, 'keep_event_editor_postbox_in_main_column' ) );
 		add_action( 'save_post_taka_organizer', array( __CLASS__, 'save_organizer' ) );
 		add_action( 'save_post_taka_venue', array( __CLASS__, 'save_venue' ) );
 		add_action( 'save_post_taka_event', array( __CLASS__, 'save_event' ) );
@@ -47,6 +48,7 @@ class TAKA_Platform_Admin {
 		add_action( 'admin_post_taka_platform_export_translation_package', array( __CLASS__, 'handle_export_translation_package' ) );
 		add_action( 'admin_post_taka_platform_import_translation_package', array( __CLASS__, 'handle_import_translation_package' ) );
 		add_action( 'admin_post_taka_platform_save_translation_glossary', array( __CLASS__, 'handle_save_translation_glossary' ) );
+		add_action( 'wp_ajax_taka_platform_reset_admin_layout', array( __CLASS__, 'ajax_reset_admin_layout' ) );
 		if ( class_exists( 'TAKA_Platform_Admin_Event_Assistant' ) ) {
 			TAKA_Platform_Admin_Event_Assistant::init();
 		}
@@ -57,6 +59,23 @@ class TAKA_Platform_Admin {
 	public static function keep_event_editor_postbox_visible( $value ) {
 		if ( ! is_array( $value ) ) { return $value; }
 		return array_values( array_diff( $value, array( 'taka_event_details' ) ) );
+	}
+
+	/** Keep the large Event details editor in the main WordPress postbox column. */
+	public static function keep_event_editor_postbox_in_main_column( $value ) {
+		if ( ! is_array( $value ) ) { return $value; }
+
+		foreach ( $value as $context => $order ) {
+			$value[ $context ] = self::remove_postbox_from_order_string( $order, 'taka_event_details' );
+		}
+
+		$normal = self::postbox_order_list( $value['normal'] ?? '' );
+		if ( ! in_array( 'taka_event_details', $normal, true ) ) {
+			array_unshift( $normal, 'taka_event_details' );
+		}
+		$value['normal'] = implode( ',', $normal );
+
+		return $value;
 	}
 
 	/** Remove corrupted WordPress postbox preferences that hide the structured Event editor. */
@@ -74,6 +93,52 @@ class TAKA_Platform_Admin {
 				update_user_option( $user_id, $option, self::keep_event_editor_postbox_visible( $value ) );
 			}
 		}
+
+		$order_option = 'meta-box-order_' . TAKA_PLATFORM_CPT_EVENT;
+		$order        = get_user_option( $order_option, $user_id );
+		if ( is_array( $order ) ) {
+			update_user_option( $user_id, $order_option, self::keep_event_editor_postbox_in_main_column( $order ) );
+		} elseif ( ! empty( $order ) ) {
+			delete_user_option( $user_id, $order_option );
+		}
+	}
+
+	/** AJAX endpoint used by the admin "Reset layout" control to clear WordPress postbox preferences. */
+	public static function ajax_reset_admin_layout() {
+		check_ajax_referer( 'taka_platform_admin_layout', 'nonce' );
+
+		$screen = sanitize_key( wp_unslash( $_POST['screen'] ?? '' ) );
+		if ( 'post-type-' . TAKA_PLATFORM_CPT_EVENT !== $screen && TAKA_PLATFORM_CPT_EVENT !== $screen ) {
+			wp_send_json_success();
+		}
+
+		if ( ! current_user_can( 'edit_taka_events' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You are not allowed to reset this layout.', 'taka-platform' ) ), 403 );
+		}
+
+		self::reset_admin_layout_user_preferences( get_current_user_id(), TAKA_PLATFORM_CPT_EVENT );
+		wp_send_json_success();
+	}
+
+	/** Reset WordPress postbox preferences for a TAKA admin screen. */
+	private static function reset_admin_layout_user_preferences( $user_id, $post_type ) {
+		if ( ! $user_id || ! $post_type ) { return; }
+
+		foreach ( array( 'closedpostboxes_', 'metaboxhidden_', 'meta-box-order_' ) as $prefix ) {
+			delete_user_option( $user_id, $prefix . $post_type );
+		}
+	}
+
+	/** Parse a WordPress postbox order string into clean IDs. */
+	private static function postbox_order_list( $order ) {
+		if ( ! is_string( $order ) || '' === trim( $order ) ) { return array(); }
+		return array_values( array_filter( array_map( 'sanitize_key', array_map( 'trim', explode( ',', $order ) ) ) ) );
+	}
+
+	/** Remove one postbox ID from a WordPress postbox order string. */
+	private static function remove_postbox_from_order_string( $order, $postbox_id ) {
+		$list = array_diff( self::postbox_order_list( $order ), array( sanitize_key( $postbox_id ) ) );
+		return implode( ',', array_values( $list ) );
 	}
 
 
@@ -240,6 +305,9 @@ class TAKA_Platform_Admin {
 				'editSourceColumn' => __( 'Edit the original label column.', 'taka-platform' ),
 				'resetAdminLayout' => __( 'Reset layout', 'taka-platform' ),
 				'resetAdminLayoutDescription' => __( 'Restore the default expanded and collapsed admin sections on this screen.', 'taka-platform' ),
+				'resetAdminLayoutAction' => 'taka_platform_reset_admin_layout',
+				'resetAdminLayoutNonce' => wp_create_nonce( 'taka_platform_admin_layout' ),
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 			)
 		);
 		wp_enqueue_script( 'taka-platform-media-fields', TAKA_PLATFORM_PLUGIN_URL . 'assets/js/media-fields.js', array(), TAKA_PLATFORM_VERSION, true );

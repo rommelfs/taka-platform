@@ -158,6 +158,28 @@ document.addEventListener('click', function (event) {
     }
   }
 
+  function resetWordPressLayoutPreferences() {
+    var body;
+
+    if (!i18n.ajaxUrl || !i18n.resetAdminLayoutNonce || typeof window.fetch === 'undefined') {
+      return;
+    }
+
+    body = new window.URLSearchParams();
+    body.append('action', i18n.resetAdminLayoutAction || 'taka_platform_reset_admin_layout');
+    body.append('nonce', i18n.resetAdminLayoutNonce);
+    body.append('screen', screenKey());
+
+    window.fetch(i18n.ajaxUrl, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+      },
+      body: body.toString()
+    }).catch(function () {});
+  }
+
   function shouldSkipField(field) {
     return field.disabled
       || field.type === 'hidden'
@@ -254,6 +276,11 @@ document.addEventListener('click', function (event) {
     return Array.prototype.slice.call(document.querySelectorAll(protectedPostboxSelector));
   }
 
+  function preferredPostboxContainer() {
+    return document.getElementById('normal-sortables')
+      || document.querySelector('#postbox-container-2 .meta-box-sortables');
+  }
+
   function openProtectedPostbox(postbox) {
     var inside;
     var toggle;
@@ -282,8 +309,45 @@ document.addEventListener('click', function (event) {
     }
   }
 
+  function ensureProtectedPostboxesInMainColumn() {
+    var container;
+
+    if (!isEventEditorScreen()) {
+      return;
+    }
+
+    container = preferredPostboxContainer();
+    if (!container) {
+      recoverProtectedPostboxes();
+      return;
+    }
+
+    protectedPostboxes().forEach(function (postbox) {
+      if (postbox.parentNode !== container) {
+        container.insertBefore(postbox, container.firstChild);
+      }
+      openProtectedPostbox(postbox);
+    });
+  }
+
   function recoverProtectedPostboxes() {
     protectedPostboxes().forEach(openProtectedPostbox);
+  }
+
+  function observePostboxColumns() {
+    var containers;
+
+    if (!isEventEditorScreen() || typeof window.MutationObserver === 'undefined') {
+      return;
+    }
+
+    containers = Array.prototype.slice.call(document.querySelectorAll('#normal-sortables, #side-sortables, #advanced-sortables'));
+    containers.forEach(function (container) {
+      var observer = new window.MutationObserver(function () {
+        window.setTimeout(ensureProtectedPostboxesInMainColumn, 0);
+      });
+      observer.observe(container, { childList: true });
+    });
   }
 
   function observeProtectedPostboxes() {
@@ -298,6 +362,28 @@ document.addEventListener('click', function (event) {
         }
       });
       observer.observe(postbox, { attributes: true, attributeFilter: ['class'] });
+    });
+  }
+
+  function protectPostboxSorting() {
+    var jq = window.jQuery;
+
+    if (!isEventEditorScreen() || !jq || !jq.fn || !jq.fn.sortable) {
+      return;
+    }
+
+    jq(function ($) {
+      $('.meta-box-sortables').each(function () {
+        if (!$(this).data('ui-sortable') && !$(this).data('sortable')) {
+          return;
+        }
+
+        var currentCancel = $(this).sortable('option', 'cancel') || 'input,textarea,button,select,option';
+        if (currentCancel.indexOf(protectedPostboxSelector) === -1) {
+          $(this).sortable('option', 'cancel', currentCancel + ', ' + protectedPostboxSelector + ', ' + protectedPostboxSelector + ' *');
+        }
+      });
+      window.setTimeout(ensureProtectedPostboxesInMainColumn, 0);
     });
   }
 
@@ -330,9 +416,10 @@ document.addEventListener('click', function (event) {
 
     button.addEventListener('click', function () {
       removeCurrentScreenStoredStates();
+      resetWordPressLayoutPreferences();
       sectionStorageKeys.forEach(removeStoredState);
       sections.forEach(applyDefaultState);
-      recoverProtectedPostboxes();
+      ensureProtectedPostboxesInMainColumn();
       ensureOneEditableSectionVisible(sections);
     });
 
@@ -374,8 +461,10 @@ document.addEventListener('click', function (event) {
       });
     });
 
-    recoverProtectedPostboxes();
+    ensureProtectedPostboxesInMainColumn();
     observeProtectedPostboxes();
+    observePostboxColumns();
+    protectPostboxSorting();
     ensureOneEditableSectionVisible(sections);
     addResetControl(sections);
   });
@@ -396,6 +485,7 @@ document.addEventListener('click', function (event) {
     event.preventDefault();
     event.stopImmediatePropagation();
     openProtectedPostbox(postbox);
+    ensureProtectedPostboxesInMainColumn();
   }, true);
 
   document.addEventListener('invalid', function (event) {
