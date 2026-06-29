@@ -173,6 +173,7 @@ class TAKA_Platform_Translation_Packages {
 		$include_existing = ! empty( $args['include_existing_translations'] );
 		$include_context = array_key_exists( 'include_context', $args ) ? ! empty( $args['include_context'] ) : true;
 		$only_missing = ! empty( $args['only_missing_translations'] );
+		$only_changed = ! empty( $args['only_changed_source_texts'] );
 		$items = array();
 		foreach ( self::object_definitions( array(), $include_context ) as $definition ) {
 			foreach ( $definition['objects'] as $object_id => $object ) {
@@ -182,14 +183,18 @@ class TAKA_Platform_Translation_Packages {
 					$value = $object['values'][ $field ] ?? '';
 					$source_text = self::value_for_language( $value, $object_source );
 					if ( '' === trim( (string) $source_text ) ) { continue; }
+					$source_hash_status = self::translation_source_hash_status( $definition['type'], (string) $object_id, (string) $field, $object_source, (string) $source_text );
+					$source_hash_current = 'current' === $source_hash_status;
+					$source_hash_stale = 'changed' === $source_hash_status || ( $only_changed && 'unknown' === $source_hash_status );
+					if ( $only_changed && $source_hash_current ) { continue; }
 					$existing = array();
 					$translations = array();
 					$has_missing = false;
 					foreach ( $item_targets as $target ) {
 						$current = self::value_for_language( $value, $target, false );
-						$existing[ $target ] = $include_existing ? $current : '';
+						$existing[ $target ] = ( $include_existing && ! $source_hash_stale ) ? $current : '';
 						$translations[ $target ] = '';
-						if ( '' === trim( (string) $current ) ) { $has_missing = true; }
+						if ( $source_hash_stale || '' === trim( (string) $current ) ) { $has_missing = true; }
 					}
 					if ( $only_missing && ! $has_missing ) { continue; }
 					$item = array(
@@ -250,6 +255,7 @@ class TAKA_Platform_Translation_Packages {
 		$index = self::current_item_index( (array) ( $package['items'] ?? array() ) );
 		$changes = array();
 		$source_language_changes = array();
+		$source_hash_updates = array();
 		foreach ( (array) ( $package['items'] ?? array() ) as $item ) {
 			if ( ! is_array( $item ) || empty( $item['id'] ) || empty( $item['translations'] ) || ! is_array( $item['translations'] ) ) {
 				$summary['errors'][] = 'Invalid item in package.';
@@ -305,12 +311,17 @@ class TAKA_Platform_Translation_Packages {
 					continue;
 				}
 				$existing = self::value_for_language( $current['value'], $lang, false );
-				if ( ! $overwrite && '' !== trim( (string) $existing ) ) {
+				$source_hash_status = (string) ( $current['source_hash_status'] ?? 'current' );
+				if ( ! $overwrite && 'current' === $source_hash_status && '' !== trim( (string) $existing ) ) {
 					$summary['skipped_existing']++;
 					$summary['report'][] = self::import_report_row( $item, $lang, 'skipped_existing' );
 					continue;
 				}
 				$changes[ $current['object_type'] ][ $current['object_id'] ][ $current['field'] ][ $lang ] = function_exists( 'wp_kses_post' ) ? wp_kses_post( $translation ) : sanitize_textarea_field( $translation );
+				$source_hash_updates[ $current['object_type'] ][ $current['object_id'] ][ $current['field'] ] = array(
+					'source_language' => $source_language,
+					'source_hash' => self::hash( $current_source ),
+				);
 				$summary['imported']++;
 				if ( '' === trim( (string) $existing ) ) {
 					$summary['created']++;
@@ -322,7 +333,7 @@ class TAKA_Platform_Translation_Packages {
 			}
 		}
 		if ( $summary['imported'] > 0 || ! empty( $source_language_changes ) ) {
-			self::apply_changes( $changes, $source_language_changes );
+			self::apply_changes( $changes, $source_language_changes, $source_hash_updates );
 		}
 		return $summary;
 	}
@@ -426,7 +437,7 @@ class TAKA_Platform_Translation_Packages {
 				'type' => 'event',
 				'context_prefix' => 'Event',
 				'fields' => TAKA_Platform_Data::translatable_text_fields( 'event' ),
-				'objects' => self::post_text_objects( TAKA_Platform_Data::get_events(), 'event' ),
+				'objects' => self::post_text_objects( TAKA_Platform_Data::get_events_for_translation_packages(), 'event' ),
 			);
 		}
 
@@ -468,6 +479,34 @@ class TAKA_Platform_Translation_Packages {
 		return $out;
 	}
 
+	private static function translation_source_hash_status( $object_type, $object_id, $field, $source_language, $source_text ) {
+		$source_language = self::sanitize_language( $source_language, self::default_source_language() );
+		$post_type = self::post_type_for_object_type( $object_type );
+		if ( '' === $post_type || ! function_exists( 'get_post_meta' ) ) { return 'current'; }
+		$post_id = self::find_post_id( $post_type, $object_id );
+		if ( ! $post_id ) { return 'current'; }
+		$hashes = get_post_meta( $post_id, TAKA_Platform_Data::TEXT_TRANSLATION_SOURCE_HASHES_META, true );
+		if ( ! is_array( $hashes ) || empty( $hashes[ $field ] ) ) { return 'unknown'; }
+		$record = $hashes[ $field ];
+		if ( is_string( $record ) ) {
+			$record = array( 'source_hash' => $record, 'source_language' => $source_language );
+		}
+		if ( ! is_array( $record ) || empty( $record['source_hash'] ) ) { return 'unknown'; }
+		$record_language = self::sanitize_language( $record['source_language'] ?? $source_language, self::default_source_language() );
+		$current_hash = self::hash( $source_text );
+		return ( $record_language === $source_language && hash_equals( (string) $record['source_hash'], $current_hash ) ) ? 'current' : 'changed';
+	}
+
+	private static function post_type_for_object_type( $object_type ) {
+		$post_types = array(
+			'event' => TAKA_PLATFORM_CPT_EVENT,
+			'organizer' => TAKA_PLATFORM_CPT_ORGANIZER,
+			'venue' => TAKA_PLATFORM_CPT_VENUE,
+			'content_block' => TAKA_PLATFORM_CPT_CONTENT_BLOCK,
+		);
+		return (string) ( $post_types[ $object_type ] ?? '' );
+	}
+
 	private static function content_block_objects( $include_contexts = true ) {
 		$out = array();
 		$usage_contexts = $include_contexts ? TAKA_Platform_Data::content_block_usage_contexts() : array();
@@ -507,12 +546,16 @@ class TAKA_Platform_Translation_Packages {
 				foreach ( array_keys( $definition['fields'] ) as $field ) {
 					$id = $definition['type'] . ':' . $object_id . ':' . $field;
 					if ( ! empty( $wanted_ids ) && empty( $wanted_ids[ $id ] ) ) { continue; }
+					$value = $object['values'][ $field ] ?? '';
+					$source_language = $object['source_language'] ?? self::default_source_language();
+					$source_text = self::value_for_language( $value, $source_language );
 					$index[ $id ] = array(
 						'object_type' => $definition['type'],
 						'object_id' => (string) $object_id,
 						'field' => $field,
-						'source_language' => $object['source_language'] ?? self::default_source_language(),
-						'value' => $object['values'][ $field ] ?? '',
+						'source_language' => $source_language,
+						'value' => $value,
+						'source_hash_status' => self::translation_source_hash_status( $definition['type'], (string) $object_id, (string) $field, $source_language, (string) $source_text ),
 					);
 				}
 			}
@@ -528,7 +571,7 @@ class TAKA_Platform_Translation_Packages {
 		return '';
 	}
 
-	private static function apply_changes( $changes, $source_language_changes = array() ) {
+	private static function apply_changes( $changes, $source_language_changes = array(), $source_hash_updates = array() ) {
 		if ( ! empty( $changes['content_section'] ) ) {
 			$sections = get_option( TAKA_Platform_Data::SECTIONS_OPTION, array() );
 			$sections = is_array( $sections ) ? $sections : array();
@@ -561,7 +604,7 @@ class TAKA_Platform_Translation_Packages {
 		}
 		foreach ( array( 'event' => TAKA_PLATFORM_CPT_EVENT, 'organizer' => TAKA_PLATFORM_CPT_ORGANIZER, 'venue' => TAKA_PLATFORM_CPT_VENUE, 'content_block' => TAKA_PLATFORM_CPT_CONTENT_BLOCK ) as $type => $post_type ) {
 			if ( ! empty( $changes[ $type ] ) ) {
-				self::apply_post_text_changes( $post_type, $changes[ $type ] );
+				self::apply_post_text_changes( $post_type, $changes[ $type ], $source_hash_updates[ $type ] ?? array() );
 			}
 		}
 		if ( ! empty( $changes['option_list'] ) ) {
@@ -613,7 +656,7 @@ class TAKA_Platform_Translation_Packages {
 		}
 	}
 
-	private static function apply_post_text_changes( $post_type, $objects ) {
+	private static function apply_post_text_changes( $post_type, $objects, $source_hash_updates = array() ) {
 		foreach ( $objects as $object_id => $fields ) {
 			$post_id = self::find_post_id( $post_type, $object_id );
 			if ( ! $post_id ) { continue; }
@@ -625,6 +668,39 @@ class TAKA_Platform_Translation_Packages {
 				}
 			}
 			update_post_meta( $post_id, '_taka_text_translations', $stored );
+			if ( ! empty( $source_hash_updates[ $object_id ] ) ) {
+				self::update_post_text_source_hashes( $post_id, $source_hash_updates[ $object_id ] );
+			}
+		}
+	}
+
+	private static function update_post_text_source_hashes( $post_id, $updates ) {
+		$post_id = absint( $post_id );
+		if ( ! $post_id || ! is_array( $updates ) ) { return; }
+		$hashes = get_post_meta( $post_id, TAKA_Platform_Data::TEXT_TRANSLATION_SOURCE_HASHES_META, true );
+		$hashes = is_array( $hashes ) ? $hashes : array();
+		foreach ( $updates as $field => $record ) {
+			if ( ! is_array( $record ) || empty( $record['source_hash'] ) ) { continue; }
+			$hashes[ sanitize_key( $field ) ] = array(
+				'source_language' => self::sanitize_language( $record['source_language'] ?? self::default_source_language(), self::default_source_language() ),
+				'source_hash' => sanitize_text_field( $record['source_hash'] ),
+			);
+		}
+		update_post_meta( $post_id, TAKA_Platform_Data::TEXT_TRANSLATION_SOURCE_HASHES_META, $hashes );
+	}
+
+	public static function mark_post_text_source_changed( $post_id, $field, $source_language, $previous_source_text ) {
+		$post_id = absint( $post_id );
+		$field = sanitize_key( $field );
+		if ( ! $post_id || '' === $field || ! function_exists( 'get_post_meta' ) ) { return; }
+		$hashes = get_post_meta( $post_id, TAKA_Platform_Data::TEXT_TRANSLATION_SOURCE_HASHES_META, true );
+		$hashes = is_array( $hashes ) ? $hashes : array();
+		if ( empty( $hashes[ $field ] ) ) {
+			$hashes[ $field ] = array(
+				'source_language' => self::sanitize_language( $source_language, self::default_source_language() ),
+				'source_hash' => self::hash( (string) $previous_source_text ),
+			);
+			update_post_meta( $post_id, TAKA_Platform_Data::TEXT_TRANSLATION_SOURCE_HASHES_META, $hashes );
 		}
 	}
 

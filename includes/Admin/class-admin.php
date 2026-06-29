@@ -3022,6 +3022,9 @@ class TAKA_Platform_Admin {
 			if ( $source_language_changed && '' === trim( $value ) ) {
 				continue;
 			}
+			if ( class_exists( 'TAKA_Platform_Translation_Packages' ) ) {
+				TAKA_Platform_Translation_Packages::mark_post_text_source_changed( $post_id, $field, $old_source_language, null !== $previous_value ? $previous_value : '' );
+			}
 			self::update_object_source_text_field( $post_id, $object_type, $field, $value );
 		}
 	}
