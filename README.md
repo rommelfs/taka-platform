@@ -56,6 +56,7 @@ Use **TAKA Platform -> Import / Export** to seed database posts from the bundled
 The WordPress admin menu is branded **TAKA Platform** and includes:
 
 - Dashboard
+- New Event Assistant
 - Events (`taka_event`)
 - Organizers (`taka_organizer`)
 - Venues (`taka_venue`)
@@ -71,6 +72,8 @@ The WordPress admin menu is branded **TAKA Platform** and includes:
 The dashboard explains the long form: **TAKA – Ticketing, Attendance, Knowledge & Administration**. Settings expose editable hero copy, hero image/layout controls, overlay strength, readable text-box options, ticket section headings and configurable booking information. Content Sections expose fully configurable homepage editorial blocks with add/delete controls, visibility, sort order, multilingual kicker/title/subtitle/body/button fields, layout/background styles, main/secondary images, galleries, image fit and image focus controls. Homepage rendering uses a generic section pipeline, so administrator-created Content Section keys render through the shared content-section partial without adding PHP templates.
 
 Admin screens use the shared `TAKA_Platform_Admin_Collapsible_Section` renderer for collapsible UI sections. Essential editorial sections open by default; advanced, media, diagnostic, legacy and technical sections stay collapsed unless they contain validation issues or the current user has manually changed the layout.
+
+The Event Assistant is the preferred guided editor for creating and maintaining events over their full lifecycle. It is available from **TAKA Platform -> New Event Assistant**, event edit screens and event list row actions. Assistant sections are modular objects with shared rendering, validation/completeness scoring and the existing event save pipeline, so future lifecycle modules should register a section instead of creating another one-off event editor.
 
 ## Content Blocks
 

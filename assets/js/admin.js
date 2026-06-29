@@ -251,6 +251,48 @@ document.addEventListener('click', function (event) {
   }, true);
 })();
 
+(function () {
+  function openSectionFromHash(hash) {
+    var target;
+    var section;
+
+    if (!hash || hash.length < 2) {
+      return;
+    }
+
+    try {
+      target = document.querySelector(hash);
+    } catch (error) {
+      return;
+    }
+
+    if (!target) {
+      return;
+    }
+
+    section = target.matches('[data-taka-admin-section]') ? target : target.closest('[data-taka-admin-section]');
+    if (section) {
+      section.open = true;
+    }
+  }
+
+  document.addEventListener('click', function (event) {
+    var link = event.target.closest('a[href^="#taka-event-assistant-section-"]');
+    if (!link) {
+      return;
+    }
+    openSectionFromHash(link.getAttribute('href'));
+  });
+
+  window.addEventListener('hashchange', function () {
+    openSectionFromHash(window.location.hash);
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    openSectionFromHash(window.location.hash);
+  });
+})();
+
 document.addEventListener('click', function (event) {
   var addProgram = event.target.closest('[data-taka-program-add]');
   var removeProgram = event.target.closest('[data-taka-program-remove]');

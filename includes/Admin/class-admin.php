@@ -44,6 +44,9 @@ class TAKA_Platform_Admin {
 		add_action( 'admin_post_taka_platform_export_translation_package', array( __CLASS__, 'handle_export_translation_package' ) );
 		add_action( 'admin_post_taka_platform_import_translation_package', array( __CLASS__, 'handle_import_translation_package' ) );
 		add_action( 'admin_post_taka_platform_save_translation_glossary', array( __CLASS__, 'handle_save_translation_glossary' ) );
+		if ( class_exists( 'TAKA_Platform_Admin_Event_Assistant' ) ) {
+			TAKA_Platform_Admin_Event_Assistant::init();
+		}
 	}
 
 
@@ -157,6 +160,9 @@ class TAKA_Platform_Admin {
 	public static function register_menu() {
 		add_menu_page( __( 'TAKA Platform', 'taka-platform' ), __( 'TAKA Platform', 'taka-platform' ), 'edit_taka_events', 'taka-platform', array( __CLASS__, 'render_dashboard' ), 'dashicons-tickets-alt', 28 );
 		add_submenu_page( 'taka-platform', __( 'Dashboard', 'taka-platform' ), __( 'Dashboard', 'taka-platform' ), 'edit_taka_events', 'taka-platform', array( __CLASS__, 'render_dashboard' ) );
+		if ( class_exists( 'TAKA_Platform_Admin_Event_Assistant' ) ) {
+			TAKA_Platform_Admin_Event_Assistant::register_menu();
+		}
 		add_submenu_page( 'taka-platform', __( 'Media', 'taka-platform' ), __( 'Media', 'taka-platform' ), 'manage_options', 'taka-tour-media', array( __CLASS__, 'render_media' ) );
 		add_submenu_page( 'taka-platform', __( 'Content Sections', 'taka-platform' ), __( 'Content Sections', 'taka-platform' ), 'manage_options', 'taka-platform-content-sections', array( __CLASS__, 'render_content_sections' ) );
 		add_submenu_page( 'taka-platform', __( 'Import / Export', 'taka-platform' ), __( 'Import / Export', 'taka-platform' ), 'manage_options', 'taka-tour-import-export', array( __CLASS__, 'render_import_export' ) );

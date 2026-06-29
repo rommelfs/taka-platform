@@ -80,6 +80,253 @@
 	margin: 8px 0 16px;
 }
 
+.taka-event-assistant__intro {
+	max-width: 880px;
+}
+
+.taka-event-assistant__layout {
+	align-items: start;
+	display: grid;
+	gap: 20px;
+	grid-template-columns: minmax(210px, 260px) minmax(0, 1fr);
+	margin-top: 18px;
+}
+
+.taka-event-assistant__sidebar {
+	position: sticky;
+	top: 44px;
+}
+
+.taka-event-assistant-nav {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 12px;
+}
+
+.taka-event-assistant-nav h2 {
+	font-size: 13px;
+	margin: 0 0 10px;
+	text-transform: uppercase;
+}
+
+.taka-event-assistant-nav ol {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.taka-event-assistant-nav li {
+	margin: 0;
+}
+
+.taka-event-assistant-nav__item {
+	align-items: center;
+	border-radius: 4px;
+	color: #1d2327;
+	display: flex;
+	gap: 8px;
+	padding: 7px 8px;
+	text-decoration: none;
+}
+
+.taka-event-assistant-nav__item:hover,
+.taka-event-assistant-nav__item:focus {
+	background: #f6f7f7;
+	color: #135e96;
+}
+
+.taka-event-assistant-nav__mark {
+	align-items: center;
+	border: 1px solid #c3c4c7;
+	border-radius: 50%;
+	display: inline-flex;
+	flex: 0 0 22px;
+	font-size: 11px;
+	font-weight: 700;
+	height: 22px;
+	justify-content: center;
+	line-height: 1;
+	width: 22px;
+}
+
+.taka-event-assistant-nav__item--complete .taka-event-assistant-nav__mark,
+.taka-event-assistant-status--complete {
+	background: #edfaef;
+	border-color: #68de7c;
+	color: #0a6b22;
+}
+
+.taka-event-assistant-nav__item--incomplete .taka-event-assistant-nav__mark,
+.taka-event-assistant-status--incomplete {
+	background: #fcf0f1;
+	border-color: #d63638;
+	color: #8a2424;
+}
+
+.taka-event-assistant-nav__item--optional .taka-event-assistant-nav__mark,
+.taka-event-assistant-status--optional,
+.taka-event-assistant-status--warning {
+	background: #fff8e5;
+	border-color: #dba617;
+	color: #6c4f00;
+}
+
+.taka-event-assistant-health {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	margin: 16px 0 10px;
+	max-width: 1120px;
+	padding: 16px;
+}
+
+.taka-event-assistant-health__summary {
+	align-items: center;
+	display: flex;
+	gap: 18px;
+	justify-content: space-between;
+}
+
+.taka-event-assistant-health h2 {
+	font-size: 16px;
+	margin: 0 0 10px;
+}
+
+.taka-event-assistant-health__bar {
+	background: #f0f0f1;
+	border-radius: 999px;
+	height: 10px;
+	min-width: 260px;
+	overflow: hidden;
+}
+
+.taka-event-assistant-health__bar span {
+	background: #2271b1;
+	display: block;
+	height: 100%;
+	transition: width 160ms ease-in-out;
+}
+
+.taka-event-assistant-health__score {
+	align-items: flex-end;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	text-align: right;
+}
+
+.taka-event-assistant-health__score strong {
+	color: #1d2327;
+	font-size: 28px;
+	line-height: 1;
+}
+
+.taka-event-assistant-health__badge,
+.taka-event-assistant-status {
+	border: 1px solid #c3c4c7;
+	border-radius: 999px;
+	display: inline-block;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.3;
+	padding: 4px 8px;
+}
+
+.taka-event-assistant-health__badge--success {
+	background: #edfaef;
+	border-color: #68de7c;
+	color: #0a6b22;
+}
+
+.taka-event-assistant-health__badge--warning {
+	background: #fff8e5;
+	border-color: #dba617;
+	color: #6c4f00;
+}
+
+.taka-event-assistant-health__badge--critical {
+	background: #fcf0f1;
+	border-color: #d63638;
+	color: #8a2424;
+}
+
+.taka-event-assistant-health__lists {
+	display: grid;
+	gap: 16px;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	margin-top: 14px;
+}
+
+.taka-event-assistant-health__list h3 {
+	font-size: 13px;
+	margin: 0 0 8px;
+}
+
+.taka-event-assistant-health__list ul {
+	margin: 0;
+	padding-left: 18px;
+}
+
+.taka-event-assistant-health__list li {
+	margin-bottom: 4px;
+}
+
+.taka-event-assistant-health__empty {
+	margin-bottom: 0;
+}
+
+.taka-event-assistant__reuse {
+	max-width: 1120px;
+}
+
+.taka-event-assistant-section__status {
+	margin: 10px 0 12px;
+}
+
+.taka-event-assistant-field input.widefat,
+.taka-event-assistant-field textarea.widefat,
+.taka-event-assistant-field select.widefat,
+.taka-event-assistant-field textarea.large-text {
+	max-width: 880px;
+	width: 100%;
+}
+
+.taka-event-assistant .taka-program-item {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	box-sizing: border-box;
+	margin: 0 0 10px;
+	padding: 10px;
+}
+
+.taka-event-assistant .taka-program-item p:first-child {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.taka-event-assistant .taka-program-item input[type="number"] {
+	width: 80px;
+}
+
+.taka-event-assistant .taka-content-reference-fields {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	box-sizing: border-box;
+	margin: 12px 0;
+	max-width: 920px;
+	padding: 12px;
+}
+
+.taka-event-assistant__actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin: 18px 0;
+}
+
 @keyframes taka-admin-section-open {
 	from {
 		opacity: 0;
@@ -260,5 +507,28 @@
 
 	.taka-event-video-list {
 		grid-template-columns: 1fr;
+	}
+
+	.taka-event-assistant__layout {
+		grid-template-columns: 1fr;
+	}
+
+	.taka-event-assistant__sidebar {
+		position: static;
+	}
+
+	.taka-event-assistant-health__summary {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.taka-event-assistant-health__bar {
+		min-width: 0;
+		width: 100%;
+	}
+
+	.taka-event-assistant-health__score {
+		align-items: flex-start;
+		text-align: left;
 	}
 }
