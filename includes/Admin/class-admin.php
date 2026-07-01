@@ -149,6 +149,9 @@ class TAKA_Platform_Admin {
 		if ( class_exists( 'TAKA_Platform_Tour_Planning' ) ) {
 			TAKA_Platform_Tour_Planning::ensure_capabilities();
 		}
+		if ( class_exists( 'TAKA_Ticketing_Module' ) ) {
+			TAKA_Ticketing_Module::ensure_capabilities();
+		}
 		$editor_caps = array(
 			'read',
 			'upload_files',
@@ -2206,6 +2209,7 @@ class TAKA_Platform_Admin {
 			'_taka_ticket_door_price_child' => TAKA_Platform_Data::sanitize_money_value( $item['ticket_door_price_child'] ?? '' ),
 			'_taka_ticket_door_price_member' => TAKA_Platform_Data::sanitize_money_value( $item['ticket_door_price_member'] ?? '' ),
 			'_taka_ticket_door_note' => $item['ticket_door_note'] ?? '',
+			'_taka_native_ticket_types' => class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::sanitize_ticket_types( $item['native_ticket_types'] ?? ( $item['ticket_types'] ?? array() ) ) : array(),
 			'_taka_image_id' => (int) ( $item['image_id'] ?? 0 ),
 			'_taka_image_url' => $item['image_url'] ?? ( $item['image'] ?? '' ),
 			'_taka_group_image_id' => (int) ( $item['group_image_id'] ?? 0 ),
@@ -2355,6 +2359,9 @@ class TAKA_Platform_Admin {
 		echo '<p class="description">' . esc_html__( 'Pay-at-door notes are edited in Source language & website translations so each website language can have its own text.', 'taka-platform' ) . '</p>';
 		self::render_event_booking_information_fields( $post->ID );
 		self::admin_section_close();
+		if ( class_exists( 'TAKA_Ticketing_Module' ) ) {
+			TAKA_Ticketing_Module::render_event_ticket_types_section( $post->ID );
+		}
 
 		self::admin_section_open( __( 'Media & promo videos', 'taka-platform' ), __( 'Event imagery and optional video content shown on frontend event pages.', 'taka-platform' ), self::has_any_meta( $post->ID, array( 'image_id', 'image_url', 'group_image_id', 'group_image_url', 'promo_videos' ) ), 'taka-admin-section--media', 'event-media-promo-videos' );
 		self::media_field( $post->ID, 'image_id', __( 'Event action photo', 'taka-platform' ), false, __( 'Select action photo', 'taka-platform' ) );
@@ -2493,6 +2500,9 @@ class TAKA_Platform_Admin {
 		self::save_event_organizer_relationships( $post_id, $posted_relationships );
 		self::save_event_program_items( $post_id );
 		self::save_event_videos( $post_id );
+		if ( class_exists( 'TAKA_Ticketing_Module' ) ) {
+			TAKA_Ticketing_Module::save_event_ticket_types( $post_id );
+		}
 		self::save_event_structured_meta( $post_id );
 	}
 

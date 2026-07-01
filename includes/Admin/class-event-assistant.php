@@ -974,6 +974,9 @@ class TAKA_Platform_Admin_Event_Assistant {
 		self::text_field( $context, 'ticket_door_price_child', __( 'Child door price', 'taka-platform' ) );
 		self::text_field( $context, 'ticket_door_price_member', __( 'Member door price', 'taka-platform' ) );
 		echo '<p class="description">' . esc_html__( 'For pay-at-door events, the booking URL is not required. Add the event-specific note in Website translations so it can be translated per language.', 'taka-platform' ) . '</p>';
+		if ( class_exists( 'TAKA_Ticketing_Module' ) ) {
+			echo '<p class="description">' . esc_html__( 'Native TAKA Ticketing can be selected here. Repeatable ticket types are configured in the shared native ticketing section after the draft exists.', 'taka-platform' ) . '</p>';
+		}
 	}
 
 	public static function render_translations_section( $context ) {
@@ -1219,6 +1222,7 @@ class TAKA_Platform_Admin_Event_Assistant {
 			'source_language'        => $source_language,
 			'translations'           => $translations,
 			'program_items'          => $event_id ? TAKA_Platform_Data::normalize_program_items( get_post_meta( $event_id, '_taka_program_items', true ), array() ) : array(),
+			'native_ticket_types'    => ( $event_id && class_exists( 'TAKA_Ticketing_Module' ) ) ? TAKA_Ticketing_Module::ticket_types_for_event( $event_id ) : array(),
 			'organizer_relationships' => $event_id ? TAKA_Platform_Data::normalize_event_organizer_relationships( get_post_meta( $event_id, '_taka_event_organizers', true ), $values['organizer_id'] ) : TAKA_Platform_Data::normalize_event_organizer_relationships( array(), $values['organizer_id'] ),
 			'event_videos'           => $event_id ? TAKA_Platform_Data::normalize_event_videos( get_post_meta( $event_id, '_taka_promo_videos', true ) ) : array(),
 			'content_reference'      => $event_id ? TAKA_Platform_Data::normalize_content_reference( get_post_meta( $event_id, '_taka_content_reference_event_description', true ), 'event_description' ) : TAKA_Platform_Data::normalize_content_reference( array(), 'event_description' ),

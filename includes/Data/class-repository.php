@@ -51,12 +51,13 @@ class TAKA_Platform_Data {
 				'label' => 'Ticket Mode',
 				'options' => array(
 					self::option( 'online_shop', 'Online ticket shop', 'en', array( 'de' => 'Online-Ticketshop' ), 10 ),
-					self::option( 'external_url', 'External booking URL', 'en', array( 'de' => 'Externe Buchungs-URL' ), 20 ),
+					self::option( 'external', 'External booking URL', 'en', array( 'de' => 'Externe Buchungs-URL' ), 20, '', array( 'external_url' ) ),
+					self::option( 'native_taka_ticketing', 'Native TAKA Ticketing', 'en', array( 'de' => 'Native TAKA-Ticketing' ), 25 ),
 					self::option( 'coming_soon', 'Tickets coming soon', 'en', array( 'de' => 'Tickets folgen' ), 30 ),
 					self::option( 'sold_out', 'Sold out / waiting list', 'en', array( 'de' => 'Ausverkauft / Warteliste' ), 40 ),
 					self::option( 'pay_at_door', 'Pay at the door', 'en', array( 'de' => 'Abendkasse' ), 50 ),
-					self::option( 'free_entry', 'Free entry', 'en', array( 'de' => 'Freier Eintritt' ), 60 ),
-					self::option( 'no_ticket_shop', 'No ticket shop', 'en', array( 'de' => 'Kein Ticketshop' ), 70 ),
+					self::option( 'free', 'Free entry', 'en', array( 'de' => 'Freier Eintritt' ), 60, '', array( 'free_entry' ) ),
+					self::option( 'none', 'No ticket shop', 'en', array( 'de' => 'Kein Ticketshop' ), 70, '', array( 'no_ticket_shop' ) ),
 				),
 			),
 			'ticket_provider' => array(
@@ -1531,6 +1532,7 @@ class TAKA_Platform_Data {
 				'ticket_door_price_reduced' => self::sanitize_money_value( get_post_meta( $post->ID, '_taka_ticket_door_price_reduced', true ) ),
 				'ticket_door_price_child' => self::sanitize_money_value( get_post_meta( $post->ID, '_taka_ticket_door_price_child', true ) ),
 				'ticket_door_price_member' => self::sanitize_money_value( get_post_meta( $post->ID, '_taka_ticket_door_price_member', true ) ),
+				'native_ticket_types' => class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::ticket_types_for_event( $post->ID ) : array(),
 				'image_id' => $image_id,
 				'image_url' => (string) get_post_meta( $post->ID, '_taka_image_url', true ),
 				'image' => self::resolve_attachment_url( $image_id, 'large', (string) get_post_meta( $post->ID, '_taka_image_url', true ) ),
@@ -1639,6 +1641,7 @@ class TAKA_Platform_Data {
 			$event['gallery_image_ids'] = $event['gallery_image_ids'] ?? array();
 			$event['gallery_urls'] = $event['gallery'] ?? array();
 			$event['promo_videos'] = self::normalize_event_videos( $event['promo_videos'] ?? ( $event['videos'] ?? array() ) );
+			$event['native_ticket_types'] = class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::sanitize_ticket_types( $event['native_ticket_types'] ?? ( $event['ticket_types'] ?? array() ) ) : array();
 			$event['booking_information'] = self::normalize_booking_information( $event['booking_information'] ?? array(), false );
 			$event['content_references'] = is_array( $event['content_references'] ?? null ) ? $event['content_references'] : array();
 			$event['content_references']['event_description'] = self::normalize_content_reference( $event['content_references']['event_description'] ?? array(), 'event_description' );
@@ -3087,22 +3090,32 @@ class TAKA_Platform_Data {
 
 	/** Resolve the stable ticket mode, inferring older provider/status-only events. */
 	public static function ticket_mode_for_event( $event ) {
-		$mode = self::normalize_event_option_value( 'ticket_mode', $event['ticket_mode'] ?? '' );
-		if ( in_array( $mode, array( 'online_shop', 'external_url', 'coming_soon', 'sold_out', 'pay_at_door', 'free_entry', 'no_ticket_shop' ), true ) ) { return $mode; }
-		$status = self::normalize_event_option_value( 'ticket_status', $event['ticket_status'] ?? '' );
+		$mode = self::normalize_ticket_mode_alias( self::normalize_event_option_value( 'ticket_mode', $event['ticket_mode'] ?? '' ) );
+		if ( in_array( $mode, array( 'online_shop', 'external', 'coming_soon', 'sold_out', 'pay_at_door', 'free', 'none', 'native_taka_ticketing' ), true ) ) { return $mode; }
+		$status = self::normalize_ticket_mode_alias( self::normalize_event_option_value( 'ticket_status', $event['ticket_status'] ?? '' ) );
 		$provider = self::normalize_event_option_value( 'ticket_provider', $event['ticket_provider'] ?? '' );
 		$url = trim( (string) ( $event['ticket_shop_url'] ?? '' ) );
-		if ( in_array( $status, array( 'pay_at_door', 'free_entry', 'no_ticket_shop' ), true ) ) { return $status; }
-		if ( '' !== $url ) { return 'pretix' === strtolower( (string) $provider ) ? 'online_shop' : 'external_url'; }
+		if ( in_array( $status, array( 'pay_at_door', 'free', 'none' ), true ) ) { return $status; }
+		if ( '' !== $url ) { return 'pretix' === strtolower( (string) $provider ) ? 'online_shop' : 'external'; }
 		if ( in_array( $status, array( 'sold_out', 'waiting_list' ), true ) ) { return 'sold_out'; }
 		if ( 'coming_soon' === $status ) { return 'coming_soon'; }
-		if ( 'none' === $provider ) { return 'no_ticket_shop'; }
+		if ( 'none' === $provider ) { return 'none'; }
 		return '';
 	}
 
 	/** Ticket modes that intentionally do not render an online booking URL. */
 	public static function ticket_mode_has_online_url( $mode ) {
-		return in_array( (string) $mode, array( 'online_shop', 'external_url' ), true );
+		return in_array( self::normalize_ticket_mode_alias( $mode ), array( 'online_shop', 'external' ), true );
+	}
+
+	private static function normalize_ticket_mode_alias( $mode ) {
+		$mode = sanitize_key( (string) $mode );
+		$aliases = array(
+			'external_url'   => 'external',
+			'free_entry'     => 'free',
+			'no_ticket_shop' => 'none',
+		);
+		return $aliases[ $mode ] ?? $mode;
 	}
 
 	/** Get enabled ticket widget URL for Pretix events. */
@@ -3121,7 +3134,7 @@ class TAKA_Platform_Data {
 	public static function ticket_information_card( $event, $lang = null ) {
 		$lang = $lang ?: taka_tour_current_language();
 		$mode = self::ticket_mode_for_event( $event );
-		if ( ! in_array( $mode, array( 'pay_at_door', 'free_entry', 'no_ticket_shop' ), true ) ) {
+		if ( ! in_array( $mode, array( 'pay_at_door', 'free', 'none' ), true ) ) {
 			return array();
 		}
 		$cards = array(
@@ -3130,11 +3143,11 @@ class TAKA_Platform_Data {
 				'body'  => self::ticket_door_price_label( $event, $lang ),
 				'details' => self::ticket_door_price_details( $event, $lang ),
 			),
-			'free_entry' => array(
+			'free' => array(
 				'title' => taka_tour_translate( 'event.ticket_free_entry', 'Free entry', $lang ),
 				'body'  => taka_tour_translate( 'event.ticket_free_entry_body', 'No ticket shop is required for this event.', $lang ),
 			),
-			'no_ticket_shop' => array(
+			'none' => array(
 				'title' => taka_tour_translate( 'event.ticket_no_ticket_shop', 'No ticket shop', $lang ),
 				'body'  => taka_tour_translate( 'event.ticket_no_ticket_shop_body', 'Ticket information will be provided by the organizer.', $lang ),
 			),
@@ -3587,8 +3600,8 @@ class TAKA_Platform_Data {
 	private static function ticket_status_label( $event, $lang ) {
 		$mode = self::ticket_mode_for_event( $event );
 		if ( 'pay_at_door' === $mode ) { return taka_tour_translate( 'event.ticket_pay_at_door', 'Pay at the door', $lang ); }
-		if ( 'free_entry' === $mode ) { return taka_tour_translate( 'event.ticket_free_entry', 'Free entry', $lang ); }
-		if ( 'no_ticket_shop' === $mode ) { return taka_tour_translate( 'event.ticket_no_ticket_shop', 'No ticket shop', $lang ); }
+		if ( 'free' === $mode ) { return taka_tour_translate( 'event.ticket_free_entry', 'Free entry', $lang ); }
+		if ( 'none' === $mode ) { return taka_tour_translate( 'event.ticket_no_ticket_shop', 'No ticket shop', $lang ); }
 		if ( 'sold_out' === $mode ) { return taka_tour_translate( 'event.ticket_sold_out_waiting_list', 'Sold out / waiting list', $lang ); }
 		if ( '' !== self::pretix_event_url( $event ) ) { return taka_tour_translate( 'seminar.ticketshop_open_pretix', 'Tickets bei Pretix öffnen', $lang ); }
 		if ( '' !== self::ticket_direct_url( $event ) ) { return taka_tour_translate( 'event.ticketshop_direct', 'Open ticket shop', $lang ); }

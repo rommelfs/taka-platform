@@ -142,6 +142,8 @@ Pretix remains supported. Admins set:
 
 The frontend automatically renders the correct Pretix widget plus a direct fallback link. The ticket layer now uses provider classes and a registry so Eventbrite, WooCommerce, TicketTailor or external URL providers can be added later.
 
+Native TAKA Ticketing has started as a separate architecture under `includes/Ticketing/`. Phase 1 adds event ticket type configuration, payment-provider scaffolding and backup/export support, but intentionally does not add public checkout or order creation yet. See [docs/ticketing.md](docs/ticketing.md).
+
 ## Multilingual frontend
 
 Supported query-parameter languages: `?taka_lang=de`, `en`, `nl`, `fr`, `lb`, `fi`, `ja`. Static JSON translations in `translations/` are used for frontend labels. Missing keys fall back to German and then to the supplied template fallback.
@@ -161,6 +163,7 @@ New platform modules live in smaller responsibility-based folders:
 - `includes/I18n/` static translation loader
 - `includes/Rendering/` frontend rendering helpers such as route-map label layout
 - `includes/Tickets/` ticket-provider interface, Pretix provider and registry
+- `includes/Ticketing/` native TAKA ticketing architecture, ticket types and payment-provider scaffolds
 - `includes/Support/` shared helper functions
 
 Legacy `includes/class-taka-tour-*.php` files remain as thin compatibility shims.

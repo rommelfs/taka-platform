@@ -32,6 +32,14 @@ require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/I18n/class-manual-translation-
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Tickets/interface-ticket-provider.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Tickets/class-pretix-provider.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Tickets/class-ticket-provider-registry.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/interface-payment-provider.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-ticket-types.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-order.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-participant.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-payment.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/interface-repositories.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-bank-transfer-provider.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-ticketing-module.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Rendering/class-tour-map-label-layout.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Data/class-repository.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/ImportExport/class-translation-packages.php';
@@ -88,6 +96,7 @@ add_action(
 	static function () {
 		TAKA_Platform_Events_Manager_Integration::init();
 		TAKA_Platform_Plugin::instance();
+		TAKA_Ticketing_Module::init();
 		if ( is_admin() ) {
 			TAKA_Platform_Tour_Planning::init();
 			TAKA_Platform_Admin::init();

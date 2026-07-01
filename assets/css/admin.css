@@ -80,6 +80,47 @@
 	margin: 8px 0 16px;
 }
 
+.taka-native-ticket-types {
+	display: grid;
+	gap: 12px;
+	margin-top: 12px;
+}
+
+.taka-native-ticket-type {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 12px;
+}
+
+.taka-native-ticket-type__header {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+	margin-bottom: 10px;
+}
+
+.taka-native-ticket-type__grid {
+	display: grid;
+	gap: 10px 12px;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.taka-native-ticket-type__grid label {
+	display: block;
+}
+
+.taka-native-ticket-type__grid input,
+.taka-native-ticket-type__grid select,
+.taka-native-ticket-type__grid textarea {
+	margin-top: 4px;
+}
+
+.taka-native-ticket-type__wide {
+	grid-column: 1 / -1;
+}
+
 .taka-tour-planning-filters {
 	align-items: end;
 	background: #fff;
