@@ -46,6 +46,7 @@ class TAKA_People_Registration_Repository {
 
 		$existing = $this->find_existing( $data );
 		if ( $existing ) {
+			$data = $this->preserve_operational_fields( $data, $existing );
 			$data['id'] = absint( $existing['id'] ?? 0 );
 			$data['created_at'] = (string) ( $existing['created_at'] ?? '' );
 		}
@@ -130,5 +131,30 @@ class TAKA_People_Registration_Repository {
 			)
 		);
 		return implode( ' - ', $parts ) ?: __( 'Registration', 'taka-platform' );
+	}
+
+	private function preserve_operational_fields( $incoming, $existing ) {
+		$incoming = TAKA_People_Registration::normalize( $incoming );
+		$existing = TAKA_People_Registration::normalize( $existing );
+
+		foreach ( array( 'validation_token', 'checked_in_at', 'checked_in_by', 'internal_notes', 'attendance_sessions', 'operations_timeline' ) as $field ) {
+			$incoming_empty = empty( $incoming[ $field ] );
+			if ( $incoming_empty && ! empty( $existing[ $field ] ) ) {
+				$incoming[ $field ] = $existing[ $field ];
+			}
+		}
+
+		if ( ! empty( $existing['walk_in'] ) && '0' !== (string) $existing['walk_in'] ) {
+			$incoming['walk_in'] = '1';
+		}
+		if ( 'checked_in' === (string) ( $existing['checkin_status'] ?? '' ) && 'not_checked_in' === (string) ( $incoming['checkin_status'] ?? '' ) ) {
+			$incoming['checkin_status'] = 'checked_in';
+			$incoming['attendance_state'] = 'checked_in';
+		}
+		if ( in_array( (string) ( $existing['attendance_state'] ?? '' ), array( 'checked_in', 'checked_out', 'no_show' ), true ) && 'registered' === (string) ( $incoming['attendance_state'] ?? '' ) ) {
+			$incoming['attendance_state'] = (string) $existing['attendance_state'];
+		}
+
+		return $incoming;
 	}
 }

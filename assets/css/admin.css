@@ -198,6 +198,310 @@
 	width: 100%;
 }
 
+.taka-operations-admin {
+	--taka-ops-border: #dcdcde;
+	--taka-ops-muted: #646970;
+	--taka-ops-panel: #fff;
+	--taka-ops-soft: #f6f7f7;
+}
+
+.taka-operations-event-selector,
+.taka-operations-search,
+.taka-operations-quick-actions,
+.taka-operations-card-actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.taka-operations-event-selector {
+	background: var(--taka-ops-panel);
+	border: 1px solid var(--taka-ops-border);
+	margin: 14px 0;
+	padding: 12px;
+}
+
+.taka-operations-event-selector select {
+	min-width: min(420px, 100%);
+}
+
+.taka-operations-dashboard,
+.taka-operations-panel,
+.taka-operations-empty {
+	background: var(--taka-ops-panel);
+	border: 1px solid var(--taka-ops-border);
+	border-radius: 4px;
+	margin: 14px 0;
+	padding: 14px;
+}
+
+.taka-operations-dashboard__heading {
+	align-items: baseline;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 14px;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.taka-operations-dashboard__heading h2,
+.taka-operations-panel h2,
+.taka-operations-person-card h3 {
+	margin: 0;
+}
+
+.taka-operations-dashboard__heading p {
+	color: var(--taka-ops-muted);
+	margin: 0;
+}
+
+.taka-operations-metrics {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+}
+
+.taka-operations-metric {
+	background: var(--taka-ops-soft);
+	border: 1px solid var(--taka-ops-border);
+	border-radius: 4px;
+	padding: 12px;
+}
+
+.taka-operations-metric span,
+.taka-operations-form-grid span,
+.taka-operations-search span {
+	color: var(--taka-ops-muted);
+	display: block;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.taka-operations-metric strong {
+	display: block;
+	font-size: 26px;
+	line-height: 1.15;
+	margin-top: 3px;
+}
+
+.taka-operations-quick-actions {
+	background: #1d2327;
+	border-radius: 4px;
+	margin: 14px 0;
+	padding: 10px;
+}
+
+.taka-operations-quick-actions .button {
+	min-height: 36px;
+}
+
+.taka-operations-layout {
+	align-items: start;
+	display: grid;
+	gap: 16px;
+	grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+}
+
+.taka-operations-search-panel {
+	display: grid;
+	gap: 12px;
+}
+
+.taka-operations-search label {
+	flex: 1 1 260px;
+}
+
+.taka-operations-search input[type="search"] {
+	width: 100%;
+}
+
+.taka-operations-table .is-selected td {
+	background: #f0f6fc;
+}
+
+.taka-operations-participant {
+	position: sticky;
+	top: 48px;
+}
+
+.taka-operations-person-card__meta {
+	color: var(--taka-ops-muted);
+	font-size: 14px;
+	margin: 4px 0 12px;
+}
+
+.taka-operations-badges,
+.taka-operations-warnings {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 10px 0;
+}
+
+.taka-operations-badge,
+.taka-operations-warnings span {
+	background: #f0f0f1;
+	border: 1px solid #c3c4c7;
+	border-radius: 999px;
+	display: inline-flex;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 1.2;
+	padding: 5px 8px;
+}
+
+.taka-operations-badge.is-ok {
+	background: #edfaef;
+	border-color: #68de7c;
+	color: #075b17;
+}
+
+.taka-operations-badge.is-warning,
+.taka-operations-warnings span {
+	background: #fcf9e8;
+	border-color: #dba617;
+	color: #6c4300;
+}
+
+.taka-operations-person-card__details {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: 1fr;
+}
+
+.taka-operations-person-card__details div,
+.taka-operations-summary-group dl div {
+	border-top: 1px solid #f0f0f1;
+	display: grid;
+	gap: 4px;
+	grid-template-columns: 110px minmax(0, 1fr);
+	padding-top: 8px;
+}
+
+.taka-operations-person-card__details dt,
+.taka-operations-summary-group dt {
+	color: var(--taka-ops-muted);
+	font-weight: 700;
+}
+
+.taka-operations-action {
+	display: inline-block;
+	margin: 0;
+}
+
+.taka-operations-card-actions .button {
+	min-height: 36px;
+}
+
+.taka-operations-qr-card {
+	background: var(--taka-ops-soft);
+	border: 1px solid var(--taka-ops-border);
+	border-radius: 4px;
+	margin-top: 14px;
+	padding: 12px;
+}
+
+.taka-operations-qr-card h4,
+.taka-operations-timeline h4,
+.taka-operations-summary-group h3 {
+	margin: 0 0 8px;
+}
+
+.taka-operations-qr-placeholder {
+	align-items: center;
+	background: #fff;
+	border: 1px dashed #8c8f94;
+	color: var(--taka-ops-muted);
+	display: flex;
+	font-size: 12px;
+	height: 120px;
+	justify-content: center;
+	margin-bottom: 8px;
+	text-align: center;
+}
+
+.taka-operations-qr-card code {
+	display: block;
+	overflow-wrap: anywhere;
+	white-space: normal;
+}
+
+.taka-operations-timeline ul {
+	margin: 0;
+}
+
+.taka-operations-timeline li {
+	border-top: 1px solid #f0f0f1;
+	margin: 0;
+	padding: 7px 0;
+}
+
+.taka-operations-timeline span {
+	color: var(--taka-ops-muted);
+	display: block;
+	font-size: 12px;
+}
+
+.taka-operations-form-grid {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.taka-operations-form-grid label {
+	display: block;
+}
+
+.taka-operations-form-grid input,
+.taka-operations-form-grid select,
+.taka-operations-form-grid textarea {
+	margin-top: 4px;
+	width: 100%;
+}
+
+.taka-operations-form-grid__wide {
+	grid-column: 1 / -1;
+}
+
+.taka-operations-checkbox {
+	display: block;
+	margin: 12px 0;
+}
+
+.taka-operations-summary-group {
+	border-top: 1px solid #f0f0f1;
+	margin-top: 12px;
+	padding-top: 12px;
+}
+
+.taka-operations-summary-group dl {
+	margin: 0;
+}
+
+@media (max-width: 1100px) {
+	.taka-operations-layout {
+		grid-template-columns: 1fr;
+	}
+
+	.taka-operations-participant {
+		position: static;
+	}
+}
+
+@media (max-width: 600px) {
+	.taka-operations-metrics,
+	.taka-operations-form-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.taka-operations-person-card__details div,
+	.taka-operations-summary-group dl div {
+		grid-template-columns: 1fr;
+	}
+}
+
 .taka-ticketing-admin-tabs {
 	margin: 14px 0;
 }

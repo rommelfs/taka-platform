@@ -373,6 +373,12 @@ class TAKA_Ticketing_Module {
 		self::render_ticket_type_rows( $ticket_types, (string) get_post_meta( $post_id, '_taka_currency', true ) );
 		self::render_payment_method_settings( $post_id );
 		self::render_event_product_summary( $post_id );
+		if ( class_exists( 'TAKA_Event_Operations_Module' ) ) {
+			echo '<div class="taka-native-payment-settings"><h3>' . esc_html__( 'Event-day operations', 'taka-platform' ) . '</h3>';
+			echo '<p class="description">' . esc_html__( 'Open the private operations center for registrations, payments, walk-ins and check-in.', 'taka-platform' ) . '</p>';
+			echo TAKA_Event_Operations_Module::render_event_link( $post_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo '</div>';
+		}
 		TAKA_Platform_Admin_Collapsible_Section::close();
 	}
 

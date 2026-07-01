@@ -271,3 +271,29 @@ The profile view summarizes upcoming registrations, events attended, previous to
 Capacity is reserved when an order is created. Available capacity is calculated from active non-cancelled orders for the same event and ticket type.
 
 Cancelling an order releases the reserved capacity because cancelled orders are ignored by the capacity calculation.
+
+## Phase 5 Event Operations
+
+Event Operations is the private event-day control center under TAKA Platform -> Event Operations. It reuses the People, Registration, Order, Product and Payment services instead of storing attendance data inside orders.
+
+The attendance service records:
+
+- Registration attendance state
+- Check-in status
+- Walk-in flag
+- Per-registration validation token for QR payloads
+- Internal operation notes
+- Operation timeline entries
+- A placeholder array for future session attendance
+
+Orders remain financial objects. When operations receive a payment, the existing order payment service marks the order paid and the registration sync keeps payment status current. When operations check someone in, the registration is updated first and the linked order receives a matching timeline entry for backward compatibility.
+
+QR payloads contain only the registration ID and validation token:
+
+`TAKA-REG:{registration_id}:{validation_token}`
+
+The default admin UI accepts scanned or pasted QR payloads. Visual QR rendering is exposed through the `taka_event_operations_qr_markup` filter so a later offline-capable QR renderer can be added without changing attendance logic.
+
+Walk-in registration creates or reuses a Person, creates a private ticket order, reserves capacity immediately, syncs a Registration, and marks it as a walk-in. This keeps walk-ins compatible with existing People profiles, order timelines, products, payments and future check-in features.
+
+The Phase 5 UI includes dashboard metrics, quick actions, search by QR/name/email/order/dojo/country, participant cards, payment receive actions, check-in/undo/no-show actions, product visibility and operational warning badges.

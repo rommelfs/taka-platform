@@ -59,6 +59,8 @@ require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-order-reposito
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-email-service.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-order-service.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-ticketing-module.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Operations/class-attendance-service.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Operations/class-event-operations-module.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Rendering/class-tour-map-label-layout.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Data/class-repository.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/ImportExport/class-translation-packages.php';
@@ -88,6 +90,7 @@ register_activation_hook(
 		TAKA_Platform_Admin::ensure_capabilities();
 		TAKA_People_Module::ensure_capabilities();
 		TAKA_Ticketing_Module::ensure_capabilities();
+		TAKA_Event_Operations_Module::ensure_capabilities();
 		if ( function_exists( 'flush_rewrite_rules' ) ) {
 			flush_rewrite_rules();
 		}
@@ -122,6 +125,7 @@ add_action(
 		TAKA_People_Module::init();
 		TAKA_Ticketing_Module::init();
 		if ( is_admin() ) {
+			TAKA_Event_Operations_Module::init();
 			TAKA_Platform_Tour_Planning::init();
 			TAKA_Platform_Admin::init();
 		}
