@@ -82,6 +82,28 @@ class TAKA_Ticketing_Email_Service {
 			self::label( 'ticketing.payment_status', 'Payment status', $lang ) . ': ' . self::payment_status_label( $data['payment_status'] ?? 'pending', $lang ),
 		);
 
+		if ( '' !== trim( (string) ( $data['applied_voucher_code'] ?? '' ) ) ) {
+			array_splice(
+				$lines,
+				8,
+				0,
+				array(
+					self::label( 'ticketing.voucher_applied', 'Voucher applied', $lang ) . ': ' . $data['applied_voucher_code'],
+					self::label( 'ticketing.original_amount', 'Original amount', $lang ) . ': ' . TAKA_Ticketing_Module::format_money( $data['original_amount'] ?? $data['amount'] ?? '0', $data['currency'] ?? 'EUR' ),
+					self::label( 'ticketing.discount', 'Discount', $lang ) . ': ' . TAKA_Ticketing_Module::format_money( $data['discount_amount'] ?? '0', $data['currency'] ?? 'EUR' ),
+					self::label( 'ticketing.final_amount', 'Final amount', $lang ) . ': ' . TAKA_Ticketing_Module::format_money( $data['amount'] ?? '0', $data['currency'] ?? 'EUR' ),
+				)
+			);
+		}
+
+		if ( ! empty( $data['applied_benefits'] ) && is_array( $data['applied_benefits'] ) ) {
+			$lines[] = '';
+			$lines[] = self::label( 'ticketing.included_benefits', 'Included benefits', $lang ) . ':';
+			foreach ( $data['applied_benefits'] as $benefit ) {
+				$lines[] = '- ' . TAKA_Ticketing_Module::benefit_line( $benefit );
+			}
+		}
+
 		if ( 'bank_transfer' === (string) ( $data['payment_method'] ?? '' ) ) {
 			$lines[] = '';
 			$lines[] = self::label( 'ticketing.bank_transfer_instructions', 'Bank transfer instructions', $lang );
@@ -99,6 +121,9 @@ class TAKA_Ticketing_Email_Service {
 			if ( '' !== trim( (string) ( $instructions['instructions'] ?? '' ) ) ) {
 				$lines[] = $instructions['instructions'];
 			}
+		} elseif ( in_array( (string) ( $data['payment_method'] ?? '' ), array( 'promotion', 'free' ), true ) ) {
+			$lines[] = '';
+			$lines[] = self::label( 'ticketing.no_payment_required', 'No payment required.', $lang );
 		}
 
 		return implode( "\n", array_filter( $lines, static function ( $line ) { return null !== $line; } ) );

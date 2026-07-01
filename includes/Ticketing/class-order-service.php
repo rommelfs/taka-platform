@@ -29,11 +29,6 @@ class TAKA_Ticketing_Order_Service {
 			return new WP_Error( 'taka_ticketing_ticket_unavailable', TAKA_Ticketing_Module::text( 'ticketing.error_ticket_unavailable', 'This ticket type is no longer available.', $lang ) );
 		}
 
-		$enabled_methods = TAKA_Ticketing_Module::enabled_payment_methods_for_event( $event_id );
-		if ( ! in_array( $payment_method, $enabled_methods, true ) ) {
-			return new WP_Error( 'taka_ticketing_payment_method', TAKA_Ticketing_Module::text( 'ticketing.error_payment_method', 'Please choose an available payment method.', $lang ) );
-		}
-
 		$buyer = self::buyer_from_post( $posted );
 		$participant = self::participant_from_post( $posted, $buyer );
 		$error = self::validate_people( $buyer, $participant, ! empty( $posted['participant_is_buyer'] ), $lang );
@@ -42,6 +37,34 @@ class TAKA_Ticketing_Order_Service {
 		}
 		if ( empty( $posted['terms_accepted'] ) || empty( $posted['privacy_accepted'] ) ) {
 			return new WP_Error( 'taka_ticketing_terms', TAKA_Ticketing_Module::text( 'ticketing.error_terms', 'Please accept the terms and privacy notice.', $lang ) );
+		}
+
+		$pricing = TAKA_Ticketing_Pricing_Service::quote( $event_id, $ticket_type, $buyer['email'] ?? '', $posted['promotion_code'] ?? '', $lang );
+		if ( is_wp_error( $pricing ) ) {
+			return $pricing;
+		}
+
+		$payment_required = ! empty( $pricing['payment_required'] );
+		if ( $payment_required ) {
+			$enabled_methods = TAKA_Ticketing_Module::enabled_payment_methods_for_event( $event_id );
+			if ( ! in_array( $payment_method, $enabled_methods, true ) ) {
+				return new WP_Error( 'taka_ticketing_payment_method', TAKA_Ticketing_Module::text( 'ticketing.error_payment_method', 'Please choose an available payment method.', $lang ) );
+			}
+		} else {
+			$payment_method = '' !== (string) ( $pricing['promotion_code'] ?? '' ) ? 'promotion' : 'free';
+		}
+
+		$timeline = array(
+			array(
+				'time'  => current_time( 'mysql' ),
+				'label' => __( 'Order submitted', 'taka-platform' ),
+			),
+		);
+		if ( '' !== (string) ( $pricing['promotion_code'] ?? '' ) ) {
+			$timeline[] = array(
+				'time'  => current_time( 'mysql' ),
+				'label' => sprintf( __( 'Promotion applied: %s', 'taka-platform' ), sanitize_text_field( $pricing['promotion_code'] ) ),
+			);
 		}
 
 		$order = new TAKA_Ticketing_Order(
@@ -54,26 +77,29 @@ class TAKA_Ticketing_Order_Service {
 				'ticket_type_name'    => $ticket_type['name'],
 				'buyer'               => $buyer,
 				'participant'         => $participant,
-				'amount'              => $ticket_type['price'],
-				'currency'            => $ticket_type['currency'],
+				'original_amount'     => $pricing['original_amount'],
+				'discount_amount'     => $pricing['discount_amount'],
+				'amount'              => $pricing['final_amount'],
+				'final_amount'        => $pricing['final_amount'],
+				'currency'            => $pricing['currency'],
 				'payment_method'      => $payment_method,
-				'payment_status'      => 'pending',
+				'payment_status'      => $payment_required ? 'pending' : 'paid',
 				'order_status'        => 'confirmed',
 				'checkin_status'      => 'not_checked_in',
+				'payment_required'    => $payment_required ? '1' : '0',
+				'applied_voucher_code' => $pricing['promotion_code'] ?? '',
+				'applied_promotion_id' => absint( $pricing['promotion_id'] ?? 0 ),
+				'applied_promotion'   => $pricing['promotion_snapshot'] ?? null,
+				'applied_benefits'    => is_array( $pricing['benefits'] ?? null ) ? $pricing['benefits'] : array(),
 				'language'            => $lang,
 				'created_at'          => current_time( 'mysql' ),
 				'updated_at'          => current_time( 'mysql' ),
-				'timeline'            => array(
-					array(
-						'time'  => current_time( 'mysql' ),
-						'label' => __( 'Order submitted', 'taka-platform' ),
-					),
-				),
+				'timeline'            => $timeline,
 			)
 		);
 
 		$provider = TAKA_Ticketing_Module::payment_provider( $payment_method );
-		if ( $provider ) {
+		if ( $payment_required && $provider ) {
 			$data = $order->to_array();
 			$data['payment'] = $provider->create_payment( $order );
 			$order = new TAKA_Ticketing_Order( $data );

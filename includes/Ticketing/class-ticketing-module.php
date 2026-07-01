@@ -13,12 +13,16 @@ class TAKA_Ticketing_Module {
 	const BANK_TRANSFER_META   = '_taka_native_bank_transfer_settings';
 	const PAY_AT_DOOR_INSTRUCTIONS_META = '_taka_native_pay_at_door_instructions';
 	const CHECKOUT_ACTION      = 'taka_ticketing_checkout';
+	const PROMOTION_AJAX_ACTION = 'taka_ticketing_apply_promotion';
 	const ADMIN_ACTION         = 'taka_ticketing_order_action';
 	const SETTINGS_ACTION      = 'taka_ticketing_save_settings';
+	const PROMOTION_ACTION     = 'taka_ticketing_save_promotion';
+	const PROMOTION_DELETE_ACTION = 'taka_ticketing_delete_promotion';
 	const ADMIN_PAGE_SLUG      = 'taka-platform-ticketing';
 
 	private static $payment_providers = array();
 	private static $order_repository = null;
+	private static $promotion_repository = null;
 
 	/** Register native ticketing hooks and provider implementations. */
 	public static function init() {
@@ -29,8 +33,12 @@ class TAKA_Ticketing_Module {
 		add_action( 'admin_init', array( __CLASS__, 'ensure_capabilities' ) );
 		add_action( 'admin_post_' . self::CHECKOUT_ACTION, array( __CLASS__, 'handle_checkout' ) );
 		add_action( 'admin_post_nopriv_' . self::CHECKOUT_ACTION, array( __CLASS__, 'handle_checkout' ) );
+		add_action( 'wp_ajax_' . self::PROMOTION_AJAX_ACTION, array( __CLASS__, 'handle_apply_promotion_ajax' ) );
+		add_action( 'wp_ajax_nopriv_' . self::PROMOTION_AJAX_ACTION, array( __CLASS__, 'handle_apply_promotion_ajax' ) );
 		add_action( 'admin_post_' . self::ADMIN_ACTION, array( __CLASS__, 'handle_admin_order_action' ) );
 		add_action( 'admin_post_' . self::SETTINGS_ACTION, array( __CLASS__, 'handle_save_settings' ) );
+		add_action( 'admin_post_' . self::PROMOTION_ACTION, array( __CLASS__, 'handle_save_promotion' ) );
+		add_action( 'admin_post_' . self::PROMOTION_DELETE_ACTION, array( __CLASS__, 'handle_delete_promotion' ) );
 		add_filter( 'taka_platform_event_assistant_sections', array( __CLASS__, 'register_event_assistant_section' ) );
 	}
 
@@ -41,6 +49,23 @@ class TAKA_Ticketing_Module {
 				'labels'              => array(
 					'name'          => __( 'Ticket Orders', 'taka-platform' ),
 					'singular_name' => __( 'Ticket Order', 'taka-platform' ),
+				),
+				'public'              => false,
+				'publicly_queryable'  => false,
+				'show_ui'             => false,
+				'show_in_rest'        => false,
+				'exclude_from_search' => true,
+				'capability_type'     => 'post',
+				'supports'            => array( 'title' ),
+			)
+		);
+
+		register_post_type(
+			TAKA_PLATFORM_CPT_TICKET_PROMOTION,
+			array(
+				'labels'              => array(
+					'name'          => __( 'Ticket Promotions', 'taka-platform' ),
+					'singular_name' => __( 'Ticket Promotion', 'taka-platform' ),
 				),
 				'public'              => false,
 				'publicly_queryable'  => false,
@@ -86,6 +111,7 @@ class TAKA_Ticketing_Module {
 			'view_taka_orders',
 			'edit_taka_orders',
 			'checkin_taka_participants',
+			'manage_taka_promotions',
 		);
 	}
 
@@ -110,6 +136,13 @@ class TAKA_Ticketing_Module {
 			self::$order_repository = new TAKA_Ticketing_Order_Repository();
 		}
 		return self::$order_repository;
+	}
+
+	public static function promotion_repository() {
+		if ( null === self::$promotion_repository ) {
+			self::$promotion_repository = new TAKA_Ticketing_Promotion_Repository();
+		}
+		return self::$promotion_repository;
 	}
 
 	public static function normalize_bank_transfer_settings( $settings ) {
@@ -449,7 +482,7 @@ class TAKA_Ticketing_Module {
 		$event_title = (string) ( $event['title'] ?? get_the_title( $event_id ) );
 		?>
 		<button class="taka-native-checkout__toggle" type="button" data-taka-native-checkout-toggle aria-expanded="<?php echo empty( $errors ) ? 'false' : 'true'; ?>" aria-controls="<?php echo esc_attr( $form_id ); ?>"><?php echo esc_html( taka_tour_translate( 'ticketing.book_tickets', 'Book Tickets' ) ); ?></button>
-		<form id="<?php echo esc_attr( $form_id ); ?>" class="taka-native-checkout__form<?php echo empty( $errors ) ? '' : ' is-open'; ?>" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post" <?php echo empty( $errors ) ? 'hidden' : ''; ?>>
+		<form id="<?php echo esc_attr( $form_id ); ?>" class="taka-native-checkout__form<?php echo empty( $errors ) ? '' : ' is-open'; ?>" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post" data-taka-promotion-endpoint="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" data-taka-promotion-action="<?php echo esc_attr( self::PROMOTION_AJAX_ACTION ); ?>" data-taka-promotion-nonce="<?php echo esc_attr( wp_create_nonce( self::CHECKOUT_ACTION ) ); ?>" data-taka-promotion-empty="<?php echo esc_attr( self::text( 'ticketing.error_promotion_empty', 'Enter a promotion code first.', $lang ) ); ?>" data-taka-promotion-cleared="<?php echo esc_attr( self::text( 'ticketing.promotion_reapply', 'Apply the promotion code again after changing the ticket.', $lang ) ); ?>" data-taka-no-payment-label="<?php echo esc_attr( self::text( 'ticketing.no_payment_required', 'No payment required.', $lang ) ); ?>" <?php echo empty( $errors ) ? 'hidden' : ''; ?>>
 			<input type="hidden" name="action" value="<?php echo esc_attr( self::CHECKOUT_ACTION ); ?>">
 			<input type="hidden" name="event_id" value="<?php echo esc_attr( (string) $event_id ); ?>">
 			<input type="hidden" name="redirect_to" value="<?php echo esc_url( self::current_url() ); ?>">
@@ -507,7 +540,16 @@ class TAKA_Ticketing_Module {
 					<?php self::frontend_textarea( 'participant_notes', taka_tour_translate( 'ticketing.notes', 'Notes' ) ); ?>
 				</div>
 			</section>
-			<section class="taka-native-checkout__step">
+			<section class="taka-native-checkout__step" data-taka-promotion-section>
+				<h4><?php echo esc_html( self::text( 'ticketing.promotion_code', 'Promotion code', $lang ) ); ?></h4>
+				<div class="taka-native-promotion">
+					<label><span><?php echo esc_html( self::text( 'ticketing.voucher_code', 'Voucher code', $lang ) ); ?></span><input type="text" name="promotion_code" data-taka-promotion-code autocomplete="off" placeholder="<?php echo esc_attr( self::text( 'ticketing.promotion_code_placeholder', 'Enter code', $lang ) ); ?>"></label>
+					<button type="button" data-taka-apply-promotion><?php echo esc_html( self::text( 'ticketing.apply_promotion', 'Apply', $lang ) ); ?></button>
+				</div>
+				<div class="taka-native-promotion__message" data-taka-promotion-message aria-live="polite"></div>
+				<ul class="taka-native-promotion__benefits" data-taka-promotion-benefits hidden></ul>
+			</section>
+			<section class="taka-native-checkout__step" data-taka-payment-section>
 				<h4><?php echo esc_html( taka_tour_translate( 'ticketing.payment_method', 'Payment method' ) ); ?></h4>
 				<div class="taka-native-payment-options">
 					<?php foreach ( $payment_methods as $index => $method ) : ?>
@@ -521,6 +563,8 @@ class TAKA_Ticketing_Module {
 					<div><dt><?php echo esc_html( taka_tour_translate( 'ticketing.event', 'Event' ) ); ?></dt><dd><?php echo esc_html( $event_title ); ?></dd></div>
 					<div><dt><?php echo esc_html( taka_tour_translate( 'ticketing.ticket', 'Ticket' ) ); ?></dt><dd data-taka-review-ticket>-</dd></div>
 					<div><dt><?php echo esc_html( taka_tour_translate( 'ticketing.price', 'Price' ) ); ?></dt><dd data-taka-review-price>-</dd></div>
+					<div data-taka-review-promotion-row hidden><dt><?php echo esc_html( self::text( 'ticketing.voucher_applied', 'Voucher applied', $lang ) ); ?></dt><dd data-taka-review-promotion>-</dd></div>
+					<div data-taka-review-discount-row hidden><dt><?php echo esc_html( self::text( 'ticketing.discount', 'Discount', $lang ) ); ?></dt><dd data-taka-review-discount>-</dd></div>
 					<div><dt><?php echo esc_html( taka_tour_translate( 'ticketing.buyer', 'Buyer' ) ); ?></dt><dd data-taka-review-buyer>-</dd></div>
 					<div><dt><?php echo esc_html( taka_tour_translate( 'ticketing.participant', 'Participant' ) ); ?></dt><dd data-taka-review-participant>-</dd></div>
 					<div><dt><?php echo esc_html( taka_tour_translate( 'ticketing.payment_method', 'Payment method' ) ); ?></dt><dd data-taka-review-payment>-</dd></div>
@@ -613,6 +657,31 @@ class TAKA_Ticketing_Module {
 		exit;
 	}
 
+	public static function handle_apply_promotion_ajax() {
+		$lang = sanitize_key( wp_unslash( $_POST['language'] ?? taka_tour_current_language() ) );
+		$nonce = sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) );
+		if ( '' === $nonce || ! wp_verify_nonce( $nonce, self::CHECKOUT_ACTION ) ) {
+			wp_send_json_error( array( 'message' => self::text( 'ticketing.error_session_expired', 'Your booking session expired. Please try again.', $lang ) ), 403 );
+		}
+
+		$event_id = absint( $_POST['event_id'] ?? 0 );
+		$ticket_type_id = sanitize_key( wp_unslash( $_POST['ticket_type_id'] ?? '' ) );
+		$promotion_code = sanitize_text_field( wp_unslash( $_POST['promotion_code'] ?? '' ) );
+		$buyer_email = sanitize_email( wp_unslash( $_POST['buyer_email'] ?? '' ) );
+
+		$ticket_type = self::find_ticket_type( $event_id, $ticket_type_id );
+		if ( ! $ticket_type ) {
+			wp_send_json_error( array( 'message' => self::text( 'ticketing.error_ticket_missing', 'Ticket type not found.', $lang ) ), 404 );
+		}
+
+		$quote = TAKA_Ticketing_Pricing_Service::quote( $event_id, $ticket_type, $buyer_email, $promotion_code, $lang );
+		if ( is_wp_error( $quote ) ) {
+			wp_send_json_error( array( 'message' => $quote->get_error_message() ), 400 );
+		}
+
+		wp_send_json_success( self::pricing_response_payload( $quote, $lang ) );
+	}
+
 	public static function handle_admin_order_action() {
 		if ( ! current_user_can( 'edit_taka_orders' ) ) {
 			wp_die( esc_html__( 'Insufficient permissions.', 'taka-platform' ) );
@@ -643,6 +712,37 @@ class TAKA_Ticketing_Module {
 		$settings = isset( $_POST['taka_ticketing_settings'] ) && is_array( $_POST['taka_ticketing_settings'] ) ? wp_unslash( $_POST['taka_ticketing_settings'] ) : array();
 		update_option( self::SETTINGS_OPTION, self::normalize_settings( $settings ), false );
 		wp_safe_redirect( self::admin_url( array( 'settings_updated' => '1' ) ) );
+		exit;
+	}
+
+	public static function handle_save_promotion() {
+		if ( ! current_user_can( 'manage_taka_promotions' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'taka-platform' ) );
+		}
+		check_admin_referer( self::PROMOTION_ACTION, '_wpnonce' );
+		$promotion = isset( $_POST['promotion'] ) && is_array( $_POST['promotion'] ) ? wp_unslash( $_POST['promotion'] ) : array();
+		$result = self::promotion_repository()->save( $promotion );
+		$args = array( 'section' => 'promotions' );
+		if ( is_wp_error( $result ) ) {
+			$args['promotion_error'] = $result->get_error_message();
+			if ( ! empty( $promotion['id'] ) ) {
+				$args['promotion_id'] = absint( $promotion['id'] );
+			}
+		} else {
+			$args['promotion_saved'] = '1';
+			$args['promotion_id'] = absint( $result['id'] ?? 0 );
+		}
+		wp_safe_redirect( self::admin_url( $args ) );
+		exit;
+	}
+
+	public static function handle_delete_promotion() {
+		if ( ! current_user_can( 'manage_taka_promotions' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'taka-platform' ) );
+		}
+		check_admin_referer( self::PROMOTION_DELETE_ACTION, '_wpnonce' );
+		self::promotion_repository()->delete( absint( $_POST['promotion_id'] ?? 0 ) );
+		wp_safe_redirect( self::admin_url( array( 'section' => 'promotions', 'promotion_deleted' => '1' ) ) );
 		exit;
 	}
 
@@ -684,6 +784,7 @@ class TAKA_Ticketing_Module {
 		$lang = sanitize_key( $data['language'] ?? taka_tour_current_language() );
 		$provider = self::payment_provider( $data['payment_method'] ?? '' );
 		$instructions = $provider ? $provider->get_public_instructions( $order ) : array();
+		$benefits = is_array( $data['applied_benefits'] ?? null ) ? $data['applied_benefits'] : array();
 		?>
 		<section class="taka-native-confirmation">
 			<h3><?php echo esc_html( self::text( 'ticketing.registration_received', 'Registration received', $lang ) ); ?></h3>
@@ -691,9 +792,23 @@ class TAKA_Ticketing_Module {
 				<div><dt><?php echo esc_html( self::text( 'ticketing.order_number', 'Order number', $lang ) ); ?></dt><dd><?php echo esc_html( $data['order_number'] ?? '' ); ?></dd></div>
 				<div><dt><?php echo esc_html( self::text( 'ticketing.event', 'Event', $lang ) ); ?></dt><dd><?php echo esc_html( $data['event_title'] ?? '' ); ?></dd></div>
 				<div><dt><?php echo esc_html( self::text( 'ticketing.ticket', 'Ticket', $lang ) ); ?></dt><dd><?php echo esc_html( $data['ticket_type_name'] ?? '' ); ?></dd></div>
+				<?php if ( '' !== trim( (string) ( $data['applied_voucher_code'] ?? '' ) ) ) : ?>
+					<div><dt><?php echo esc_html( self::text( 'ticketing.voucher_applied', 'Voucher applied', $lang ) ); ?></dt><dd><?php echo esc_html( $data['applied_voucher_code'] ); ?></dd></div>
+					<div><dt><?php echo esc_html( self::text( 'ticketing.discount', 'Discount', $lang ) ); ?></dt><dd><?php echo esc_html( self::format_money( $data['discount_amount'] ?? '0', $data['currency'] ?? 'EUR' ) ); ?></dd></div>
+				<?php endif; ?>
 				<div><dt><?php echo esc_html( self::text( 'ticketing.amount', 'Amount', $lang ) ); ?></dt><dd><?php echo esc_html( self::format_money( $data['amount'] ?? '', $data['currency'] ?? 'EUR' ) ); ?></dd></div>
 				<div><dt><?php echo esc_html( self::text( 'ticketing.payment_method', 'Payment method', $lang ) ); ?></dt><dd><?php echo esc_html( self::payment_method_label( $data['payment_method'] ?? '', $lang ) ); ?></dd></div>
 			</dl>
+			<?php if ( ! empty( $benefits ) ) : ?>
+				<div class="taka-native-confirmation__instructions">
+					<h4><?php echo esc_html( self::text( 'ticketing.included_benefits', 'Included benefits', $lang ) ); ?></h4>
+					<ul>
+						<?php foreach ( $benefits as $benefit ) : ?>
+							<li><?php echo esc_html( self::benefit_line( $benefit ) ); ?></li>
+						<?php endforeach; ?>
+					</ul>
+				</div>
+			<?php endif; ?>
 			<h4><?php echo esc_html( self::text( 'ticketing.next_steps', 'Next steps', $lang ) ); ?></h4>
 			<?php if ( 'bank_transfer' === (string) ( $data['payment_method'] ?? '' ) ) : ?>
 				<div class="taka-native-confirmation__instructions">
@@ -708,6 +823,10 @@ class TAKA_Ticketing_Module {
 				<div class="taka-native-confirmation__instructions">
 					<p><?php echo esc_html( $instructions['message'] ?? self::text( 'ticketing.pay_at_door_message', 'Please pay your admission at the registration desk before entering the seminar. Payment is required before participation.', $lang ) ); ?></p>
 					<?php if ( '' !== trim( (string) ( $instructions['instructions'] ?? '' ) ) ) : ?><p><?php echo esc_html( $instructions['instructions'] ); ?></p><?php endif; ?>
+				</div>
+			<?php elseif ( in_array( (string) ( $data['payment_method'] ?? '' ), array( 'promotion', 'free' ), true ) ) : ?>
+				<div class="taka-native-confirmation__instructions">
+					<p><?php echo esc_html( self::text( 'ticketing.no_payment_required', 'No payment required.', $lang ) ); ?></p>
 				</div>
 			<?php endif; ?>
 			<div class="taka-native-confirmation__actions">
@@ -797,10 +916,41 @@ class TAKA_Ticketing_Module {
 		return trim( ( 'EUR' === $currency ? '€' : $currency . ' ' ) . $amount );
 	}
 
+	public static function pricing_response_payload( $quote, $lang = null ) {
+		$quote = is_array( $quote ) ? $quote : array();
+		$currency = $quote['currency'] ?? 'EUR';
+		$benefits = array();
+		foreach ( (array) ( $quote['benefits'] ?? array() ) as $benefit ) {
+			$benefits[] = array(
+				'type'  => sanitize_key( $benefit['type'] ?? '' ),
+				'label' => sanitize_text_field( $benefit['label'] ?? '' ),
+				'value' => sanitize_text_field( $benefit['value'] ?? '' ),
+				'note'  => sanitize_text_field( $benefit['note'] ?? '' ),
+			);
+		}
+
+		return array(
+			'message'                 => self::text( 'ticketing.promotion_applied', 'Promotion applied.', $lang ),
+			'promotion_code'          => sanitize_text_field( $quote['promotion_code'] ?? '' ),
+			'promotion_title'         => sanitize_text_field( $quote['promotion_title'] ?? '' ),
+			'original_amount'         => TAKA_Ticketing_Pricing_Service::normalize_money( $quote['original_amount'] ?? '0' ),
+			'original_amount_display' => self::format_money( $quote['original_amount'] ?? '0', $currency ),
+			'discount_amount'         => TAKA_Ticketing_Pricing_Service::normalize_money( $quote['discount_amount'] ?? '0' ),
+			'discount_display'        => self::format_money( $quote['discount_amount'] ?? '0', $currency ),
+			'final_amount'            => TAKA_Ticketing_Pricing_Service::normalize_money( $quote['final_amount'] ?? '0' ),
+			'final_amount_display'    => self::format_money( $quote['final_amount'] ?? '0', $currency ),
+			'payment_required'        => ! empty( $quote['payment_required'] ),
+			'no_payment_label'        => self::text( 'ticketing.no_payment_required', 'No payment required.', $lang ),
+			'benefits'                => $benefits,
+		);
+	}
+
 	public static function payment_method_label( $method, $lang = null ) {
 		$labels = array(
 			'bank_transfer' => self::text( 'ticketing.payment_bank_transfer', 'Bank Transfer', $lang ),
 			'pay_at_door'   => self::text( 'ticketing.payment_pay_at_door', 'Pay at the Door', $lang ),
+			'promotion'     => self::text( 'ticketing.payment_promotion', 'Voucher / promotion', $lang ),
+			'free'          => self::text( 'ticketing.no_payment_required', 'No payment required.', $lang ),
 		);
 		return $labels[ $method ] ?? sanitize_text_field( $method );
 	}
@@ -809,6 +959,7 @@ class TAKA_Ticketing_Module {
 		$icons = array(
 			'bank_transfer' => '🏦',
 			'pay_at_door'   => '💶',
+			'promotion'     => '%',
 		);
 		return trim( ( $icons[ $method ] ?? '' ) . ' ' . self::payment_method_label( $method ) );
 	}
@@ -823,17 +974,47 @@ class TAKA_Ticketing_Module {
 		}
 
 		$order_id = absint( $_GET['order_id'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$section = sanitize_key( $_GET['section'] ?? 'orders' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		echo '<div class="wrap taka-ticketing-admin"><h1>' . esc_html__( 'Ticketing', 'taka-platform' ) . '</h1>';
 		if ( ! empty( $_GET['settings_updated'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Ticketing settings saved.', 'taka-platform' ) . '</p></div>';
 		}
+		if ( ! empty( $_GET['promotion_saved'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Promotion saved.', 'taka-platform' ) . '</p></div>';
+		}
+		if ( ! empty( $_GET['promotion_deleted'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Promotion deleted.', 'taka-platform' ) . '</p></div>';
+		}
+		if ( ! empty( $_GET['promotion_error'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html( sanitize_text_field( wp_unslash( $_GET['promotion_error'] ) ) ) . '</p></div>';
+		}
 		if ( $order_id ) {
+			self::render_admin_nav( 'orders' );
 			self::render_order_detail( $order_id );
+		} elseif ( 'promotions' === $section ) {
+			self::render_admin_nav( 'promotions' );
+			self::render_promotions_page();
 		} else {
+			self::render_admin_nav( 'orders' );
 			self::render_settings_box();
 			self::render_order_list();
 		}
 		echo '</div>';
+	}
+
+	private static function render_admin_nav( $active ) {
+		$items = array(
+			'orders'     => array( 'label' => __( 'Orders', 'taka-platform' ), 'url' => self::admin_url() ),
+			'promotions' => array( 'label' => __( 'Promotions / Vouchers', 'taka-platform' ), 'url' => self::admin_url( array( 'section' => 'promotions' ) ) ),
+		);
+		echo '<nav class="nav-tab-wrapper taka-ticketing-admin-tabs" aria-label="' . esc_attr__( 'Ticketing sections', 'taka-platform' ) . '">';
+		foreach ( $items as $key => $item ) {
+			if ( 'promotions' === $key && ! current_user_can( 'manage_taka_promotions' ) ) {
+				continue;
+			}
+			echo '<a class="nav-tab ' . ( $active === $key ? 'nav-tab-active' : '' ) . '" href="' . esc_url( $item['url'] ) . '">' . esc_html( $item['label'] ) . '</a>';
+		}
+		echo '</nav>';
 	}
 
 	private static function render_settings_box() {
@@ -881,6 +1062,204 @@ class TAKA_Ticketing_Module {
 		echo '</section>';
 	}
 
+	private static function render_promotions_page() {
+		if ( ! current_user_can( 'manage_taka_promotions' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'taka-platform' ) );
+		}
+		$promotion_id = absint( $_GET['promotion_id'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$promotion = $promotion_id ? self::promotion_repository()->find_by_id( $promotion_id ) : null;
+		$promotion = $promotion ? $promotion : TAKA_Ticketing_Promotion::normalize( array( 'status' => 'active', 'category' => 'discount', 'scope_type' => 'all' ) );
+		echo '<h2>' . esc_html__( 'Promotions / Vouchers', 'taka-platform' ) . '</h2>';
+		echo '<p class="description">' . esc_html__( 'Create voucher codes that can grant monetary discounts and non-ticket benefits such as meals, merch, special access or manual approval flags.', 'taka-platform' ) . '</p>';
+		if ( $promotion_id ) {
+			echo '<p><a class="button" href="' . esc_url( self::admin_url( array( 'section' => 'promotions' ) ) ) . '">' . esc_html__( 'Add new promotion', 'taka-platform' ) . '</a></p>';
+		}
+		self::render_promotion_form( $promotion );
+		self::render_promotion_list();
+	}
+
+	private static function render_promotion_form( $promotion ) {
+		$promotion = TAKA_Ticketing_Promotion::normalize( $promotion );
+		$benefits = array();
+		foreach ( (array) ( $promotion['benefits'] ?? array() ) as $benefit ) {
+			$benefits[ $benefit['type'] ] = $benefit;
+		}
+		?>
+		<div class="taka-ticketing-settings taka-ticketing-promotion-form">
+			<h3><?php echo esc_html( ! empty( $promotion['id'] ) ? __( 'Edit promotion', 'taka-platform' ) : __( 'Add promotion', 'taka-platform' ) ); ?></h3>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="<?php echo esc_attr( self::PROMOTION_ACTION ); ?>">
+				<input type="hidden" name="promotion[id]" value="<?php echo esc_attr( (string) absint( $promotion['id'] ?? 0 ) ); ?>">
+				<?php wp_nonce_field( self::PROMOTION_ACTION ); ?>
+				<div class="taka-ticketing-promotion-form__grid">
+					<label><span><?php echo esc_html__( 'Code', 'taka-platform' ); ?></span><input class="regular-text" type="text" name="promotion[code]" value="<?php echo esc_attr( $promotion['code'] ?? '' ); ?>" required></label>
+					<label><span><?php echo esc_html__( 'Title', 'taka-platform' ); ?></span><input class="regular-text" type="text" name="promotion[title]" value="<?php echo esc_attr( $promotion['title'] ?? '' ); ?>" required></label>
+					<label><span><?php echo esc_html__( 'Category', 'taka-platform' ); ?></span><?php self::admin_select( 'promotion[category]', TAKA_Ticketing_Promotion::categories(), $promotion['category'] ?? 'discount' ); ?></label>
+					<label><span><?php echo esc_html__( 'Status', 'taka-platform' ); ?></span><?php self::admin_select( 'promotion[status]', TAKA_Ticketing_Promotion::statuses(), $promotion['status'] ?? 'active' ); ?></label>
+					<label><span><?php echo esc_html__( 'Valid from', 'taka-platform' ); ?></span><input type="date" name="promotion[valid_from]" value="<?php echo esc_attr( $promotion['valid_from'] ?? '' ); ?>"></label>
+					<label><span><?php echo esc_html__( 'Valid until', 'taka-platform' ); ?></span><input type="date" name="promotion[valid_until]" value="<?php echo esc_attr( $promotion['valid_until'] ?? '' ); ?>"></label>
+					<label><span><?php echo esc_html__( 'Max total uses', 'taka-platform' ); ?></span><input type="number" min="0" name="promotion[max_total_uses]" value="<?php echo esc_attr( $promotion['max_total_uses'] ?? '' ); ?>"></label>
+					<label><span><?php echo esc_html__( 'Max uses per email/person', 'taka-platform' ); ?></span><input type="number" min="0" name="promotion[max_uses_per_person]" value="<?php echo esc_attr( $promotion['max_uses_per_person'] ?? '' ); ?>"></label>
+					<label class="taka-ticketing-promotion-form__wide"><span><?php echo esc_html__( 'Description', 'taka-platform' ); ?></span><textarea rows="2" name="promotion[description]"><?php echo esc_textarea( $promotion['description'] ?? '' ); ?></textarea></label>
+				</div>
+				<h4><?php echo esc_html__( 'Scope', 'taka-platform' ); ?></h4>
+				<div class="taka-ticketing-promotion-form__grid">
+					<label><span><?php echo esc_html__( 'Scope', 'taka-platform' ); ?></span><?php self::admin_select( 'promotion[scope_type]', TAKA_Ticketing_Promotion::scope_types(), $promotion['scope_type'] ?? 'all' ); ?></label>
+					<label><span><?php echo esc_html__( 'Selected tour ID', 'taka-platform' ); ?></span><input type="text" name="promotion[scope_tour_id]" value="<?php echo esc_attr( $promotion['scope_tour_id'] ?? '' ); ?>"></label>
+					<label><span><?php echo esc_html__( 'Selected event', 'taka-platform' ); ?></span><?php self::admin_event_select( 'promotion[scope_event_id]', absint( $promotion['scope_event_id'] ?? 0 ) ); ?></label>
+					<label><span><?php echo esc_html__( 'Selected ticket type ID', 'taka-platform' ); ?></span><input type="text" name="promotion[scope_ticket_type_id]" value="<?php echo esc_attr( $promotion['scope_ticket_type_id'] ?? '' ); ?>"></label>
+				</div>
+				<h4><?php echo esc_html__( 'Benefits', 'taka-platform' ); ?></h4>
+				<div class="taka-ticketing-promotion-benefits">
+					<?php foreach ( TAKA_Ticketing_Promotion::benefit_types() as $type => $label ) : ?>
+						<?php $benefit = $benefits[ $type ] ?? array(); ?>
+						<div class="taka-ticketing-promotion-benefit">
+							<label><input type="checkbox" name="<?php echo esc_attr( 'promotion[benefits][' . $type . '][enabled]' ); ?>" value="1" <?php checked( isset( $benefits[ $type ] ) ); ?>> <strong><?php echo esc_html( $label ); ?></strong></label>
+							<?php if ( 'percentage_discount' === $type ) : ?>
+								<label><span><?php echo esc_html__( 'Percent', 'taka-platform' ); ?></span><input type="number" min="0" max="100" step="0.01" name="<?php echo esc_attr( 'promotion[benefits][' . $type . '][value]' ); ?>" value="<?php echo esc_attr( $benefit['value'] ?? '' ); ?>"></label>
+							<?php elseif ( 'fixed_discount' === $type ) : ?>
+								<label><span><?php echo esc_html__( 'Amount', 'taka-platform' ); ?></span><input type="text" name="<?php echo esc_attr( 'promotion[benefits][' . $type . '][value]' ); ?>" value="<?php echo esc_attr( $benefit['value'] ?? '' ); ?>"></label>
+							<?php else : ?>
+								<label><span><?php echo esc_html__( 'Optional value', 'taka-platform' ); ?></span><input type="text" name="<?php echo esc_attr( 'promotion[benefits][' . $type . '][value]' ); ?>" value="<?php echo esc_attr( $benefit['value'] ?? '' ); ?>"></label>
+							<?php endif; ?>
+							<label><span><?php echo esc_html__( 'Note', 'taka-platform' ); ?></span><input type="text" name="<?php echo esc_attr( 'promotion[benefits][' . $type . '][note]' ); ?>" value="<?php echo esc_attr( $benefit['note'] ?? '' ); ?>"></label>
+						</div>
+					<?php endforeach; ?>
+				</div>
+				<?php submit_button( __( 'Save promotion', 'taka-platform' ) ); ?>
+			</form>
+		</div>
+		<?php
+	}
+
+	private static function render_promotion_list() {
+		$promotions = self::promotion_repository()->query( array( 'per_page' => -1 ) );
+		?>
+		<h3><?php echo esc_html__( 'Existing promotions', 'taka-platform' ); ?></h3>
+		<table class="widefat striped">
+			<thead><tr>
+				<th><?php echo esc_html__( 'Code', 'taka-platform' ); ?></th>
+				<th><?php echo esc_html__( 'Title', 'taka-platform' ); ?></th>
+				<th><?php echo esc_html__( 'Category', 'taka-platform' ); ?></th>
+				<th><?php echo esc_html__( 'Benefits', 'taka-platform' ); ?></th>
+				<th><?php echo esc_html__( 'Scope', 'taka-platform' ); ?></th>
+				<th><?php echo esc_html__( 'Uses', 'taka-platform' ); ?></th>
+				<th><?php echo esc_html__( 'Remaining', 'taka-platform' ); ?></th>
+				<th><?php echo esc_html__( 'Valid until', 'taka-platform' ); ?></th>
+				<th><?php echo esc_html__( 'Status', 'taka-platform' ); ?></th>
+				<th><?php echo esc_html__( 'Actions', 'taka-platform' ); ?></th>
+			</tr></thead>
+			<tbody>
+				<?php if ( empty( $promotions ) ) : ?>
+					<tr><td colspan="10"><?php echo esc_html__( 'No promotions yet.', 'taka-platform' ); ?></td></tr>
+				<?php endif; ?>
+				<?php foreach ( $promotions as $promotion ) : ?>
+					<?php $uses = self::promotion_repository()->count_uses( $promotion['id'] ?? 0 ); ?>
+					<tr>
+						<td><code><?php echo esc_html( $promotion['code'] ?? '' ); ?></code></td>
+						<td><?php echo esc_html( $promotion['title'] ?? '' ); ?></td>
+						<td><?php echo esc_html( TAKA_Ticketing_Promotion::categories()[ $promotion['category'] ?? '' ] ?? '' ); ?></td>
+						<td><?php echo esc_html( self::promotion_benefits_summary( $promotion ) ); ?></td>
+						<td><?php echo esc_html( self::promotion_scope_summary( $promotion ) ); ?></td>
+						<td><?php echo esc_html( (string) $uses ); ?></td>
+						<td><?php echo esc_html( self::promotion_remaining_label( $promotion, $uses ) ); ?></td>
+						<td><?php echo esc_html( $promotion['valid_until'] ?? '' ); ?></td>
+						<td><?php echo esc_html( TAKA_Ticketing_Promotion::statuses()[ $promotion['status'] ?? '' ] ?? '' ); ?></td>
+						<td class="taka-ticketing-promotion-actions">
+							<a class="button button-small" href="<?php echo esc_url( self::admin_url( array( 'section' => 'promotions', 'promotion_id' => absint( $promotion['id'] ?? 0 ) ) ) ); ?>"><?php echo esc_html__( 'Edit', 'taka-platform' ); ?></a>
+							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+								<input type="hidden" name="action" value="<?php echo esc_attr( self::PROMOTION_DELETE_ACTION ); ?>">
+								<input type="hidden" name="promotion_id" value="<?php echo esc_attr( (string) absint( $promotion['id'] ?? 0 ) ); ?>">
+								<?php wp_nonce_field( self::PROMOTION_DELETE_ACTION ); ?>
+								<button class="button button-small button-link-delete" type="submit"><?php echo esc_html__( 'Delete', 'taka-platform' ); ?></button>
+							</form>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+		<?php
+	}
+
+	private static function admin_select( $name, $choices, $current ) {
+		echo '<select name="' . esc_attr( $name ) . '">';
+		foreach ( (array) $choices as $value => $label ) {
+			echo '<option value="' . esc_attr( (string) $value ) . '" ' . selected( (string) $current, (string) $value, false ) . '>' . esc_html( (string) $label ) . '</option>';
+		}
+		echo '</select>';
+	}
+
+	private static function admin_event_select( $name, $current ) {
+		$events = get_posts(
+			array(
+				'post_type'        => TAKA_PLATFORM_CPT_EVENT,
+				'post_status'      => 'any',
+				'posts_per_page'   => -1,
+				'orderby'          => 'title',
+				'order'            => 'ASC',
+				'suppress_filters' => true,
+			)
+		);
+		echo '<select name="' . esc_attr( $name ) . '"><option value="0">' . esc_html__( 'Any event', 'taka-platform' ) . '</option>';
+		foreach ( $events as $event ) {
+			echo '<option value="' . esc_attr( (string) $event->ID ) . '" ' . selected( absint( $current ), absint( $event->ID ), false ) . '>' . esc_html( get_the_title( $event ) ) . '</option>';
+		}
+		echo '</select>';
+	}
+
+	private static function promotion_benefits_summary( $promotion ) {
+		$parts = array();
+		foreach ( (array) ( $promotion['benefits'] ?? array() ) as $benefit ) {
+			$label = TAKA_Ticketing_Promotion::benefit_types()[ $benefit['type'] ?? '' ] ?? sanitize_text_field( $benefit['type'] ?? '' );
+			$value = sanitize_text_field( $benefit['value'] ?? '' );
+			$parts[] = '' === $value ? $label : $label . ' ' . $value;
+		}
+		return implode( ', ', array_filter( $parts ) );
+	}
+
+	private static function promotion_scope_summary( $promotion ) {
+		$scope = (string) ( $promotion['scope_type'] ?? 'all' );
+		$label = TAKA_Ticketing_Promotion::scope_types()[ $scope ] ?? $scope;
+		if ( 'event' === $scope && ! empty( $promotion['scope_event_id'] ) ) {
+			return $label . ': ' . get_the_title( absint( $promotion['scope_event_id'] ) );
+		}
+		if ( 'ticket_type' === $scope && '' !== trim( (string) ( $promotion['scope_ticket_type_id'] ?? '' ) ) ) {
+			return $label . ': ' . $promotion['scope_ticket_type_id'];
+		}
+		if ( 'tour' === $scope && '' !== trim( (string) ( $promotion['scope_tour_id'] ?? '' ) ) ) {
+			return $label . ': ' . $promotion['scope_tour_id'];
+		}
+		return $label;
+	}
+
+	private static function promotion_remaining_label( $promotion, $uses ) {
+		$max = '' === trim( (string) ( $promotion['max_total_uses'] ?? '' ) ) ? 0 : absint( $promotion['max_total_uses'] );
+		if ( $max <= 0 ) {
+			return __( 'Unlimited', 'taka-platform' );
+		}
+		return (string) max( 0, $max - absint( $uses ) );
+	}
+
+	public static function export_ticketing_config() {
+		return array(
+			'settings'   => self::ticketing_settings(),
+			'promotions' => self::promotion_repository()->export_promotions(),
+		);
+	}
+
+	public static function import_ticketing_config( $config, $mode = 'update', $dry_run = false ) {
+		$config = is_array( $config ) ? $config : array();
+		$settings = is_array( $config['settings'] ?? null ) ? $config['settings'] : $config;
+		if ( ! $dry_run ) {
+			update_option( self::SETTINGS_OPTION, self::normalize_settings( $settings ), false );
+		}
+		$summary = array( 'settings' => $dry_run ? 'dry_run' : 'updated', 'promotions' => array( 'created' => 0, 'updated' => 0, 'skipped' => 0, 'errors' => array() ) );
+		if ( ! empty( $config['promotions'] ) && is_array( $config['promotions'] ) ) {
+			$summary['promotions'] = self::promotion_repository()->import_promotions( $config['promotions'], $mode, $dry_run );
+		}
+		return $summary;
+	}
+
 	private static function render_order_list() {
 		$orders = self::order_repository()->query( array( 'per_page' => 100 ) );
 		?>
@@ -893,6 +1272,7 @@ class TAKA_Ticketing_Module {
 				<th><?php echo esc_html__( 'Participant', 'taka-platform' ); ?></th>
 				<th><?php echo esc_html__( 'Event', 'taka-platform' ); ?></th>
 				<th><?php echo esc_html__( 'Ticket', 'taka-platform' ); ?></th>
+				<th><?php echo esc_html__( 'Promotion', 'taka-platform' ); ?></th>
 				<th><?php echo esc_html__( 'Amount', 'taka-platform' ); ?></th>
 				<th><?php echo esc_html__( 'Payment Method', 'taka-platform' ); ?></th>
 				<th><?php echo esc_html__( 'Payment status', 'taka-platform' ); ?></th>
@@ -901,7 +1281,7 @@ class TAKA_Ticketing_Module {
 			</tr></thead>
 			<tbody>
 				<?php if ( empty( $orders ) ) : ?>
-					<tr><td colspan="11"><?php echo esc_html__( 'No native ticket orders yet.', 'taka-platform' ); ?></td></tr>
+					<tr><td colspan="12"><?php echo esc_html__( 'No native ticket orders yet.', 'taka-platform' ); ?></td></tr>
 				<?php endif; ?>
 				<?php foreach ( $orders as $order ) : ?>
 					<?php $data = $order->to_array(); $buyer = (array) ( $data['buyer'] ?? array() ); $participant = (array) ( $data['participant'] ?? array() ); ?>
@@ -912,6 +1292,7 @@ class TAKA_Ticketing_Module {
 						<td><?php echo esc_html( trim( ( $participant['first_name'] ?? '' ) . ' ' . ( $participant['last_name'] ?? '' ) ) ); ?></td>
 						<td><?php echo esc_html( $data['event_title'] ?? '' ); ?></td>
 						<td><?php echo esc_html( $data['ticket_type_name'] ?? '' ); ?></td>
+						<td><?php echo esc_html( $data['applied_voucher_code'] ?? '' ); ?></td>
 						<td><?php echo esc_html( self::format_money( $data['amount'] ?? '', $data['currency'] ?? 'EUR' ) ); ?></td>
 						<td><?php echo esc_html( self::payment_method_admin_label( $data['payment_method'] ?? '' ) ); ?></td>
 						<td><?php echo esc_html( $data['payment_status'] ?? '' ); ?></td>
@@ -942,7 +1323,16 @@ class TAKA_Ticketing_Module {
 			<section><h3><?php echo esc_html__( 'Order', 'taka-platform' ); ?></h3>
 				<p><strong><?php echo esc_html__( 'Event', 'taka-platform' ); ?>:</strong> <?php echo esc_html( $data['event_title'] ?? '' ); ?></p>
 				<p><strong><?php echo esc_html__( 'Ticket', 'taka-platform' ); ?>:</strong> <?php echo esc_html( $data['ticket_type_name'] ?? '' ); ?></p>
+				<?php if ( '' !== trim( (string) ( $data['applied_voucher_code'] ?? '' ) ) ) : ?>
+					<p><strong><?php echo esc_html__( 'Voucher applied', 'taka-platform' ); ?>:</strong> <?php echo esc_html( $data['applied_voucher_code'] ); ?></p>
+					<p><strong><?php echo esc_html__( 'Original amount', 'taka-platform' ); ?>:</strong> <?php echo esc_html( self::format_money( $data['original_amount'] ?? $data['amount'] ?? '', $data['currency'] ?? 'EUR' ) ); ?></p>
+					<p><strong><?php echo esc_html__( 'Discount', 'taka-platform' ); ?>:</strong> <?php echo esc_html( self::format_money( $data['discount_amount'] ?? '0', $data['currency'] ?? 'EUR' ) ); ?></p>
+				<?php endif; ?>
 				<p><strong><?php echo esc_html__( 'Amount', 'taka-platform' ); ?>:</strong> <?php echo esc_html( self::format_money( $data['amount'] ?? '', $data['currency'] ?? 'EUR' ) ); ?></p>
+				<?php if ( ! empty( $data['applied_benefits'] ) && is_array( $data['applied_benefits'] ) ) : ?>
+					<p><strong><?php echo esc_html__( 'Benefits', 'taka-platform' ); ?>:</strong></p>
+					<ul><?php foreach ( $data['applied_benefits'] as $benefit ) : ?><li><?php echo esc_html( self::benefit_line( $benefit ) ); ?></li><?php endforeach; ?></ul>
+				<?php endif; ?>
 				<p><strong><?php echo esc_html__( 'Order status', 'taka-platform' ); ?>:</strong> <?php echo esc_html( $data['order_status'] ?? '' ); ?></p>
 				<p><strong><?php echo esc_html__( 'Payment status', 'taka-platform' ); ?>:</strong> <?php echo esc_html( $data['payment_status'] ?? '' ); ?></p>
 				<p><strong><?php echo esc_html__( 'Payment Method', 'taka-platform' ); ?>:</strong> <?php echo esc_html( self::payment_method_admin_label( $data['payment_method'] ?? '' ) ); ?></p>
@@ -969,6 +1359,15 @@ class TAKA_Ticketing_Module {
 			}
 			echo '<p><strong>' . esc_html( ucwords( str_replace( '_', ' ', $key ) ) ) . ':</strong> ' . esc_html( $value ) . '</p>';
 		}
+	}
+
+	public static function benefit_line( $benefit ) {
+		$benefit = is_array( $benefit ) ? $benefit : array();
+		$label = sanitize_text_field( $benefit['label'] ?? TAKA_Ticketing_Promotion::frontend_benefit_label( sanitize_key( $benefit['type'] ?? '' ) ) );
+		$value = sanitize_text_field( $benefit['value'] ?? '' );
+		$note = sanitize_text_field( $benefit['note'] ?? '' );
+		$parts = array_filter( array( $label, $value, $note ), static function ( $part ) { return '' !== trim( (string) $part ); } );
+		return implode( ' - ', $parts );
 	}
 
 	private static function admin_action_form( $order_id, $task, $label, $class ) {

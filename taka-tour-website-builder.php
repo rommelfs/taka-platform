@@ -19,6 +19,7 @@ define( 'TAKA_PLATFORM_CPT_VENUE', 'taka_venue' );
 define( 'TAKA_PLATFORM_CPT_CONTENT_BLOCK', 'taka_content_block' );
 define( 'TAKA_PLATFORM_CPT_TOUR_PLANNING', 'taka_tour_plan' );
 define( 'TAKA_PLATFORM_CPT_TICKET_ORDER', 'taka_ticket_order' );
+define( 'TAKA_PLATFORM_CPT_TICKET_PROMOTION', 'taka_ticket_promo' );
 
 // Backward-compatible constants for existing TAKA Tour installations and templates.
 define( 'TAKA_TOUR_VERSION', TAKA_PLATFORM_VERSION );
@@ -35,6 +36,9 @@ require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Tickets/class-pretix-provider.
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Tickets/class-ticket-provider-registry.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/interface-payment-provider.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-ticket-types.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-promotion.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-promotion-repository.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-pricing-service.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-order.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-participant.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-payment.php';

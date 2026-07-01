@@ -70,6 +70,7 @@
 
 .taka-native-ticket-options,
 .taka-native-payment-options,
+.taka-native-promotion,
 .taka-native-checkout__grid {
 	display: grid;
 	gap: .7rem;
@@ -109,6 +110,43 @@
 	font-weight: 850;
 	text-decoration: underline;
 	text-underline-offset: .16em;
+}
+
+.taka-native-promotion {
+	grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.taka-native-promotion button {
+	align-self: end;
+	background: #111;
+	border: 0;
+	border-radius: .5rem;
+	color: #fff;
+	cursor: pointer;
+	font: 850 .86rem/1 Inter, system-ui, sans-serif;
+	padding: .72rem .9rem;
+}
+
+.taka-native-promotion button:disabled {
+	cursor: wait;
+	opacity: .65;
+}
+
+.taka-native-promotion__message {
+	color: #315c2b;
+	font-weight: 800;
+	min-height: 1.2em;
+}
+
+.taka-native-promotion__message.is-error {
+	color: #BC002D;
+}
+
+.taka-native-promotion__benefits {
+	background: #f7f3ec;
+	border-radius: .8rem;
+	margin: 0;
+	padding: .75rem .75rem .75rem 1.8rem;
 }
 
 .taka-native-ticket-option {
@@ -396,6 +434,7 @@
 	}
 
 	.taka-native-checkout__progress,
+	.taka-native-promotion,
 	.taka-native-confirmation dl div {
 		grid-template-columns: 1fr;
 	}

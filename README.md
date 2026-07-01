@@ -142,7 +142,7 @@ Pretix remains supported. Admins set:
 
 The frontend automatically renders the correct Pretix widget plus a direct fallback link. The ticket layer now uses provider classes and a registry so Eventbrite, WooCommerce, TicketTailor or external URL providers can be added later.
 
-Native TAKA Ticketing lives under `includes/Ticketing/`. Phase 1 added event ticket type configuration and payment-provider scaffolding; Phase 2 adds localized native checkout with Bank Transfer and Pay at the Door providers, private order storage, admin order management, capacity reservations and configurable booking/privacy consent links. See [docs/ticketing.md](docs/ticketing.md).
+Native TAKA Ticketing lives under `includes/Ticketing/`. Phase 1 added event ticket type configuration and payment-provider scaffolding; Phase 2 adds localized native checkout with Bank Transfer and Pay at the Door providers, private order storage, admin order management, capacity reservations, configurable booking/privacy consent links and a Promotion & Benefits engine for vouchers, discounts and included benefits. See [docs/ticketing.md](docs/ticketing.md).
 
 ## Multilingual frontend
 

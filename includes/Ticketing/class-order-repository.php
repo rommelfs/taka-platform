@@ -10,6 +10,9 @@ class TAKA_Ticketing_Order_Repository implements TAKA_Ticketing_Order_Repository
 	const TOKEN_META          = '_taka_ticketing_public_token';
 	const EVENT_ID_META       = '_taka_ticketing_event_id';
 	const TICKET_TYPE_ID_META = '_taka_ticketing_ticket_type_id';
+	const PROMOTION_ID_META   = '_taka_ticketing_promotion_id';
+	const PROMOTION_CODE_META = '_taka_ticketing_promotion_code';
+	const BUYER_EMAIL_META    = '_taka_ticketing_buyer_email';
 
 	public function find_by_id( $order_id ) {
 		$post = get_post( absint( $order_id ) );
@@ -126,5 +129,9 @@ class TAKA_Ticketing_Order_Repository implements TAKA_Ticketing_Order_Repository
 		update_post_meta( $order_id, self::TOKEN_META, sanitize_text_field( $data['public_token'] ?? '' ) );
 		update_post_meta( $order_id, self::EVENT_ID_META, (string) absint( $data['event_id'] ?? 0 ) );
 		update_post_meta( $order_id, self::TICKET_TYPE_ID_META, sanitize_key( $data['ticket_type_id'] ?? '' ) );
+		update_post_meta( $order_id, self::PROMOTION_ID_META, (string) absint( $data['applied_promotion_id'] ?? 0 ) );
+		update_post_meta( $order_id, self::PROMOTION_CODE_META, sanitize_text_field( $data['applied_voucher_code'] ?? '' ) );
+		$buyer = is_array( $data['buyer'] ?? null ) ? $data['buyer'] : array();
+		update_post_meta( $order_id, self::BUYER_EMAIL_META, sanitize_email( $buyer['email'] ?? '' ) );
 	}
 }

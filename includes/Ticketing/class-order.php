@@ -2,9 +2,10 @@
 /**
  * Native ticketing order value object placeholder.
  *
- * Intended future fields: id, order_number, event_id, ticket_type_id,
- * buyer_data, participant_data, total_amount, currency, payment_method,
- * payment_status, order_status, created_at and updated_at.
+ * Intended fields: id, order_number, event_id, ticket_type_id, buyer_data,
+ * participant_data, original_amount, discount_amount, final amount, currency,
+ * payment_method, payment_status, order_status, applied promotion snapshot,
+ * created_at and updated_at.
  */
 
 defined( 'ABSPATH' ) || exit;

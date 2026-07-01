@@ -137,7 +137,7 @@ Administrators receive these capabilities. Later phases can assign subsets to ti
 
 WordPress export data includes native ticket type configuration as `native_ticket_types` on each event. Import restores the same data into `_taka_native_ticket_types`.
 
-The export also includes the global `ticketing` settings block for native checkout consent labels, booking terms URL and privacy notice URL. Private order and participant records are intentionally not included in the public config export.
+The export also includes the global `ticketing` settings block for native checkout consent labels, booking terms URL and privacy notice URL. The `ticketing` export block contains `settings` and `promotions`; older exports where `ticketing` is only the settings object remain importable. Promotion definitions are included so voucher and benefit configuration can be backed up and restored. Private order and participant records are intentionally not included in the public config export.
 
 ## Phase 2 Scope
 
@@ -145,6 +145,7 @@ Phase 2 adds:
 
 - Public native checkout rendering for Events using `native_taka_ticketing`.
 - Ticket type selection with capacity display.
+- Promotion/voucher code application through the shared pricing service.
 - Buyer information capture with country select options.
 - Participant information capture with buyer-is-participant default, optional dojo/rank details and dietary preference select options.
 - Payment method selection.
@@ -158,6 +159,18 @@ Phase 2 adds:
 - Mark paid, cancel and delete actions for privileged users.
 
 The checkout currently supports one participant per order. The order shape keeps participant data separate so later phases can add multiple participants without changing the provider contract.
+
+## Promotions And Benefits
+
+Native ticketing includes a reusable Promotion & Benefits engine. Promotions are managed under TAKA Platform -> Ticketing -> Promotions / Vouchers.
+
+A promotion has a voucher code, title, description, category, validity dates, use limits, scope, status and one or more benefits. Scopes can target all events, a selected tour, a selected event or a ticket type ID.
+
+Supported benefits are free ticket, percentage discount, fixed amount discount, included meal, included merch, special access, manual note and manual approval required.
+
+Checkout does not calculate discounts directly. It calls `TAKA_Ticketing_Pricing_Service`, which starts with the base ticket price, validates the promotion through `TAKA_Ticketing_Promotion_Repository`, applies benefits, returns the final amount and decides whether a payment provider is required.
+
+If the final amount is zero because of a promotion, no payment provider is selected. The order stores `payment_method = promotion`, `payment_status = paid`, the original amount, discount amount, final amount, voucher code, promotion ID and a snapshot of the applied benefits. Non-monetary benefits are shown in confirmation screens and emails and remain available even if the promotion changes later.
 
 ## Payment Providers
 
@@ -186,10 +199,11 @@ Order data includes:
 - Ticket type ID and name
 - Buyer data
 - Participant data
-- Amount and currency
+- Original amount, discount amount, final amount and currency
 - Payment method
 - Payment status
 - Order status
+- Applied voucher code, promotion ID and applied benefits snapshot
 - Check-in status placeholder
 - Timeline entries
 

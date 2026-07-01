@@ -27,6 +27,7 @@ class TAKA_Platform_Data {
 			self::VENUE_POST_TYPE => __( 'Venues', 'taka-platform' ),
 			self::CONTENT_BLOCK_POST_TYPE => __( 'Content Blocks', 'taka-platform' ),
 			self::TOUR_PLANNING_POST_TYPE => __( 'Private Tour Planning', 'taka-platform' ),
+			( defined( 'TAKA_PLATFORM_CPT_TICKET_PROMOTION' ) ? TAKA_PLATFORM_CPT_TICKET_PROMOTION : 'taka_ticket_promo' ) => __( 'Ticket Promotions', 'taka-platform' ),
 		);
 	}
 
@@ -3585,7 +3586,7 @@ class TAKA_Platform_Data {
 			'content_sections' => array_values( self::get_content_sections( false ) ),
 		);
 		if ( class_exists( 'TAKA_Ticketing_Module' ) ) {
-			$export['ticketing'] = TAKA_Ticketing_Module::ticketing_settings();
+			$export['ticketing'] = TAKA_Ticketing_Module::export_ticketing_config();
 		}
 		if ( class_exists( 'TAKA_Platform_Tour_Planning' ) ) {
 			$export['private_tour_planning'] = TAKA_Platform_Tour_Planning::export_items();

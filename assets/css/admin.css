@@ -198,6 +198,67 @@
 	width: 100%;
 }
 
+.taka-ticketing-admin-tabs {
+	margin: 14px 0;
+}
+
+.taka-ticketing-promotion-form__grid {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.taka-ticketing-promotion-form__grid label,
+.taka-ticketing-promotion-benefit label {
+	display: grid;
+	gap: 4px;
+}
+
+.taka-ticketing-promotion-form__grid label > span,
+.taka-ticketing-promotion-benefit label > span {
+	color: #646970;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: .04em;
+	text-transform: uppercase;
+}
+
+.taka-ticketing-promotion-form__grid input,
+.taka-ticketing-promotion-form__grid select,
+.taka-ticketing-promotion-form__grid textarea,
+.taka-ticketing-promotion-benefit input {
+	max-width: 100%;
+	width: 100%;
+}
+
+.taka-ticketing-promotion-form__wide {
+	grid-column: 1 / -1;
+}
+
+.taka-ticketing-promotion-benefits {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.taka-ticketing-promotion-benefit {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	display: grid;
+	gap: 8px;
+	padding: 10px;
+}
+
+.taka-ticketing-promotion-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.taka-ticketing-promotion-actions form {
+	margin: 0;
+}
+
 .taka-ticketing-admin-actions {
 	display: flex;
 	flex-wrap: wrap;
