@@ -1,11 +1,12 @@
 <?php
 /**
- * Private tour logistics planning for TAKA Platform.
+ * Private tour agenda planning for TAKA Platform.
  *
- * Planning items are intentionally stored as a private internal post type in
- * phase 1. This keeps editorial event data separate from sensitive logistics
- * while preserving a clear migration path to dedicated planning/order tables
- * if future phases need higher-volume workflows or reminders.
+ * Manual agenda items are stored as private internal posts. Public seminar
+ * Events are projected into the private agenda as read-only Seminar items at
+ * render time, so Event title, date and venue changes are reflected without
+ * duplicating public event data. Future modules can register new agenda item
+ * types without changing the agenda renderer.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -15,6 +16,7 @@ class TAKA_Platform_Tour_Planning {
 	const NONCE = 'taka_platform_tour_planning_nonce';
 	const CONFIG_META = '_taka_planning_config_id';
 	private static $menu_registered = false;
+	private static $agenda_item_types = array();
 
 	/** Register admin hooks for the private planning module. */
 	public static function init() {
@@ -34,10 +36,10 @@ class TAKA_Platform_Tour_Planning {
 			TAKA_PLATFORM_CPT_TOUR_PLANNING,
 			array(
 				'labels'              => array(
-					'name'          => __( 'Tour Planning', 'taka-platform' ),
-					'singular_name' => __( 'Tour Planning Item', 'taka-platform' ),
-					'add_new_item'  => __( 'Add Tour Planning Item', 'taka-platform' ),
-					'edit_item'     => __( 'Edit Tour Planning Item', 'taka-platform' ),
+					'name'          => __( 'Tour Agenda Items', 'taka-platform' ),
+					'singular_name' => __( 'Tour Agenda Item', 'taka-platform' ),
+					'add_new_item'  => __( 'Add Tour Agenda Item', 'taka-platform' ),
+					'edit_item'     => __( 'Edit Tour Agenda Item', 'taka-platform' ),
 				),
 				'public'              => false,
 				'publicly_queryable'  => false,
@@ -61,7 +63,7 @@ class TAKA_Platform_Tour_Planning {
 
 		add_submenu_page(
 			'taka-platform',
-			__( 'Tour Planning', 'taka-platform' ),
+			__( 'Tour Agenda', 'taka-platform' ),
 			__( 'Tour Planning', 'taka-platform' ),
 			'view_taka_tour_planning',
 			self::PAGE_SLUG,
@@ -80,6 +82,27 @@ class TAKA_Platform_Tour_Planning {
 		);
 	}
 
+	/** Register an agenda item type for the unified private Tour Agenda. */
+	public static function registerAgendaItemType( $type, $args = array() ) {
+		self::register_agenda_item_type( $type, $args );
+	}
+
+	/** Register an agenda item type using WordPress-style naming. */
+	public static function register_agenda_item_type( $type, $args = array() ) {
+		$type = sanitize_key( $type );
+		if ( '' === $type ) {
+			return;
+		}
+		self::$agenda_item_types[ $type ] = wp_parse_args(
+			$args,
+			array(
+				'label'    => ucfirst( str_replace( '_', ' ', $type ) ),
+				'icon'     => 'dashicons-marker',
+				'category' => 'planning',
+			)
+		);
+	}
+
 	/** Redirect the common mistaken pretty admin path to the canonical admin.php?page URL. */
 	public static function maybe_redirect_legacy_admin_path() {
 		$path = rawurldecode( (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), PHP_URL_PATH ) );
@@ -95,6 +118,43 @@ class TAKA_Platform_Tour_Planning {
 		}
 		wp_safe_redirect( self::admin_url(), 301 );
 		exit;
+	}
+
+	/** Return registered agenda item type definitions. */
+	public static function agenda_item_types() {
+		if ( empty( self::$agenda_item_types ) ) {
+			self::register_default_agenda_item_types();
+		}
+		$types = apply_filters( 'taka_platform_tour_agenda_item_types', self::$agenda_item_types );
+		return is_array( $types ) ? $types : self::$agenda_item_types;
+	}
+
+	/** Built-in agenda item types. Extensions should call registerAgendaItemType(). */
+	private static function register_default_agenda_item_types() {
+		$types = array(
+			'seminar' => array( 'label' => __( 'Seminar', 'taka-platform' ), 'icon' => 'dashicons-awards', 'category' => 'seminar' ),
+			'flight' => array( 'label' => __( 'Flight', 'taka-platform' ), 'icon' => 'dashicons-airplane', 'category' => 'travel' ),
+			'train' => array( 'label' => __( 'Train', 'taka-platform' ), 'icon' => 'dashicons-tickets-alt', 'category' => 'travel' ),
+			'transfer' => array( 'label' => __( 'Transfer', 'taka-platform' ), 'icon' => 'dashicons-car', 'category' => 'travel' ),
+			'hotel' => array( 'label' => __( 'Hotel', 'taka-platform' ), 'icon' => 'dashicons-building', 'category' => 'accommodation' ),
+			'accommodation' => array( 'label' => __( 'Accommodation / overnight stay', 'taka-platform' ), 'icon' => 'dashicons-building', 'category' => 'accommodation' ),
+			'meal' => array( 'label' => __( 'Meal', 'taka-platform' ), 'icon' => 'dashicons-food', 'category' => 'meal' ),
+			'coffee_meeting' => array( 'label' => __( 'Coffee meeting', 'taka-platform' ), 'icon' => 'dashicons-coffee', 'category' => 'meeting' ),
+			'organizer_meeting' => array( 'label' => __( 'Organizer meeting', 'taka-platform' ), 'icon' => 'dashicons-groups', 'category' => 'meeting' ),
+			'press_appointment' => array( 'label' => __( 'Press appointment', 'taka-platform' ), 'icon' => 'dashicons-media-document', 'category' => 'media' ),
+			'video_shoot' => array( 'label' => __( 'Video shoot', 'taka-platform' ), 'icon' => 'dashicons-video-alt3', 'category' => 'media' ),
+			'excursion' => array( 'label' => __( 'Excursion', 'taka-platform' ), 'icon' => 'dashicons-location-alt', 'category' => 'activity' ),
+			'shopping' => array( 'label' => __( 'Shopping', 'taka-platform' ), 'icon' => 'dashicons-cart', 'category' => 'activity' ),
+			'free_time' => array( 'label' => __( 'Free time', 'taka-platform' ), 'icon' => 'dashicons-clock', 'category' => 'activity' ),
+			'logistics' => array( 'label' => __( 'Logistics', 'taka-platform' ), 'icon' => 'dashicons-archive', 'category' => 'planning' ),
+			'internal_meeting' => array( 'label' => __( 'Internal meeting', 'taka-platform' ), 'icon' => 'dashicons-clipboard', 'category' => 'meeting' ),
+			'internal_appointment' => array( 'label' => __( 'Internal appointment', 'taka-platform' ), 'icon' => 'dashicons-calendar-alt', 'category' => 'meeting' ),
+			'sponsor_meeting' => array( 'label' => __( 'Sponsor meeting', 'taka-platform' ), 'icon' => 'dashicons-star-filled', 'category' => 'sponsor' ),
+			'other' => array( 'label' => __( 'Other', 'taka-platform' ), 'icon' => 'dashicons-marker', 'category' => 'planning' ),
+		);
+		foreach ( $types as $type => $args ) {
+			self::register_agenda_item_type( $type, $args );
+		}
 	}
 
 	/** Ensure platform admins and explicit tour planners receive the right caps. */
@@ -232,7 +292,7 @@ class TAKA_Platform_Tour_Planning {
 		$post_id = absint( $_GET['post'] );
 		$post = get_post( $post_id );
 		if ( $post && TAKA_PLATFORM_CPT_TOUR_PLANNING === $post->post_type && ! self::user_can_access_item( get_current_user_id(), $post_id, 'edit' ) ) {
-			wp_die( esc_html__( 'You are not allowed to edit this private tour planning item.', 'taka-platform' ) );
+			wp_die( esc_html__( 'You are not allowed to edit this private Tour Agenda item.', 'taka-platform' ) );
 		}
 	}
 
@@ -301,17 +361,19 @@ class TAKA_Platform_Tour_Planning {
 		TAKA_Platform_Admin_Collapsible_Section::open( array(
 			'id'            => 'tour-planning-basic',
 			'title'         => __( 'Agenda basics', 'taka-platform' ),
-			'help_text'     => __( 'Private logistical timing, status and event relationship. This is never rendered on public event pages.', 'taka-platform' ),
+			'help_text'     => __( 'Private manual agenda item timing, status and optional Event relationship. Seminar agenda items are generated automatically from Events.', 'taka-platform' ),
 			'default_state' => TAKA_Platform_Admin_Collapsible_Section::STATE_EXPANDED,
 			'class'         => 'taka-admin-section--essential',
 		) );
-		self::select_field( 'type', __( 'Planning item type', 'taka-platform' ), $item['type'], self::type_labels() );
-		self::text_field( 'tour_key', __( 'Tour / agenda key', 'taka-platform' ), $item['tour_key'] );
-		self::date_field( 'start_date', __( 'Start date', 'taka-platform' ), $item['start_date'] );
+		self::select_field( 'type', __( 'Agenda item type', 'taka-platform' ), $item['type'], self::type_labels() );
+		self::text_field( 'tour_key', __( 'Tour', 'taka-platform' ), $item['tour_key'] );
+		self::date_field( 'start_date', __( 'Date', 'taka-platform' ), $item['start_date'] );
 		self::time_field( 'start_time', __( 'Start time', 'taka-platform' ), $item['start_time'] );
 		self::date_field( 'end_date', __( 'End date', 'taka-platform' ), $item['end_date'] );
 		self::time_field( 'end_time', __( 'End time', 'taka-platform' ), $item['end_time'] );
+		self::checkbox_field( 'all_day', __( 'All-day item', 'taka-platform' ), ! empty( $item['all_day'] ) );
 		self::text_field( 'location', __( 'Location', 'taka-platform' ), $item['location'] );
+		self::textarea_field( 'description', __( 'Description', 'taka-platform' ), $item['description'] );
 		self::event_select_field( 'related_event_id', __( 'Related event', 'taka-platform' ), $item['related_event_id'] );
 		self::select_field( 'status', __( 'Status', 'taka-platform' ), $item['status'], self::status_labels() );
 		TAKA_Platform_Admin_Collapsible_Section::close();
@@ -334,7 +396,7 @@ class TAKA_Platform_Tour_Planning {
 			'id'            => 'tour-planning-accommodation',
 			'title'         => __( 'Accommodation / overnight stay', 'taka-platform' ),
 			'help_text'     => __( 'Hotel, room and booking-reference details for overnight stays.', 'taka-platform' ),
-			'default_state' => 'accommodation' === $item['type'] || self::has_accommodation_data( $item ) ? TAKA_Platform_Admin_Collapsible_Section::STATE_EXPANDED : TAKA_Platform_Admin_Collapsible_Section::STATE_COLLAPSED,
+			'default_state' => self::is_accommodation_agenda_type( $item['type'] ) || self::has_accommodation_data( $item ) ? TAKA_Platform_Admin_Collapsible_Section::STATE_EXPANDED : TAKA_Platform_Admin_Collapsible_Section::STATE_COLLAPSED,
 			'class'         => 'taka-admin-section--advanced',
 		) );
 		self::text_field( 'accommodation_name', __( 'Hotel / accommodation name', 'taka-platform' ), $item['accommodation_name'] );
@@ -353,7 +415,7 @@ class TAKA_Platform_Tour_Planning {
 			'id'            => 'tour-planning-transfer',
 			'title'         => __( 'Transfer', 'taka-platform' ),
 			'help_text'     => __( 'Internal travel legs such as car, train, flight, taxi or public transport.', 'taka-platform' ),
-			'default_state' => 'transfer' === $item['type'] || self::has_transfer_data( $item ) ? TAKA_Platform_Admin_Collapsible_Section::STATE_EXPANDED : TAKA_Platform_Admin_Collapsible_Section::STATE_COLLAPSED,
+			'default_state' => self::is_transfer_agenda_type( $item['type'] ) || self::has_transfer_data( $item ) ? TAKA_Platform_Admin_Collapsible_Section::STATE_EXPANDED : TAKA_Platform_Admin_Collapsible_Section::STATE_COLLAPSED,
 			'class'         => 'taka-admin-section--advanced',
 		) );
 		self::select_field( 'transfer_type', __( 'Transfer type', 'taka-platform' ), $item['transfer_type'], self::transfer_type_labels() );
@@ -372,7 +434,7 @@ class TAKA_Platform_Tour_Planning {
 			'id'            => 'tour-planning-meal',
 			'title'         => __( 'Meal / catering / restaurant', 'taka-platform' ),
 			'help_text'     => __( 'Meals, restaurants, catering and private invitations for the tour group.', 'taka-platform' ),
-			'default_state' => 'meal' === $item['type'] || self::has_meal_data( $item ) ? TAKA_Platform_Admin_Collapsible_Section::STATE_EXPANDED : TAKA_Platform_Admin_Collapsible_Section::STATE_COLLAPSED,
+			'default_state' => self::is_meal_agenda_type( $item['type'] ) || self::has_meal_data( $item ) ? TAKA_Platform_Admin_Collapsible_Section::STATE_EXPANDED : TAKA_Platform_Admin_Collapsible_Section::STATE_COLLAPSED,
 			'class'         => 'taka-admin-section--advanced',
 		) );
 		self::select_field( 'meal_type', __( 'Meal type', 'taka-platform' ), $item['meal_type'], self::meal_type_labels() );
@@ -385,7 +447,7 @@ class TAKA_Platform_Tour_Planning {
 		TAKA_Platform_Admin_Collapsible_Section::open( array(
 			'id'            => 'tour-planning-notes-access',
 			'title'         => __( 'Notes and private access', 'taka-platform' ),
-			'help_text'     => __( 'Private notes and server-enforced access rules for this planning item.', 'taka-platform' ),
+			'help_text'     => __( 'Private notes and server-enforced access rules for this manual agenda item.', 'taka-platform' ),
 			'default_state' => TAKA_Platform_Admin_Collapsible_Section::STATE_COLLAPSED,
 			'class'         => 'taka-admin-section--advanced',
 		) );
@@ -393,7 +455,7 @@ class TAKA_Platform_Tour_Planning {
 		self::select_field( 'access_group', __( 'Visibility / access group', 'taka-platform' ), $item['access_group'], self::access_group_labels() );
 		self::user_multiselect_field( 'assigned_user_ids', __( 'Assigned users', 'taka-platform' ), $item['assigned_user_ids'] );
 		self::organizer_multiselect_field( 'assigned_organizer_ids', __( 'Assigned organizer members', 'taka-platform' ), $item['assigned_organizer_ids'] );
-		echo '<p class="description">' . esc_html__( 'Planning items are private. Access is enforced server-side; hiding UI is not used as the only protection.', 'taka-platform' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'Manual agenda items are private. Access is enforced server-side; hiding UI is not used as the only protection.', 'taka-platform' ) . '</p>';
 		TAKA_Platform_Admin_Collapsible_Section::close();
 	}
 
@@ -419,34 +481,36 @@ class TAKA_Platform_Tour_Planning {
 		}
 
 		$filters = self::agenda_filters_from_request();
-		$items = self::query_items( $filters );
+		$items = self::query_agenda_items( $filters );
 		$view = sanitize_key( $filters['view'] ?? 'timeline' );
 		?>
 		<div class="wrap taka-tour-planning">
-			<h1><?php echo esc_html__( 'Tour Planning', 'taka-platform' ); ?></h1>
-			<p><?php echo esc_html__( 'Private logistical agenda for travel, accommodation, transfers, meals, free time, excursions and internal responsibilities. This data is never rendered on public pages.', 'taka-platform' ); ?></p>
+			<h1><?php echo esc_html__( 'Tour Agenda', 'taka-platform' ); ?></h1>
+			<p><?php echo esc_html__( 'Private chronological hub for the full seminar tour. Seminar Events appear automatically as read-only agenda items; hotels, travel, costs and notes remain internal.', 'taka-platform' ); ?></p>
 			<?php if ( current_user_can( 'edit_taka_tour_planning' ) ) : ?>
-				<p><a class="button button-primary" href="<?php echo esc_url( admin_url( 'post-new.php?post_type=' . TAKA_PLATFORM_CPT_TOUR_PLANNING ) ); ?>"><?php echo esc_html__( 'Add planning item', 'taka-platform' ); ?></a></p>
+				<p><a class="button button-primary" href="<?php echo esc_url( admin_url( 'post-new.php?post_type=' . TAKA_PLATFORM_CPT_TOUR_PLANNING ) ); ?>"><?php echo esc_html__( 'Add agenda item', 'taka-platform' ); ?></a></p>
 			<?php endif; ?>
 
+			<?php self::render_tour_dashboard( $items, $filters ); ?>
+			<?php self::render_tour_navigation( $filters, $view ); ?>
 			<?php self::render_agenda_filters( $filters ); ?>
 
 			<?php if ( empty( $items ) ) : ?>
 				<div class="notice notice-info inline">
-					<p><?php echo esc_html__( 'No private tour planning items exist for the current filters yet.', 'taka-platform' ); ?></p>
+					<p><?php echo esc_html__( 'No agenda items exist for the current filters yet. Existing Events will appear here automatically as Seminar agenda items.', 'taka-platform' ); ?></p>
 				</div>
 			<?php endif; ?>
 
-			<?php if ( 'costs' === $view ) : ?>
+			<?php if ( 'calendar' === $view ) : ?>
+				<?php self::render_calendar_view( $items ); ?>
+			<?php elseif ( 'kanban' === $view ) : ?>
+				<?php self::render_kanban_view( $items ); ?>
+			<?php elseif ( 'costs' === $view ) : ?>
 				<?php self::render_cost_overview( $items ); ?>
-			<?php elseif ( 'by_day' === $view ) : ?>
-				<?php self::render_grouped_items( $items, __( 'No date', 'taka-platform' ), static function ( $item ) { return $item['start_date'] ?: ''; } ); ?>
-			<?php elseif ( 'by_event' === $view ) : ?>
-				<?php self::render_grouped_items( $items, __( 'No related event', 'taka-platform' ), static function ( $item ) { return $item['related_event_title'] ?: ''; } ); ?>
-			<?php elseif ( 'by_type' === $view ) : ?>
-				<?php self::render_grouped_items( $items, __( 'Other', 'taka-platform' ), static function ( $item ) { $labels = self::type_labels(); return $labels[ $item['type'] ] ?? $item['type']; } ); ?>
+			<?php elseif ( 'station' === $view ) : ?>
+				<?php self::render_station_view( $items ); ?>
 			<?php else : ?>
-				<?php self::render_items_table( $items ); ?>
+				<?php self::render_timeline_view( $items ); ?>
 			<?php endif; ?>
 		</div>
 		<?php
@@ -460,8 +524,8 @@ class TAKA_Platform_Tour_Planning {
 		$items = self::query_items( array( 'related_event_id' => absint( $event_id ) ) );
 		TAKA_Platform_Admin_Collapsible_Section::open( array(
 			'id'            => 'event-private-tour-planning',
-			'title'         => __( 'Private Tour Planning', 'taka-platform' ),
-			'help_text'     => __( 'Internal logistics linked to this event. This section is private and never shown on public event pages.', 'taka-platform' ),
+			'title'         => __( 'Private Tour Agenda', 'taka-platform' ),
+			'help_text'     => __( 'Internal agenda items linked to this Seminar Event. The Seminar itself appears automatically in the Tour Agenda.', 'taka-platform' ),
 			'default_state' => TAKA_Platform_Admin_Collapsible_Section::STATE_COLLAPSED,
 			'class'         => 'taka-admin-section--advanced',
 		) );
@@ -477,7 +541,7 @@ class TAKA_Platform_Tour_Planning {
 		$sections[] = new TAKA_Platform_Admin_Event_Assistant_Section( array(
 			'id'              => 'private-logistics',
 			'title'           => __( 'Private logistics', 'taka-platform' ),
-			'help_text'       => __( 'Optional private tour planning for accommodation, transfers, meals and internal notes. This never blocks publication.', 'taka-platform' ),
+			'help_text'       => __( 'Optional private Tour Agenda items for accommodation, transfers, meals and internal notes. This never blocks publication.', 'taka-platform' ),
 			'default_state'   => TAKA_Platform_Admin_Collapsible_Section::STATE_COLLAPSED,
 			'weight'          => 2,
 			'render_callback' => array( __CLASS__, 'render_event_assistant_section' ),
@@ -489,7 +553,7 @@ class TAKA_Platform_Tour_Planning {
 	public static function render_event_assistant_section( $context ) {
 		$event_id = absint( $context['post_id'] ?? 0 );
 		if ( ! $event_id ) {
-			echo '<p class="description">' . esc_html__( 'Save the event first, then private planning items can be linked to it.', 'taka-platform' ) . '</p>';
+			echo '<p class="description">' . esc_html__( 'Save the event first, then private agenda items can be linked to it.', 'taka-platform' ) . '</p>';
 			return;
 		}
 		self::render_event_item_list( $event_id, self::query_items( array( 'related_event_id' => $event_id ) ) );
@@ -507,7 +571,7 @@ class TAKA_Platform_Tour_Planning {
 			$config_id = (string) get_post_meta( $post->ID, self::CONFIG_META, true );
 			$key = '' !== $config_id ? $config_id : 'planning-' . $post->ID;
 			$related_event_id = absint( $item['related_event_id'] ?? 0 );
-			unset( $item['edit_url'] );
+			unset( $item['item_id'], $item['source'], $item['post_id'], $item['event_id'], $item['related_event_title'], $item['read_only'], $item['edit_url'] );
 			$item['id'] = $key;
 			$item['config_id'] = $config_id;
 			$item['wp_post_id'] = (string) $post->ID;
@@ -566,6 +630,149 @@ class TAKA_Platform_Tour_Planning {
 	}
 
 	/** Query accessible planning items and apply private agenda filters. */
+	private static function query_agenda_items( $filters = array() ) {
+		$items = array_merge(
+			self::event_agenda_items( $filters ),
+			self::query_items( $filters )
+		);
+		$items = array_values( array_filter( $items, static function ( $item ) use ( $filters ) { return self::item_matches_filters( $item, $filters ); } ) );
+		usort( $items, array( __CLASS__, 'compare_items' ) );
+		return $items;
+	}
+
+	/** Project existing Events into read-only Seminar agenda items. */
+	private static function event_agenda_items( $filters = array() ) {
+		$posts = get_posts( array( 'post_type' => TAKA_PLATFORM_CPT_EVENT, 'post_status' => 'any', 'posts_per_page' => -1, 'orderby' => 'date', 'order' => 'ASC' ) );
+		$items = array();
+		foreach ( $posts as $post ) {
+			if ( ! self::user_can_see_event_in_agenda( $post ) ) {
+				continue;
+			}
+			foreach ( self::event_post_to_seminar_agenda_items( $post ) as $item ) {
+				if ( ! self::item_matches_filters( $item, $filters ) ) {
+					continue;
+				}
+				$items[] = $item;
+			}
+		}
+		return $items;
+	}
+
+	private static function user_can_see_event_in_agenda( $post ) {
+		if ( current_user_can( 'manage_taka_tour_planning' ) || current_user_can( 'manage_options' ) ) {
+			return true;
+		}
+		if ( in_array( (string) $post->post_status, array( 'publish', 'future' ), true ) ) {
+			return true;
+		}
+		return class_exists( 'TAKA_Platform_Admin' ) && TAKA_Platform_Admin::user_can_access_content( get_current_user_id(), $post->ID, 'edit' );
+	}
+
+	private static function event_post_to_seminar_agenda_items( $post ) {
+		$event_id = absint( $post->ID );
+		$event = array(
+			'date_start' => (string) get_post_meta( $event_id, '_taka_date_start', true ),
+			'date_end' => (string) get_post_meta( $event_id, '_taka_date_end', true ),
+			'time_start' => (string) get_post_meta( $event_id, '_taka_time_start', true ),
+			'time_end' => (string) get_post_meta( $event_id, '_taka_time_end', true ),
+		);
+		$program_items = class_exists( 'TAKA_Platform_Data' ) ? TAKA_Platform_Data::normalize_program_items( get_post_meta( $event_id, '_taka_program_items', true ), $event ) : array();
+		$dates = self::seminar_dates_from_event( $event, $program_items );
+		$items = array();
+		foreach ( $dates as $index => $date ) {
+			$times = self::seminar_times_for_date( $date, $event, $program_items );
+			$item = self::default_item();
+			$item['item_id'] = 'event-' . $event_id . '-' . $date;
+			$item['source'] = 'event';
+			$item['post_id'] = $event_id;
+			$item['event_id'] = $event_id;
+			$item['title'] = get_the_title( $post );
+			$item['tour_key'] = self::event_tour_key( $event_id );
+			$item['type'] = 'seminar';
+			$item['start_date'] = $date;
+			$item['start_time'] = $times['start'];
+			$item['end_date'] = $date;
+			$item['end_time'] = $times['end'];
+			$item['all_day'] = '' === $times['start'] && '' === $times['end'];
+			$item['location'] = self::event_location_label( $event_id );
+			$item['notes'] = __( 'Read-only Seminar item generated from the linked Event.', 'taka-platform' );
+			$item['currency'] = self::sanitize_currency( get_post_meta( $event_id, '_taka_currency', true ) ?: 'EUR' );
+			$item['related_event_id'] = $event_id;
+			$item['related_event_title'] = get_the_title( $post );
+			$item['status'] = in_array( (string) $post->post_status, array( 'trash', 'draft', 'pending' ), true ) ? 'planned' : 'confirmed';
+			$item['read_only'] = true;
+			$item['edit_url'] = get_edit_post_link( $event_id, '' );
+			$items[] = $item;
+			if ( $index > 30 ) {
+				break;
+			}
+		}
+		return $items;
+	}
+
+	private static function seminar_dates_from_event( $event, $program_items ) {
+		$dates = array();
+		foreach ( (array) $program_items as $program_item ) {
+			if ( ! empty( $program_item['date'] ) ) {
+				$dates[] = self::sanitize_date( $program_item['date'] );
+			}
+		}
+		if ( empty( $dates ) ) {
+			$dates[] = self::sanitize_date( $event['date_start'] ?? '' );
+			$end = self::sanitize_date( $event['date_end'] ?? '' );
+			if ( $end && $end !== ( $dates[0] ?? '' ) ) {
+				$dates[] = $end;
+			}
+		}
+		$dates = array_values( array_unique( array_filter( $dates ) ) );
+		sort( $dates );
+		return $dates;
+	}
+
+	private static function seminar_times_for_date( $date, $event, $program_items ) {
+		$starts = array();
+		$ends = array();
+		foreach ( (array) $program_items as $program_item ) {
+			if ( (string) ( $program_item['date'] ?? '' ) !== (string) $date ) {
+				continue;
+			}
+			if ( ! empty( $program_item['time_start'] ) ) {
+				$starts[] = self::sanitize_time( $program_item['time_start'] );
+			}
+			if ( ! empty( $program_item['time_end'] ) ) {
+				$ends[] = self::sanitize_time( $program_item['time_end'] );
+			}
+		}
+		$starts = array_values( array_filter( $starts ) );
+		$ends = array_values( array_filter( $ends ) );
+		sort( $starts );
+		sort( $ends );
+		return array(
+			'start' => $starts[0] ?? ( (string) $date === (string) ( $event['date_start'] ?? '' ) ? self::sanitize_time( $event['time_start'] ?? '' ) : '' ),
+			'end' => ! empty( $ends ) ? end( $ends ) : ( (string) $date === (string) ( $event['date_start'] ?? '' ) ? self::sanitize_time( $event['time_end'] ?? '' ) : '' ),
+		);
+	}
+
+	private static function event_tour_key( $event_id ) {
+		$key = sanitize_key( get_post_meta( $event_id, '_taka_tour_key', true ) );
+		return '' !== $key ? $key : self::default_tour_key();
+	}
+
+	private static function default_tour_key() {
+		return sanitize_key( apply_filters( 'taka_platform_default_tour_key', 'taka-tour' ) );
+	}
+
+	private static function event_location_label( $event_id ) {
+		$venue_id = absint( get_post_meta( $event_id, '_taka_venue_id', true ) );
+		if ( $venue_id ) {
+			$title = get_the_title( $venue_id );
+			if ( '' !== trim( (string) $title ) ) {
+				return $title;
+			}
+		}
+		return (string) get_post_meta( $event_id, '_taka_city', true );
+	}
+
 	private static function query_items( $filters = array() ) {
 		$posts = get_posts( array( 'post_type' => TAKA_PLATFORM_CPT_TOUR_PLANNING, 'post_status' => 'any', 'posts_per_page' => -1 ) );
 		$items = array();
@@ -592,11 +799,16 @@ class TAKA_Platform_Tour_Planning {
 		if ( ! empty( $filters['related_event_id'] ) && absint( $filters['related_event_id'] ) !== absint( $item['related_event_id'] ?? 0 ) ) {
 			return false;
 		}
-		if ( ! empty( $filters['date_from'] ) && '' !== (string) ( $item['start_date'] ?? '' ) && strcmp( (string) $item['start_date'], (string) $filters['date_from'] ) < 0 ) {
-			return false;
-		}
-		if ( ! empty( $filters['date_to'] ) && '' !== (string) ( $item['start_date'] ?? '' ) && strcmp( (string) $item['start_date'], (string) $filters['date_to'] ) > 0 ) {
-			return false;
+		if ( ! empty( $filters['date_from'] ) || ! empty( $filters['date_to'] ) ) {
+			if ( '' === (string) ( $item['start_date'] ?? '' ) ) {
+				return false;
+			}
+			if ( ! empty( $filters['date_from'] ) && strcmp( (string) $item['start_date'], (string) $filters['date_from'] ) < 0 ) {
+				return false;
+			}
+			if ( ! empty( $filters['date_to'] ) && strcmp( (string) $item['start_date'], (string) $filters['date_to'] ) > 0 ) {
+				return false;
+			}
 		}
 		return true;
 	}
@@ -607,7 +819,7 @@ class TAKA_Platform_Tour_Planning {
 		$item['post_id'] = $post_id;
 		$item['title'] = get_the_title( $post );
 		foreach ( array_keys( $item ) as $field ) {
-			if ( in_array( $field, array( 'post_id', 'title', 'related_event_title' ), true ) ) {
+			if ( in_array( $field, array( 'item_id', 'source', 'post_id', 'event_id', 'title', 'related_event_title', 'read_only', 'edit_url' ), true ) ) {
 				continue;
 			}
 			$value = get_post_meta( $post_id, '_taka_planning_' . $field, true );
@@ -616,16 +828,26 @@ class TAKA_Platform_Tour_Planning {
 			}
 		}
 		$item = array_merge( $item, self::sanitize_item_fields( $item ) );
+		$item['item_id'] = 'manual-' . $post_id;
+		$item['source'] = 'manual';
+		if ( '' === (string) ( $item['tour_key'] ?? '' ) ) {
+			$item['tour_key'] = self::default_tour_key();
+		}
 		$item['post_id'] = $post_id;
 		$item['title'] = get_the_title( $post );
 		$item['related_event_title'] = absint( $item['related_event_id'] ) ? get_the_title( absint( $item['related_event_id'] ) ) : '';
+		$item['event_id'] = absint( $item['related_event_id'] );
+		$item['read_only'] = false;
 		$item['edit_url'] = get_edit_post_link( $post_id, '' );
 		return $item;
 	}
 
 	private static function default_item() {
 		return array(
+			'item_id' => '',
+			'source' => 'manual',
 			'post_id' => 0,
+			'event_id' => 0,
 			'title' => '',
 			'tour_key' => '',
 			'type' => 'other',
@@ -633,7 +855,9 @@ class TAKA_Platform_Tour_Planning {
 			'start_time' => '',
 			'end_date' => '',
 			'end_time' => '',
+			'all_day' => false,
 			'location' => '',
+			'description' => '',
 			'notes' => '',
 			'responsible_person' => '',
 			'financial_responsible_person' => '',
@@ -645,6 +869,8 @@ class TAKA_Platform_Tour_Planning {
 			'assigned_organizer_ids' => array(),
 			'related_event_id' => 0,
 			'related_event_title' => '',
+			'read_only' => false,
+			'edit_url' => '',
 			'status' => 'planned',
 			'accommodation_name' => '',
 			'address' => '',
@@ -678,12 +904,17 @@ class TAKA_Platform_Tour_Planning {
 		$posted = is_array( $posted ) ? $posted : array();
 		$clean = self::default_item();
 		$clean['tour_key'] = sanitize_key( $posted['tour_key'] ?? '' );
+		if ( '' === $clean['tour_key'] ) {
+			$clean['tour_key'] = self::default_tour_key();
+		}
 		$clean['type'] = self::allowed_key( $posted['type'] ?? 'other', array_keys( self::type_labels() ), 'other' );
 		$clean['start_date'] = self::sanitize_date( $posted['start_date'] ?? '' );
 		$clean['start_time'] = self::sanitize_time( $posted['start_time'] ?? '' );
 		$clean['end_date'] = self::sanitize_date( $posted['end_date'] ?? '' );
 		$clean['end_time'] = self::sanitize_time( $posted['end_time'] ?? '' );
+		$clean['all_day'] = ! empty( $posted['all_day'] );
 		$clean['location'] = sanitize_text_field( $posted['location'] ?? '' );
+		$clean['description'] = sanitize_textarea_field( $posted['description'] ?? '' );
 		$clean['notes'] = sanitize_textarea_field( $posted['notes'] ?? '' );
 		$clean['responsible_person'] = sanitize_text_field( $posted['responsible_person'] ?? '' );
 		$clean['financial_responsible_person'] = sanitize_text_field( $posted['financial_responsible_person'] ?? '' );
@@ -720,8 +951,156 @@ class TAKA_Platform_Tour_Planning {
 		$clean['meal_date'] = self::sanitize_date( $posted['meal_date'] ?? '' );
 		$clean['meal_time'] = self::sanitize_time( $posted['meal_time'] ?? '' );
 		$clean['people_count'] = '' === (string) ( $posted['people_count'] ?? '' ) ? '' : (string) max( 0, absint( $posted['people_count'] ) );
-		unset( $clean['post_id'], $clean['title'], $clean['related_event_title'] );
+		unset( $clean['item_id'], $clean['source'], $clean['post_id'], $clean['event_id'], $clean['title'], $clean['related_event_title'], $clean['read_only'], $clean['edit_url'] );
 		return $clean;
+	}
+
+	private static function render_tour_dashboard( $items, $filters ) {
+		$summary = self::tour_summary( $items, $filters );
+		?>
+		<div class="taka-tour-dashboard" aria-label="<?php echo esc_attr__( 'Tour dashboard', 'taka-platform' ); ?>">
+			<div class="taka-tour-dashboard__header">
+				<div>
+					<span class="taka-tour-dashboard__eyebrow"><?php echo esc_html__( 'Tour', 'taka-platform' ); ?></span>
+					<h2><?php echo esc_html( $summary['tour_name'] ); ?></h2>
+				</div>
+				<a class="button" href="<?php echo esc_url( self::admin_url( array( 'view' => 'timeline' ) ) ); ?>"><?php echo esc_html__( 'Open agenda', 'taka-platform' ); ?></a>
+			</div>
+			<div class="taka-tour-dashboard__grid">
+				<?php foreach ( $summary['cards'] as $card ) : ?>
+					<div class="taka-tour-dashboard__card">
+						<span><?php echo esc_html( $card['label'] ); ?></span>
+						<strong><?php echo esc_html( $card['value'] ); ?></strong>
+					</div>
+				<?php endforeach; ?>
+			</div>
+		</div>
+		<?php
+	}
+
+	private static function render_tour_navigation( $filters, $active_view ) {
+		$base_args = array_filter(
+			array(
+				'tour_key' => $filters['tour_key'] ?? '',
+				'date_from' => $filters['date_from'] ?? '',
+				'date_to' => $filters['date_to'] ?? '',
+			),
+			static function ( $value ) { return '' !== (string) $value; }
+		);
+		$links = array(
+			'agenda' => array( 'label' => __( 'Agenda', 'taka-platform' ), 'url' => self::admin_url( $base_args + array( 'view' => 'timeline' ) ), 'active' => in_array( $active_view, array( 'timeline', '' ), true ) ),
+			'events' => array( 'label' => __( 'Events', 'taka-platform' ), 'url' => admin_url( 'edit.php?post_type=' . TAKA_PLATFORM_CPT_EVENT ), 'active' => false ),
+			'planning' => array( 'label' => __( 'Planning', 'taka-platform' ), 'url' => admin_url( 'edit.php?post_type=' . TAKA_PLATFORM_CPT_TOUR_PLANNING ), 'active' => false ),
+			'costs' => array( 'label' => __( 'Costs', 'taka-platform' ), 'url' => self::admin_url( $base_args + array( 'view' => 'costs' ) ), 'active' => 'costs' === $active_view ),
+			'participants' => array( 'label' => __( 'Participants', 'taka-platform' ), 'url' => '#', 'active' => false ),
+			'documents' => array( 'label' => __( 'Documents', 'taka-platform' ), 'url' => '#', 'active' => false ),
+		);
+		echo '<nav class="taka-tour-nav" aria-label="' . esc_attr__( 'Tour navigation', 'taka-platform' ) . '">';
+		echo '<strong>' . esc_html__( 'Tour', 'taka-platform' ) . '</strong>';
+		foreach ( $links as $link ) {
+			$class = ! empty( $link['active'] ) ? ' class="is-active"' : '';
+			echo '<a' . $class . ' href="' . esc_url( $link['url'] ) . '">' . esc_html( $link['label'] ) . '</a>';
+		}
+		echo '</nav>';
+	}
+
+	private static function render_timeline_view( $items ) {
+		$groups = self::group_items_by_date( $items );
+		if ( empty( $groups ) ) {
+			self::render_items_table( array() );
+			return;
+		}
+		foreach ( $groups as $date => $day_items ) {
+			echo '<section class="taka-agenda-day">';
+			echo '<h2>' . esc_html( self::date_heading( $date ) ) . '</h2>';
+			echo '<div class="taka-agenda-list">';
+			foreach ( $day_items as $item ) {
+				self::render_agenda_card( $item, true );
+			}
+			echo '</div></section>';
+		}
+	}
+
+	private static function render_calendar_view( $items ) {
+		$groups = self::group_items_by_date( $items );
+		echo '<div class="taka-agenda-calendar">';
+		if ( empty( $groups ) ) {
+			echo '<p>' . esc_html__( 'No agenda items found.', 'taka-platform' ) . '</p>';
+		}
+		foreach ( $groups as $date => $day_items ) {
+			echo '<section class="taka-agenda-calendar__day">';
+			echo '<h2>' . esc_html( self::date_heading( $date ) ) . '</h2>';
+			foreach ( $day_items as $item ) {
+				self::render_agenda_card( $item, false );
+			}
+			echo '</section>';
+		}
+		echo '</div>';
+	}
+
+	private static function render_kanban_view( $items ) {
+		$columns = array(
+			'planning' => __( 'Planning', 'taka-platform' ),
+			'confirmed' => __( 'Confirmed', 'taka-platform' ),
+			'completed' => __( 'Completed', 'taka-platform' ),
+			'cancelled' => __( 'Cancelled', 'taka-platform' ),
+		);
+		$grouped = array_fill_keys( array_keys( $columns ), array() );
+		foreach ( $items as $item ) {
+			$grouped[ self::kanban_bucket( $item ) ][] = $item;
+		}
+		echo '<div class="taka-agenda-kanban">';
+		foreach ( $columns as $bucket => $label ) {
+			echo '<section class="taka-agenda-kanban__column"><h2>' . esc_html( $label ) . ' <span>' . esc_html( (string) count( $grouped[ $bucket ] ) ) . '</span></h2>';
+			foreach ( $grouped[ $bucket ] as $item ) {
+				self::render_agenda_card( $item, false );
+			}
+			echo '</section>';
+		}
+		echo '</div>';
+	}
+
+	private static function render_station_view( $items ) {
+		$seminars = array_values( array_filter( $items, static function ( $item ) { return 'seminar' === (string) ( $item['type'] ?? '' ); } ) );
+		$used = array();
+		foreach ( $seminars as $seminar ) {
+			$event_id = absint( $seminar['related_event_id'] ?? 0 );
+			$date = (string) ( $seminar['start_date'] ?? '' );
+			$station_items = array();
+			foreach ( $items as $item ) {
+				$key = self::agenda_item_key( $item );
+				if ( 'seminar' === (string) ( $item['type'] ?? '' ) ) {
+					continue;
+				}
+				$is_related = $event_id && absint( $item['related_event_id'] ?? 0 ) === $event_id;
+				$is_same_day_unassigned = ! $is_related && empty( $item['related_event_id'] ) && '' !== $date && (string) ( $item['start_date'] ?? '' ) === $date;
+				if ( $is_related || $is_same_day_unassigned ) {
+					$station_items[] = $item;
+					$used[ $key ] = true;
+				}
+			}
+			echo '<section class="taka-agenda-station">';
+			echo '<h2>' . esc_html( $seminar['title'] ) . ' <span>' . esc_html( $seminar['start_date'] ) . '</span></h2>';
+			self::render_agenda_card( $seminar, true );
+			if ( empty( $station_items ) ) {
+				echo '<p class="description">' . esc_html__( 'No private agenda items are linked around this seminar yet.', 'taka-platform' ) . '</p>';
+			} else {
+				foreach ( $station_items as $item ) {
+					self::render_agenda_card( $item, true );
+				}
+			}
+			echo '</section>';
+		}
+		$unassigned = array_values( array_filter( $items, static function ( $item ) use ( $used ) {
+			return 'seminar' !== (string) ( $item['type'] ?? '' ) && empty( $used[ self::agenda_item_key( $item ) ] );
+		} ) );
+		if ( ! empty( $unassigned ) ) {
+			echo '<section class="taka-agenda-station"><h2>' . esc_html__( 'Unassigned agenda items', 'taka-platform' ) . '</h2>';
+			foreach ( $unassigned as $item ) {
+				self::render_agenda_card( $item, true );
+			}
+			echo '</section>';
+		}
 	}
 
 	private static function render_agenda_filters( $filters ) {
@@ -758,28 +1137,200 @@ class TAKA_Platform_Tour_Planning {
 		}
 	}
 
+	private static function tour_summary( $items, $filters ) {
+		$seminar_days = array();
+		$hotels = 0;
+		$flights = 0;
+		$meals = 0;
+		$estimated = array();
+		$open_tasks = 0;
+		$missing_hotel_bookings = 0;
+		$upcoming_transfer = '';
+		$today = current_time( 'Y-m-d' );
+		foreach ( $items as $item ) {
+			$type = (string) ( $item['type'] ?? '' );
+			if ( 'seminar' === $type && ! empty( $item['start_date'] ) ) {
+				$seminar_days[ $item['start_date'] . '|' . ( $item['related_event_id'] ?? '' ) ] = true;
+			}
+			if ( self::is_accommodation_agenda_type( $type ) ) {
+				$hotels++;
+				if ( '' === trim( (string) ( $item['booking_reference'] ?? '' ) ) && ! in_array( (string) ( $item['status'] ?? '' ), array( 'confirmed', 'paid', 'completed' ), true ) ) {
+					$missing_hotel_bookings++;
+				}
+			}
+			if ( 'flight' === $type || 'flight' === (string) ( $item['transfer_type'] ?? '' ) ) {
+				$flights++;
+			}
+			if ( self::is_meal_agenda_type( $type ) ) {
+				$meals++;
+			}
+			if ( in_array( (string) ( $item['status'] ?? '' ), array( 'planned', 'requested' ), true ) ) {
+				$open_tasks++;
+			}
+			$currency = $item['currency'] ?: 'EUR';
+			if ( ! isset( $estimated[ $currency ] ) ) {
+				$estimated[ $currency ] = 0.0;
+			}
+			$estimated[ $currency ] += (float) str_replace( ',', '.', (string) ( $item['estimated_cost'] ?? '' ) );
+			if ( '' === $upcoming_transfer && self::is_transfer_agenda_type( $type ) && ! empty( $item['start_date'] ) && strcmp( (string) $item['start_date'], $today ) >= 0 ) {
+				$upcoming_transfer = trim( self::date_heading( $item['start_date'] ) . ' ' . self::time_range_label( $item ) );
+			}
+		}
+		$tour_name = self::tour_name_from_items( $items, $filters );
+		return array(
+			'tour_name' => $tour_name,
+			'cards' => array(
+				array( 'label' => __( 'Seminar days', 'taka-platform' ), 'value' => (string) count( $seminar_days ) ),
+				array( 'label' => __( 'Agenda items', 'taka-platform' ), 'value' => (string) count( $items ) ),
+				array( 'label' => __( 'Hotels', 'taka-platform' ), 'value' => (string) $hotels ),
+				array( 'label' => __( 'Flights', 'taka-platform' ), 'value' => (string) $flights ),
+				array( 'label' => __( 'Restaurant visits', 'taka-platform' ), 'value' => (string) $meals ),
+				array( 'label' => __( 'Estimated cost', 'taka-platform' ), 'value' => self::format_cost_totals( $estimated ) ),
+				array( 'label' => __( 'Open tasks', 'taka-platform' ), 'value' => (string) $open_tasks ),
+				array( 'label' => __( 'Missing hotel booking', 'taka-platform' ), 'value' => (string) $missing_hotel_bookings ),
+				array( 'label' => __( 'Upcoming transfer', 'taka-platform' ), 'value' => $upcoming_transfer ?: __( 'None scheduled', 'taka-platform' ) ),
+			),
+		);
+	}
+
+	private static function tour_name_from_items( $items, $filters ) {
+		$key = sanitize_key( $filters['tour_key'] ?? '' );
+		if ( '' === $key ) {
+			$keys = array_values( array_unique( array_filter( array_map( static function ( $item ) { return sanitize_key( $item['tour_key'] ?? '' ); }, $items ) ) ) );
+			$key = $keys[0] ?? self::default_tour_key();
+		}
+		$year = '';
+		foreach ( $items as $item ) {
+			if ( ! empty( $item['start_date'] ) ) {
+				$year = substr( (string) $item['start_date'], 0, 4 );
+				break;
+			}
+		}
+		$name = ucwords( str_replace( '-', ' ', $key ) );
+		return trim( $name . ( $year ? ' ' . $year : '' ) );
+	}
+
+	private static function format_cost_totals( $totals ) {
+		$out = array();
+		foreach ( $totals as $currency => $amount ) {
+			if ( 0.0 === (float) $amount ) {
+				continue;
+			}
+			$out[] = $currency . ' ' . number_format_i18n( (float) $amount, 2 );
+		}
+		return ! empty( $out ) ? implode( ', ', $out ) : __( 'Not entered', 'taka-platform' );
+	}
+
+	private static function group_items_by_date( $items ) {
+		$groups = array();
+		foreach ( $items as $item ) {
+			$date = (string) ( $item['start_date'] ?? '' );
+			$key = '' !== $date ? $date : 'no-date';
+			$groups[ $key ][] = $item;
+		}
+		uksort( $groups, static function ( $a, $b ) {
+			if ( 'no-date' === $a ) { return 1; }
+			if ( 'no-date' === $b ) { return -1; }
+			return strcmp( $a, $b );
+		} );
+		return $groups;
+	}
+
+	private static function render_agenda_card( $item, $show_meta ) {
+		$type = (string) ( $item['type'] ?? 'other' );
+		$labels = self::type_labels();
+		$title = (string) ( $item['title'] ?? '' );
+		$edit_url = (string) ( $item['edit_url'] ?? '' );
+		$can_edit = ! empty( $edit_url ) && current_user_can( 'edit_post', absint( $item['post_id'] ?? 0 ) );
+		?>
+		<article class="taka-agenda-card taka-agenda-card--<?php echo esc_attr( $type ); ?>">
+			<div class="taka-agenda-card__time"><?php echo esc_html( self::time_range_label( $item ) ?: ( ! empty( $item['all_day'] ) ? __( 'All day', 'taka-platform' ) : '' ) ); ?></div>
+			<div class="taka-agenda-card__body">
+				<div class="taka-agenda-card__title">
+					<?php echo wp_kses_post( self::type_icon( $type ) ); ?>
+					<strong><?php if ( $can_edit ) : ?><a href="<?php echo esc_url( $edit_url ); ?>"><?php echo esc_html( $title ); ?></a><?php else : ?><?php echo esc_html( $title ); ?><?php endif; ?></strong>
+					<span><?php echo esc_html( $labels[ $type ] ?? $type ); ?></span>
+					<?php if ( ! empty( $item['read_only'] ) ) : ?><em><?php echo esc_html__( 'Event', 'taka-platform' ); ?></em><?php endif; ?>
+				</div>
+				<?php if ( $show_meta ) : ?>
+					<?php if ( ! empty( $item['description'] ) ) : ?><p class="taka-agenda-card__description"><?php echo esc_html( $item['description'] ); ?></p><?php endif; ?>
+					<div class="taka-agenda-card__meta">
+						<?php if ( ! empty( $item['location'] ) ) : ?><span><?php echo esc_html( $item['location'] ); ?></span><?php endif; ?>
+						<?php if ( ! empty( $item['responsible_person'] ) ) : ?><span><?php echo esc_html__( 'Responsible:', 'taka-platform' ); ?> <?php echo esc_html( $item['responsible_person'] ); ?></span><?php endif; ?>
+						<?php if ( ! empty( $item['financial_responsible_person'] ) ) : ?><span><?php echo esc_html__( 'Financial:', 'taka-platform' ); ?> <?php echo esc_html( $item['financial_responsible_person'] ); ?></span><?php endif; ?>
+						<span><?php echo esc_html( self::status_labels()[ $item['status'] ] ?? $item['status'] ); ?></span>
+					</div>
+				<?php endif; ?>
+			</div>
+		</article>
+		<?php
+	}
+
+	private static function date_heading( $date ) {
+		if ( 'no-date' === $date || '' === (string) $date ) {
+			return __( 'No date', 'taka-platform' );
+		}
+		$timestamp = strtotime( (string) $date );
+		return $timestamp ? date_i18n( 'l, j. F Y', $timestamp ) : (string) $date;
+	}
+
+	private static function kanban_bucket( $item ) {
+		$status = (string) ( $item['status'] ?? 'planned' );
+		if ( 'cancelled' === $status ) {
+			return 'cancelled';
+		}
+		if ( in_array( $status, array( 'paid', 'completed' ), true ) ) {
+			return 'completed';
+		}
+		if ( 'confirmed' === $status ) {
+			return 'confirmed';
+		}
+		return 'planning';
+	}
+
+	private static function agenda_item_key( $item ) {
+		return (string) ( $item['item_id'] ?? ( ( $item['source'] ?? 'manual' ) . '-' . ( $item['post_id'] ?? '' ) . '-' . ( $item['start_date'] ?? '' ) ) );
+	}
+
 	private static function render_cost_overview( $items ) {
-		$totals = array();
+		$groups = array(
+			'responsible' => array( 'label' => __( 'Grouped by responsible person', 'taka-platform' ), 'rows' => array() ),
+			'financial' => array( 'label' => __( 'Grouped by financial owner', 'taka-platform' ), 'rows' => array() ),
+			'category' => array( 'label' => __( 'Grouped by category', 'taka-platform' ), 'rows' => array() ),
+		);
 		foreach ( $items as $item ) {
 			$currency = $item['currency'] ?: 'EUR';
-			if ( ! isset( $totals[ $currency ] ) ) {
-				$totals[ $currency ] = array( 'estimated' => 0.0, 'actual' => 0.0 );
+			$estimated = (float) str_replace( ',', '.', (string) $item['estimated_cost'] );
+			$actual = (float) str_replace( ',', '.', (string) $item['actual_cost'] );
+			foreach ( array(
+				'responsible' => trim( (string) ( $item['responsible_person'] ?? '' ) ) ?: __( 'Unassigned', 'taka-platform' ),
+				'financial' => trim( (string) ( $item['financial_responsible_person'] ?? '' ) ) ?: __( 'Unassigned', 'taka-platform' ),
+				'category' => self::type_category_label( (string) ( $item['type'] ?? 'other' ) ),
+			) as $group => $label ) {
+				if ( ! isset( $groups[ $group ]['rows'][ $label ][ $currency ] ) ) {
+					$groups[ $group ]['rows'][ $label ][ $currency ] = array( 'estimated' => 0.0, 'actual' => 0.0 );
+				}
+				$groups[ $group ]['rows'][ $label ][ $currency ]['estimated'] += $estimated;
+				$groups[ $group ]['rows'][ $label ][ $currency ]['actual'] += $actual;
 			}
-			$totals[ $currency ]['estimated'] += (float) str_replace( ',', '.', (string) $item['estimated_cost'] );
-			$totals[ $currency ]['actual'] += (float) str_replace( ',', '.', (string) $item['actual_cost'] );
 		}
 		TAKA_Platform_Admin_Collapsible_Section::open( array(
 			'id'            => 'tour-planning-cost-overview',
 			'title'         => __( 'Cost overview', 'taka-platform' ),
-			'help_text'     => __( 'Private estimated and actual cost totals for the filtered planning items.', 'taka-platform' ),
+			'help_text'     => __( 'Private estimated and actual cost totals for the filtered agenda items.', 'taka-platform' ),
 			'default_state' => TAKA_Platform_Admin_Collapsible_Section::STATE_EXPANDED,
 		) );
-		if ( empty( $totals ) ) {
-			echo '<p>' . esc_html__( 'No costs found for the current filters.', 'taka-platform' ) . '</p>';
-		} else {
-			echo '<table class="widefat striped"><thead><tr><th>' . esc_html__( 'Currency', 'taka-platform' ) . '</th><th>' . esc_html__( 'Estimated', 'taka-platform' ) . '</th><th>' . esc_html__( 'Actual', 'taka-platform' ) . '</th></tr></thead><tbody>';
-			foreach ( $totals as $currency => $row ) {
-				echo '<tr><td>' . esc_html( $currency ) . '</td><td>' . esc_html( number_format_i18n( $row['estimated'], 2 ) ) . '</td><td>' . esc_html( number_format_i18n( $row['actual'], 2 ) ) . '</td></tr>';
+		foreach ( $groups as $group ) {
+			echo '<h3>' . esc_html( $group['label'] ) . '</h3>';
+			if ( empty( $group['rows'] ) ) {
+				echo '<p>' . esc_html__( 'No costs found for the current filters.', 'taka-platform' ) . '</p>';
+				continue;
+			}
+			echo '<table class="widefat striped taka-tour-cost-table"><thead><tr><th>' . esc_html__( 'Group', 'taka-platform' ) . '</th><th>' . esc_html__( 'Currency', 'taka-platform' ) . '</th><th>' . esc_html__( 'Estimated', 'taka-platform' ) . '</th><th>' . esc_html__( 'Actual', 'taka-platform' ) . '</th></tr></thead><tbody>';
+			foreach ( $group['rows'] as $label => $currencies ) {
+				foreach ( $currencies as $currency => $row ) {
+					echo '<tr><td>' . esc_html( $label ) . '</td><td>' . esc_html( $currency ) . '</td><td>' . esc_html( number_format_i18n( $row['estimated'], 2 ) ) . '</td><td>' . esc_html( number_format_i18n( $row['actual'], 2 ) ) . '</td></tr>';
+				}
 			}
 			echo '</tbody></table>';
 		}
@@ -803,7 +1354,7 @@ class TAKA_Platform_Tour_Planning {
 			</tr></thead>
 			<tbody>
 				<?php if ( empty( $items ) ) : ?>
-					<tr><td colspan="9"><?php echo esc_html__( 'No private planning items found.', 'taka-platform' ); ?></td></tr>
+					<tr><td colspan="9"><?php echo esc_html__( 'No agenda items found.', 'taka-platform' ); ?></td></tr>
 				<?php else : ?>
 					<?php foreach ( $items as $item ) : ?>
 						<tr>
@@ -834,11 +1385,11 @@ class TAKA_Platform_Tour_Planning {
 		);
 		echo '<p>';
 		if ( current_user_can( 'edit_taka_tour_planning' ) ) {
-			echo '<a class="button" href="' . esc_url( $add_url ) . '">' . esc_html__( 'Add planning item for this event', 'taka-platform' ) . '</a> ';
+			echo '<a class="button" href="' . esc_url( $add_url ) . '">' . esc_html__( 'Add agenda item for this event', 'taka-platform' ) . '</a> ';
 		}
-		echo '<a class="button" href="' . esc_url( self::admin_url() ) . '">' . esc_html__( 'Open Tour Planning agenda', 'taka-platform' ) . '</a></p>';
+		echo '<a class="button" href="' . esc_url( self::admin_url() ) . '">' . esc_html__( 'Open Tour Agenda', 'taka-platform' ) . '</a></p>';
 		if ( empty( $items ) ) {
-			echo '<p class="description">' . esc_html__( 'No private planning items are linked to this event yet.', 'taka-platform' ) . '</p>';
+			echo '<p class="description">' . esc_html__( 'No private agenda items are linked to this event yet.', 'taka-platform' ) . '</p>';
 			return;
 		}
 		self::render_items_table( $items );
@@ -851,6 +1402,13 @@ class TAKA_Platform_Tour_Planning {
 	}
 
 	private static function agenda_filters_from_request() {
+		$view = sanitize_key( wp_unslash( $_GET['view'] ?? 'timeline' ) );
+		$legacy_views = array(
+			'by_day' => 'timeline',
+			'by_event' => 'station',
+			'by_type' => 'calendar',
+		);
+		$view = $legacy_views[ $view ] ?? $view;
 		return array(
 			'tour_key' => sanitize_key( wp_unslash( $_GET['tour_key'] ?? '' ) ),
 			'date_from' => self::sanitize_date( wp_unslash( $_GET['date_from'] ?? '' ) ),
@@ -859,7 +1417,7 @@ class TAKA_Platform_Tour_Planning {
 			'type' => self::allowed_key( wp_unslash( $_GET['type'] ?? '' ), array_merge( array( '' ), array_keys( self::type_labels() ) ), '' ),
 			'responsible_person' => sanitize_text_field( wp_unslash( $_GET['responsible_person'] ?? '' ) ),
 			'status' => self::allowed_key( wp_unslash( $_GET['status'] ?? '' ), array_merge( array( '' ), array_keys( self::status_labels() ) ), '' ),
-			'view' => self::allowed_key( wp_unslash( $_GET['view'] ?? 'timeline' ), array_keys( self::view_labels() ), 'timeline' ),
+			'view' => self::allowed_key( $view, array_keys( self::view_labels() ), 'timeline' ),
 		);
 	}
 
@@ -929,15 +1487,11 @@ class TAKA_Platform_Tour_Planning {
 	}
 
 	private static function type_labels() {
-		return array(
-			'accommodation' => __( 'Accommodation / overnight stay', 'taka-platform' ),
-			'transfer' => __( 'Transfer', 'taka-platform' ),
-			'meal' => __( 'Meal / catering / restaurant', 'taka-platform' ),
-			'free_time' => __( 'Free time', 'taka-platform' ),
-			'excursion' => __( 'Excursion', 'taka-platform' ),
-			'internal_appointment' => __( 'Internal appointment', 'taka-platform' ),
-			'other' => __( 'Other', 'taka-platform' ),
-		);
+		$labels = array();
+		foreach ( self::agenda_item_types() as $type => $args ) {
+			$labels[ $type ] = $args['label'] ?? ucfirst( str_replace( '_', ' ', $type ) );
+		}
+		return $labels;
 	}
 
 	private static function status_labels() {
@@ -946,6 +1500,7 @@ class TAKA_Platform_Tour_Planning {
 			'requested' => __( 'Requested', 'taka-platform' ),
 			'confirmed' => __( 'Confirmed', 'taka-platform' ),
 			'paid' => __( 'Paid', 'taka-platform' ),
+			'completed' => __( 'Completed', 'taka-platform' ),
 			'cancelled' => __( 'Cancelled', 'taka-platform' ),
 		);
 	}
@@ -957,6 +1512,7 @@ class TAKA_Platform_Tour_Planning {
 			'train' => __( 'Train', 'taka-platform' ),
 			'flight' => __( 'Flight', 'taka-platform' ),
 			'taxi' => __( 'Taxi', 'taka-platform' ),
+			'bus' => __( 'Bus', 'taka-platform' ),
 			'public_transport' => __( 'Public transport', 'taka-platform' ),
 			'other' => __( 'Other', 'taka-platform' ),
 		);
@@ -970,6 +1526,7 @@ class TAKA_Platform_Tour_Planning {
 			'dinner' => __( 'Dinner', 'taka-platform' ),
 			'restaurant' => __( 'Restaurant', 'taka-platform' ),
 			'catering' => __( 'Catering', 'taka-platform' ),
+			'invitation' => __( 'Invitation', 'taka-platform' ),
 			'private_invitation' => __( 'Private invitation', 'taka-platform' ),
 			'other' => __( 'Other', 'taka-platform' ),
 		);
@@ -987,11 +1544,11 @@ class TAKA_Platform_Tour_Planning {
 
 	private static function view_labels() {
 		return array(
-			'timeline' => __( 'Timeline / agenda', 'taka-platform' ),
-			'by_day' => __( 'Grouped by day', 'taka-platform' ),
-			'by_event' => __( 'Grouped by station / event', 'taka-platform' ),
-			'by_type' => __( 'Grouped by type', 'taka-platform' ),
+			'timeline' => __( 'Timeline', 'taka-platform' ),
+			'calendar' => __( 'Calendar', 'taka-platform' ),
+			'kanban' => __( 'Kanban', 'taka-platform' ),
 			'costs' => __( 'Cost overview', 'taka-platform' ),
+			'station' => __( 'Station view', 'taka-platform' ),
 		);
 	}
 
@@ -1001,19 +1558,32 @@ class TAKA_Platform_Tour_Planning {
 	}
 
 	private static function type_icon( $type ) {
-		$icons = array(
-			'accommodation' => 'dashicons-building',
-			'transfer' => 'dashicons-airplane',
-			'meal' => 'dashicons-food',
-			'free_time' => 'dashicons-clock',
-			'excursion' => 'dashicons-location-alt',
-			'internal_appointment' => 'dashicons-calendar-alt',
-			'other' => 'dashicons-clipboard',
+		$types = self::agenda_item_types();
+		$icon = $types[ $type ]['icon'] ?? 'dashicons-marker';
+		return '<span class="dashicons ' . esc_attr( $icon ) . '" aria-hidden="true"></span>';
+	}
+
+	private static function type_category_label( $type ) {
+		$types = self::agenda_item_types();
+		$category = (string) ( $types[ $type ]['category'] ?? 'planning' );
+		$labels = array(
+			'seminar' => __( 'Seminar', 'taka-platform' ),
+			'travel' => __( 'Travel', 'taka-platform' ),
+			'accommodation' => __( 'Accommodation', 'taka-platform' ),
+			'meal' => __( 'Meals', 'taka-platform' ),
+			'meeting' => __( 'Meetings', 'taka-platform' ),
+			'media' => __( 'Media', 'taka-platform' ),
+			'activity' => __( 'Activities', 'taka-platform' ),
+			'planning' => __( 'Planning', 'taka-platform' ),
+			'sponsor' => __( 'Sponsors', 'taka-platform' ),
 		);
-		return '<span class="dashicons ' . esc_attr( $icons[ $type ] ?? 'dashicons-clipboard' ) . '" aria-hidden="true"></span>';
+		return $labels[ $category ] ?? $category;
 	}
 
 	private static function time_range_label( $item ) {
+		if ( ! empty( $item['all_day'] ) ) {
+			return __( 'All day', 'taka-platform' );
+		}
 		$start = trim( (string) ( $item['start_time'] ?? '' ) );
 		$end = trim( (string) ( $item['end_time'] ?? '' ) );
 		return '' !== $start && '' !== $end ? $start . ' - ' . $end : ( $start ?: $end );
@@ -1023,12 +1593,24 @@ class TAKA_Platform_Tour_Planning {
 		return self::has_any_item_value( $item, array( 'accommodation_name', 'address', 'checkin_date', 'checkout_date', 'rooms', 'room_types', 'guests', 'booking_reference' ) );
 	}
 
+	private static function is_accommodation_agenda_type( $type ) {
+		return in_array( (string) $type, array( 'hotel', 'accommodation' ), true );
+	}
+
 	private static function has_transfer_data( $item ) {
 		return self::has_any_item_value( $item, array( 'transfer_type', 'departure_location', 'arrival_location', 'departure_date', 'arrival_date', 'carrier_provider', 'transfer_booking_reference', 'driver_responsible_person' ) );
 	}
 
+	private static function is_transfer_agenda_type( $type ) {
+		return in_array( (string) $type, array( 'flight', 'train', 'transfer' ), true );
+	}
+
 	private static function has_meal_data( $item ) {
 		return self::has_any_item_value( $item, array( 'meal_type', 'restaurant_location', 'meal_date', 'meal_time', 'people_count' ) );
+	}
+
+	private static function is_meal_agenda_type( $type ) {
+		return 'meal' === (string) $type;
 	}
 
 	private static function has_any_item_value( $item, $fields ) {
@@ -1093,6 +1675,10 @@ class TAKA_Platform_Tour_Planning {
 
 	private static function money_field( $field, $label, $value ) {
 		self::field( $label, '<input type="text" inputmode="decimal" name="taka_planning[' . esc_attr( $field ) . ']" value="' . esc_attr( $value ) . '">' );
+	}
+
+	private static function checkbox_field( $field, $label, $checked ) {
+		self::field( $label, '<input type="checkbox" name="taka_planning[' . esc_attr( $field ) . ']" value="1" ' . checked( ! empty( $checked ), true, false ) . '>' );
 	}
 
 	private static function select_field( $field, $label, $current, $choices ) {

@@ -110,6 +110,169 @@
 	width: 18px;
 }
 
+.taka-tour-dashboard,
+.taka-tour-nav,
+.taka-agenda-day,
+.taka-agenda-station {
+	margin: 16px 0;
+}
+
+.taka-tour-dashboard {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	padding: 16px;
+}
+
+.taka-tour-dashboard__header {
+	align-items: center;
+	display: flex;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 14px;
+}
+
+.taka-tour-dashboard__eyebrow {
+	color: #646970;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.taka-tour-dashboard__header h2 {
+	margin: 2px 0 0;
+}
+
+.taka-tour-dashboard__grid {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.taka-tour-dashboard__card {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	padding: 10px;
+}
+
+.taka-tour-dashboard__card span {
+	color: #646970;
+	display: block;
+	font-size: 12px;
+}
+
+.taka-tour-dashboard__card strong {
+	display: block;
+	font-size: 18px;
+	line-height: 1.3;
+	margin-top: 4px;
+}
+
+.taka-tour-nav {
+	align-items: center;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 10px 12px;
+}
+
+.taka-tour-nav a {
+	border-radius: 4px;
+	padding: 5px 8px;
+	text-decoration: none;
+}
+
+.taka-tour-nav a.is-active {
+	background: #2271b1;
+	color: #fff;
+}
+
+.taka-agenda-list,
+.taka-agenda-calendar,
+.taka-agenda-kanban {
+	display: grid;
+	gap: 10px;
+}
+
+.taka-agenda-calendar {
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.taka-agenda-calendar__day,
+.taka-agenda-kanban__column,
+.taka-agenda-station {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	padding: 12px;
+}
+
+.taka-agenda-kanban {
+	align-items: start;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.taka-agenda-kanban__column h2 span {
+	color: #646970;
+	font-size: 13px;
+	font-weight: 400;
+}
+
+.taka-agenda-card {
+	align-items: start;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: 90px minmax(0, 1fr);
+	margin: 0 0 8px;
+	padding: 10px;
+}
+
+.taka-agenda-calendar .taka-agenda-card,
+.taka-agenda-kanban .taka-agenda-card {
+	grid-template-columns: 1fr;
+}
+
+.taka-agenda-card__time {
+	color: #646970;
+	font-weight: 600;
+}
+
+.taka-agenda-card__title {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.taka-agenda-card__title .dashicons {
+	color: #50575e;
+}
+
+.taka-agenda-card__title span,
+.taka-agenda-card__title em {
+	color: #646970;
+	font-size: 12px;
+	font-style: normal;
+}
+
+.taka-agenda-card__meta {
+	color: #50575e;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-top: 6px;
+}
+
+.taka-agenda-card__description {
+	margin: 6px 0 0;
+}
+
+.taka-tour-cost-table {
+	margin-bottom: 16px;
+}
+
 #taka_event_details .handlediv {
 	display: none;
 }

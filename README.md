@@ -89,7 +89,7 @@ Events support tour/event concepts such as title, subtitle, description, organiz
 
 Organizers support legal names, websites, logos, contact data, social links and repeatable co-organizers with their own logo, website, email, description and active/sort controls. Events can also use global or event-specific booking information for groups, multi-event discounts, payment and cancellation notes. Homepage content sections can be exported as portable config data and used as fallback/demo editorial content. Venues support addresses, websites, parking/accessibility notes, geo data and venue/parking images.
 
-Private tour logistics are managed separately in **TAKA Platform -> Tour Planning**. Planning items can track accommodation, transfers, meals, free time, excursions and internal appointments linked to events without exposing them on public pages. See [docs/tour-planning.md](docs/tour-planning.md).
+Private tour logistics are managed in **TAKA Platform -> Tour Planning** as a unified Tour Agenda. Existing Events appear automatically as read-only Seminar agenda items, while private manual items cover hotels, travel, meals, meetings, costs, responsibilities and internal notes without exposing them on public pages. See [docs/tour-planning.md](docs/tour-planning.md).
 
 ## Option lists
 
