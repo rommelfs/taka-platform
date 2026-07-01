@@ -627,6 +627,34 @@ document.addEventListener('click', function (event) {
   }
 });
 
+(function () {
+  function normalize(value) {
+    return (value || '').toString().toLowerCase();
+  }
+
+  function filterOperationsList(input) {
+    var root = input.closest('.taka-operations-admin');
+    var rows = root ? root.querySelectorAll('[data-taka-operations-search-row]') : [];
+    var query = normalize(input.value);
+
+    rows.forEach(function (row) {
+      var index = normalize(row.getAttribute('data-taka-operations-search-index'));
+      row.hidden = query && index.indexOf(query) === -1;
+    });
+  }
+
+  document.addEventListener('input', function (event) {
+    if (!event.target.matches('[data-taka-operations-live-search]')) {
+      return;
+    }
+    filterOperationsList(event.target);
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-taka-operations-live-search]').forEach(filterOperationsList);
+  });
+})();
+
 document.addEventListener('click', function (event) {
   var addEventVideo = event.target.closest('[data-taka-event-video-add]');
   var removeEventVideo = event.target.closest('[data-taka-event-video-remove]');

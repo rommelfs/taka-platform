@@ -480,6 +480,177 @@
 	margin: 0;
 }
 
+.taka-operations-mode-nav {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 10px 0 14px;
+}
+
+.taka-operations-mode-nav__profiles {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.taka-operations-volunteer-header {
+	align-items: center;
+	background: #111827;
+	border-radius: 4px;
+	color: #fff;
+	display: flex;
+	gap: 16px;
+	justify-content: space-between;
+	margin: 12px 0;
+	padding: 18px;
+}
+
+.taka-operations-volunteer-header span {
+	color: #cbd5e1;
+	display: block;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.taka-operations-volunteer-header h2 {
+	color: #fff;
+	font-size: 30px;
+	line-height: 1.1;
+	margin: 0;
+}
+
+.taka-operations-volunteer-header p {
+	color: #e5e7eb;
+	font-size: 16px;
+	margin: 4px 0 0;
+}
+
+.taka-operations-volunteer-header__numbers {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	justify-content: flex-end;
+}
+
+.taka-operations-volunteer-header__numbers strong {
+	background: rgba(255, 255, 255, .08);
+	border: 1px solid rgba(255, 255, 255, .16);
+	border-radius: 4px;
+	color: #fff;
+	display: block;
+	font-size: 28px;
+	line-height: 1;
+	min-width: 92px;
+	padding: 10px;
+	text-align: center;
+}
+
+.taka-operations-volunteer-header__numbers strong span {
+	font-size: 10px;
+	margin-top: 5px;
+}
+
+body.taka-operations-volunteer-mode #adminmenumain,
+body.taka-operations-volunteer-mode #wpadminbar,
+body.taka-operations-volunteer-mode #wpfooter {
+	display: none;
+}
+
+html.taka-operations-volunteer-root,
+html.taka-operations-volunteer-root body {
+	background: #f3f4f6;
+}
+
+html.taka-operations-volunteer-root.wp-toolbar {
+	padding-top: 0;
+}
+
+body.taka-operations-volunteer-mode #wpcontent,
+body.taka-operations-volunteer-mode #wpbody-content {
+	margin-left: 0;
+	padding: 0;
+}
+
+body.taka-operations-volunteer-mode #wpbody-content {
+	padding-bottom: 0;
+}
+
+.taka-operations-admin--volunteer {
+	box-sizing: border-box;
+	margin: 0;
+	max-width: none;
+	min-height: 100vh;
+	padding: 16px;
+}
+
+.taka-operations-admin--volunteer > h1 {
+	font-size: 22px;
+	margin: 0 0 8px;
+}
+
+.taka-operations-admin--volunteer .taka-operations-quick-actions {
+	border-radius: 0;
+	margin-left: -16px;
+	margin-right: -16px;
+	position: sticky;
+	top: 0;
+	z-index: 20;
+}
+
+.taka-operations-admin--volunteer .taka-operations-quick-actions .button,
+.taka-operations-admin--volunteer .taka-operations-card-actions .button,
+.taka-operations-admin--volunteer .taka-operations-event-selector .button,
+.taka-operations-admin--volunteer .taka-operations-search .button,
+.taka-operations-admin--volunteer .taka-operations-walk-in-form .button {
+	font-size: 17px;
+	min-height: 48px;
+	padding: 8px 16px;
+}
+
+.taka-operations-admin--volunteer .taka-operations-layout {
+	grid-template-columns: minmax(0, 1.25fr) minmax(360px, .75fr);
+}
+
+.taka-operations-admin--volunteer .taka-operations-panel,
+.taka-operations-admin--volunteer .taka-operations-dashboard,
+.taka-operations-admin--volunteer .taka-operations-event-selector {
+	border-color: #cbd5e1;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, .08);
+}
+
+.taka-operations-admin--volunteer .taka-operations-metric strong {
+	font-size: 34px;
+}
+
+.taka-operations-admin--volunteer .taka-operations-table td,
+.taka-operations-admin--volunteer .taka-operations-table th {
+	font-size: 15px;
+	padding-bottom: 12px;
+	padding-top: 12px;
+}
+
+.taka-operations-admin--volunteer .taka-operations-person-card h3 {
+	font-size: 30px;
+	line-height: 1.12;
+}
+
+.taka-operations-admin--volunteer .taka-operations-badge,
+.taka-operations-admin--volunteer .taka-operations-warnings span {
+	font-size: 14px;
+	padding: 7px 10px;
+}
+
+.taka-operations-admin--volunteer input[type="search"],
+.taka-operations-admin--volunteer input[type="text"],
+.taka-operations-admin--volunteer input[type="email"],
+.taka-operations-admin--volunteer select,
+.taka-operations-admin--volunteer textarea {
+	font-size: 16px;
+	min-height: 44px;
+}
+
 @media (max-width: 1100px) {
 	.taka-operations-layout {
 		grid-template-columns: 1fr;
@@ -487,6 +658,10 @@
 
 	.taka-operations-participant {
 		position: static;
+	}
+
+	.taka-operations-admin--volunteer .taka-operations-layout {
+		grid-template-columns: 1fr;
 	}
 }
 
@@ -499,6 +674,28 @@
 	.taka-operations-person-card__details div,
 	.taka-operations-summary-group dl div {
 		grid-template-columns: 1fr;
+	}
+
+	.taka-operations-volunteer-header {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.taka-operations-volunteer-header__numbers {
+		justify-content: stretch;
+	}
+
+	.taka-operations-volunteer-header__numbers strong {
+		flex: 1 1 30%;
+	}
+
+	.taka-operations-admin--volunteer {
+		padding: 10px;
+	}
+
+	.taka-operations-admin--volunteer .taka-operations-quick-actions {
+		margin-left: -10px;
+		margin-right: -10px;
 	}
 }
 

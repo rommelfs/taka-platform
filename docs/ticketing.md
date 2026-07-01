@@ -297,3 +297,21 @@ The default admin UI accepts scanned or pasted QR payloads. Visual QR rendering 
 Walk-in registration creates or reuses a Person, creates a private ticket order, reserves capacity immediately, syncs a Registration, and marks it as a walk-in. This keeps walk-ins compatible with existing People profiles, order timelines, products, payments and future check-in features.
 
 The Phase 5 UI includes dashboard metrics, quick actions, search by QR/name/email/order/dojo/country, participant cards, payment receive actions, check-in/undo/no-show actions, product visibility and operational warning badges.
+
+## Phase 5b Volunteer Operations Mode
+
+Volunteer Mode is available from Event Operations with `mode=volunteer`. It keeps the same Registration, Attendance and Payment services but presents a full-screen, touch-friendly interface for event-day volunteers.
+
+Volunteer Mode supports lightweight UI profiles, not WordPress roles:
+
+- Registration Desk: search, participant list, walk-in registration and summaries
+- Payment Desk: search, participant card, payment receiving and summaries
+- Entrance Check-in: QR payload lookup, search, check-in, undo and no-show actions
+- Information Desk: read-focused search, participant cards and summaries
+- All Operations: all modules for lead organizers
+
+These profiles only limit visible modules and buttons. Server-side permissions continue to be enforced by existing TAKA capabilities such as `view_taka_operations`, `manage_taka_operations`, `edit_taka_registrations` and `checkin_taka_participants`.
+
+The volunteer UI hides the surrounding WordPress chrome, increases touch target sizes, keeps quick actions visible, and adds client-side live filtering of the currently loaded participant list. It is designed for 10-12 inch tablets first, with phone and desktop layouts still supported.
+
+Future multi-operator support, badge printing and label printers should extend this mode instead of adding a separate event-day interface.

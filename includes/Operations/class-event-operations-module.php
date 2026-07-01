@@ -81,6 +81,12 @@ class TAKA_Event_Operations_Module {
 		} elseif ( 'receive_payment' === $task ) {
 			$result = TAKA_Event_Operations_Attendance_Service::receive_payment( $registration_id, get_current_user_id() );
 			$args['registration_id'] = $registration_id;
+		} elseif ( 'receive_payment_and_check_in' === $task ) {
+			$result = TAKA_Event_Operations_Attendance_Service::receive_payment( $registration_id, get_current_user_id() );
+			if ( ! is_wp_error( $result ) ) {
+				$result = TAKA_Event_Operations_Attendance_Service::check_in( $registration_id, get_current_user_id() );
+			}
+			$args['registration_id'] = $registration_id;
 		} elseif ( 'mark_no_show' === $task ) {
 			$result = TAKA_Event_Operations_Attendance_Service::mark_no_show( $registration_id, get_current_user_id() );
 			$args['registration_id'] = $registration_id;
@@ -116,6 +122,8 @@ class TAKA_Event_Operations_Module {
 		$search = sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$qr = sanitize_text_field( wp_unslash( $_GET['qr'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$registration_id = absint( $_GET['registration_id'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$mode = self::current_mode();
+		$profile = 'volunteer' === $mode ? self::current_profile() : 'standard';
 		$search_query = '' !== $qr ? $qr : $search;
 		$registrations = $event_id ? TAKA_Event_Operations_Attendance_Service::search_registrations( $event_id, $search_query ) : array();
 		if ( ! $registration_id && 1 === count( $registrations ) ) {
@@ -126,31 +134,44 @@ class TAKA_Event_Operations_Module {
 			$selected_registration = null;
 		}
 
-		echo '<div class="wrap taka-operations-admin"><h1>' . esc_html__( 'Event Operations', 'taka-platform' ) . '</h1>';
+		self::maybe_activate_volunteer_chrome( $mode );
+		echo '<div class="wrap taka-operations-admin ' . esc_attr( 'volunteer' === $mode ? 'taka-operations-admin--volunteer' : '' ) . '" data-taka-operations-mode="' . esc_attr( $mode ) . '" data-taka-operations-profile="' . esc_attr( $profile ) . '"><h1>' . esc_html__( 'Event Operations', 'taka-platform' ) . '</h1>';
 		self::render_notices();
 		if ( empty( $events ) ) {
 			self::render_empty_state();
 			echo '</div>';
 			return;
 		}
-		self::render_event_selector( $events, $event_id );
+		self::render_mode_nav( $event_id, $mode, $profile );
+		self::render_event_selector( $events, $event_id, $mode, $profile );
 		if ( ! $event_id ) {
 			echo '<div class="notice notice-warning"><p>' . esc_html__( 'Select an event you are allowed to operate.', 'taka-platform' ) . '</p></div></div>';
 			return;
 		}
 
 		$metrics = TAKA_Event_Operations_Attendance_Service::dashboard_metrics( $event_id );
+		if ( 'volunteer' === $mode ) {
+			self::render_volunteer_header( $event_id, $metrics, $profile );
+		}
 		self::render_dashboard( $event_id, $metrics );
-		self::render_quick_actions();
+		self::render_quick_actions( $mode, $profile );
 		echo '<div class="taka-operations-layout">';
 		echo '<main class="taka-operations-layout__main">';
-		self::render_search_tools( $event_id, $search, $qr );
-		self::render_registration_list( $event_id, $registrations, $selected_registration );
-		self::render_walk_in_form( $event_id );
+		if ( self::profile_can( $profile, 'search' ) ) {
+			self::render_search_tools( $event_id, $search, $qr, $mode, $profile );
+		}
+		if ( self::profile_can( $profile, 'list' ) ) {
+			self::render_registration_list( $event_id, $registrations, $selected_registration, $mode, $profile );
+		}
+		if ( self::profile_can( $profile, 'walk_in' ) ) {
+			self::render_walk_in_form( $event_id );
+		}
 		echo '</main>';
 		echo '<aside class="taka-operations-layout__side">';
-		self::render_participant_panel( $event_id, $selected_registration );
-		self::render_operational_summary( $metrics );
+		self::render_participant_panel( $event_id, $selected_registration, $mode, $profile );
+		if ( self::profile_can( $profile, 'summary' ) ) {
+			self::render_operational_summary( $metrics );
+		}
 		echo '</aside>';
 		echo '</div>';
 		echo '</div>';
@@ -173,10 +194,30 @@ class TAKA_Event_Operations_Module {
 		echo '</div>';
 	}
 
-	private static function render_event_selector( $events, $current_event_id ) {
+	private static function render_mode_nav( $event_id, $mode, $profile ) {
+		$profiles = self::volunteer_profiles();
+		$volunteer_profile = isset( $profiles[ $profile ] ) ? $profile : 'registration';
+		echo '<nav class="taka-operations-mode-nav" aria-label="' . esc_attr__( 'Operations mode', 'taka-platform' ) . '">';
+		echo '<a class="button ' . ( 'standard' === $mode ? 'button-primary' : '' ) . '" href="' . esc_url( self::admin_url( array( 'event_id' => $event_id ) ) ) . '">' . esc_html__( 'Admin mode', 'taka-platform' ) . '</a>';
+		echo '<a class="button ' . ( 'volunteer' === $mode ? 'button-primary' : '' ) . '" href="' . esc_url( self::admin_url( array( 'event_id' => $event_id, 'mode' => 'volunteer', 'profile' => $volunteer_profile ) ) ) . '">' . esc_html__( 'Volunteer mode', 'taka-platform' ) . '</a>';
+		if ( 'volunteer' === $mode ) {
+			echo '<span class="taka-operations-mode-nav__profiles">';
+			foreach ( $profiles as $key => $settings ) {
+				echo '<a class="button button-small ' . ( $profile === $key ? 'button-primary' : '' ) . '" href="' . esc_url( self::admin_url( array( 'event_id' => $event_id, 'mode' => 'volunteer', 'profile' => $key ) ) ) . '">' . esc_html( $settings['label'] ) . '</a>';
+			}
+			echo '</span>';
+		}
+		echo '</nav>';
+	}
+
+	private static function render_event_selector( $events, $current_event_id, $mode = 'standard', $profile = 'registration' ) {
 		?>
 		<form class="taka-operations-event-selector" method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
 			<input type="hidden" name="page" value="<?php echo esc_attr( self::ADMIN_PAGE_SLUG ); ?>">
+			<?php if ( 'volunteer' === $mode ) : ?>
+				<input type="hidden" name="mode" value="volunteer">
+				<input type="hidden" name="profile" value="<?php echo esc_attr( $profile ); ?>">
+			<?php endif; ?>
 			<label for="taka-operations-event"><strong><?php echo esc_html__( 'Event', 'taka-platform' ); ?></strong></label>
 			<select id="taka-operations-event" name="event_id">
 				<?php foreach ( $events as $event ) : ?>
@@ -185,6 +226,25 @@ class TAKA_Event_Operations_Module {
 			</select>
 			<?php submit_button( __( 'Open operations', 'taka-platform' ), '', '', false ); ?>
 		</form>
+		<?php
+	}
+
+	private static function render_volunteer_header( $event_id, $metrics, $profile ) {
+		$profiles = self::volunteer_profiles();
+		$settings = $profiles[ $profile ] ?? reset( $profiles );
+		?>
+		<section class="taka-operations-volunteer-header">
+			<div>
+				<span><?php echo esc_html__( 'Volunteer Mode', 'taka-platform' ); ?></span>
+				<h2><?php echo esc_html( $settings['label'] ?? __( 'Operations', 'taka-platform' ) ); ?></h2>
+				<p><?php echo esc_html( get_the_title( $event_id ) ); ?></p>
+			</div>
+			<div class="taka-operations-volunteer-header__numbers">
+				<strong><?php echo esc_html( (string) $metrics['checked_in'] ); ?><span><?php echo esc_html__( 'checked in', 'taka-platform' ); ?></span></strong>
+				<strong><?php echo esc_html( (string) $metrics['payment_pending'] ); ?><span><?php echo esc_html__( 'pending', 'taka-platform' ); ?></span></strong>
+				<strong><?php echo esc_html( null === $metrics['available'] ? __( 'Open', 'taka-platform' ) : (string) $metrics['available'] ); ?><span><?php echo esc_html__( 'available', 'taka-platform' ); ?></span></strong>
+			</div>
+		</section>
 		<?php
 	}
 
@@ -214,42 +274,49 @@ class TAKA_Event_Operations_Module {
 		echo '<div class="taka-operations-metric"><span>' . esc_html( $label ) . '</span><strong>' . esc_html( (string) $value ) . '</strong></div>';
 	}
 
-	private static function render_quick_actions() {
+	private static function render_quick_actions( $mode = 'standard', $profile = 'registration' ) {
 		?>
 		<nav class="taka-operations-quick-actions" aria-label="<?php echo esc_attr__( 'Event operation quick actions', 'taka-platform' ); ?>">
-			<a class="button button-primary" href="#taka-operations-walk-in"><?php echo esc_html__( 'Walk-in registration', 'taka-platform' ); ?></a>
-			<a class="button" href="#taka-operations-search"><?php echo esc_html__( 'Find participant', 'taka-platform' ); ?></a>
-			<a class="button" href="#taka-operations-qr"><?php echo esc_html__( 'Scan QR code', 'taka-platform' ); ?></a>
-			<a class="button" href="#taka-operations-participant"><?php echo esc_html__( 'Receive payment', 'taka-platform' ); ?></a>
-			<button class="button" type="button" disabled><?php echo esc_html__( 'Print badge', 'taka-platform' ); ?></button>
-			<button class="button" type="button" disabled><?php echo esc_html__( 'Send announcement', 'taka-platform' ); ?></button>
+			<?php if ( self::profile_can( $profile, 'walk_in' ) ) : ?><a class="button button-primary" href="#taka-operations-walk-in"><?php echo esc_html__( 'Walk-in registration', 'taka-platform' ); ?></a><?php endif; ?>
+			<?php if ( self::profile_can( $profile, 'search' ) ) : ?><a class="button" href="#taka-operations-search"><?php echo esc_html__( 'Find participant', 'taka-platform' ); ?></a><?php endif; ?>
+			<?php if ( self::profile_can( $profile, 'qr' ) ) : ?><a class="button" href="#taka-operations-qr"><?php echo esc_html__( 'Scan QR code', 'taka-platform' ); ?></a><?php endif; ?>
+			<?php if ( self::profile_can( $profile, 'payment' ) ) : ?><a class="button" href="#taka-operations-participant"><?php echo esc_html__( 'Receive payment', 'taka-platform' ); ?></a><?php endif; ?>
+			<?php if ( self::profile_can( $profile, 'check_in' ) ) : ?><a class="button" href="#taka-operations-participant"><?php echo esc_html__( 'Check-in', 'taka-platform' ); ?></a><?php endif; ?>
+			<?php if ( 'volunteer' !== $mode ) : ?>
+				<button class="button" type="button" disabled><?php echo esc_html__( 'Print badge', 'taka-platform' ); ?></button>
+				<button class="button" type="button" disabled><?php echo esc_html__( 'Send announcement', 'taka-platform' ); ?></button>
+			<?php endif; ?>
 		</nav>
 		<?php
 	}
 
-	private static function render_search_tools( $event_id, $search, $qr ) {
+	private static function render_search_tools( $event_id, $search, $qr, $mode = 'standard', $profile = 'registration' ) {
 		?>
 		<section class="taka-operations-panel taka-operations-search-panel" id="taka-operations-search">
 			<h2><?php echo esc_html__( 'Find participant', 'taka-platform' ); ?></h2>
 			<form class="taka-operations-search" method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
 				<input type="hidden" name="page" value="<?php echo esc_attr( self::ADMIN_PAGE_SLUG ); ?>">
 				<input type="hidden" name="event_id" value="<?php echo esc_attr( (string) absint( $event_id ) ); ?>">
-				<label><span><?php echo esc_html__( 'Search', 'taka-platform' ); ?></span><input type="search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="<?php echo esc_attr__( 'Name, email, order number, dojo or country', 'taka-platform' ); ?>"></label>
+				<?php if ( 'volunteer' === $mode ) : ?><input type="hidden" name="mode" value="volunteer"><input type="hidden" name="profile" value="<?php echo esc_attr( $profile ); ?>"><?php endif; ?>
+				<label><span><?php echo esc_html__( 'Search', 'taka-platform' ); ?></span><input type="search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="<?php echo esc_attr__( 'Name, email, order number, dojo or country', 'taka-platform' ); ?>" data-taka-operations-live-search></label>
 				<?php submit_button( __( 'Search', 'taka-platform' ), '', '', false ); ?>
 			</form>
-			<form class="taka-operations-search" id="taka-operations-qr" method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
-				<input type="hidden" name="page" value="<?php echo esc_attr( self::ADMIN_PAGE_SLUG ); ?>">
-				<input type="hidden" name="event_id" value="<?php echo esc_attr( (string) absint( $event_id ) ); ?>">
-				<label><span><?php echo esc_html__( 'QR payload', 'taka-platform' ); ?></span><input type="search" name="qr" value="<?php echo esc_attr( $qr ); ?>" placeholder="<?php echo esc_attr__( 'Scan or paste registration QR payload', 'taka-platform' ); ?>"></label>
-				<?php submit_button( __( 'Find QR', 'taka-platform' ), '', '', false ); ?>
-			</form>
+			<?php if ( self::profile_can( $profile, 'qr' ) ) : ?>
+				<form class="taka-operations-search" id="taka-operations-qr" method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
+					<input type="hidden" name="page" value="<?php echo esc_attr( self::ADMIN_PAGE_SLUG ); ?>">
+					<input type="hidden" name="event_id" value="<?php echo esc_attr( (string) absint( $event_id ) ); ?>">
+					<?php if ( 'volunteer' === $mode ) : ?><input type="hidden" name="mode" value="volunteer"><input type="hidden" name="profile" value="<?php echo esc_attr( $profile ); ?>"><?php endif; ?>
+					<label><span><?php echo esc_html__( 'QR payload', 'taka-platform' ); ?></span><input type="search" name="qr" value="<?php echo esc_attr( $qr ); ?>" placeholder="<?php echo esc_attr__( 'Scan or paste registration QR payload', 'taka-platform' ); ?>"></label>
+					<?php submit_button( __( 'Find QR', 'taka-platform' ), '', '', false ); ?>
+				</form>
+			<?php endif; ?>
 		</section>
 		<?php
 	}
 
-	private static function render_registration_list( $event_id, $registrations, $selected_registration ) {
+	private static function render_registration_list( $event_id, $registrations, $selected_registration, $mode = 'standard', $profile = 'registration' ) {
 		?>
-		<section class="taka-operations-panel">
+		<section class="taka-operations-panel" data-taka-operations-list>
 			<h2><?php echo esc_html__( 'Manual list', 'taka-platform' ); ?></h2>
 			<table class="widefat striped taka-operations-table">
 				<thead><tr>
@@ -266,13 +333,13 @@ class TAKA_Event_Operations_Module {
 					<?php endif; ?>
 					<?php foreach ( $registrations as $registration ) : ?>
 						<?php $card = TAKA_Event_Operations_Attendance_Service::participant_card_data( $registration ); $person = $card['person']; ?>
-						<tr class="<?php echo $selected_registration && absint( $selected_registration['id'] ?? 0 ) === absint( $registration['id'] ?? 0 ) ? 'is-selected' : ''; ?>">
+						<tr class="<?php echo $selected_registration && absint( $selected_registration['id'] ?? 0 ) === absint( $registration['id'] ?? 0 ) ? 'is-selected' : ''; ?>" data-taka-operations-search-row data-taka-operations-search-index="<?php echo esc_attr( self::registration_search_index( $registration, $card ) ); ?>">
 							<td><strong><?php echo esc_html( TAKA_People_Person::full_name( $person ) ?: $person['email'] ); ?></strong><br><span class="description"><?php echo esc_html( trim( (string) ( $person['country'] ?? '' ) . ' ' . (string) ( $person['dojo'] ?? '' ) ) ); ?></span></td>
 							<td><?php echo esc_html( $card['ticket_label'] ); ?></td>
 							<td><?php echo esc_html( ucfirst( (string) ( $registration['payment_status'] ?? '' ) ) ); ?></td>
 							<td><?php echo esc_html( TAKA_Event_Operations_Attendance_Service::status_label( $registration['attendance_state'] ?? $registration['checkin_status'] ?? '' ) ); ?></td>
 							<td><?php echo esc_html( self::products_summary( $card['products'] ) ); ?></td>
-							<td><a class="button button-small" href="<?php echo esc_url( self::admin_url( array( 'event_id' => $event_id, 'registration_id' => absint( $registration['id'] ?? 0 ) ) ) ); ?>"><?php echo esc_html__( 'Open', 'taka-platform' ); ?></a></td>
+							<td><a class="button button-small" href="<?php echo esc_url( self::admin_url( array_filter( array( 'event_id' => $event_id, 'registration_id' => absint( $registration['id'] ?? 0 ), 'mode' => 'volunteer' === $mode ? 'volunteer' : '', 'profile' => 'volunteer' === $mode ? $profile : '' ) ) ) ); ?>"><?php echo esc_html__( 'Open', 'taka-platform' ); ?></a></td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>
@@ -281,7 +348,7 @@ class TAKA_Event_Operations_Module {
 		<?php
 	}
 
-	private static function render_participant_panel( $event_id, $registration ) {
+	private static function render_participant_panel( $event_id, $registration, $mode = 'standard', $profile = 'registration' ) {
 		echo '<section class="taka-operations-participant taka-operations-panel" id="taka-operations-participant">';
 		echo '<h2>' . esc_html__( 'Participant card', 'taka-platform' ) . '</h2>';
 		if ( ! $registration ) {
@@ -320,15 +387,22 @@ class TAKA_Event_Operations_Module {
 				<?php endif; ?>
 			</dl>
 			<div class="taka-operations-card-actions">
-				<?php if ( 'checked_in' !== $attendance_state ) : ?>
-					<?php self::action_form( $event_id, $registration, 'check_in', __( 'Check in', 'taka-platform' ), 'button-primary' ); ?>
-				<?php else : ?>
-					<?php self::action_form( $event_id, $registration, 'undo_check_in', __( 'Undo', 'taka-platform' ), '' ); ?>
+				<?php if ( 'paid' !== $payment_status && 'checked_in' !== $attendance_state && self::profile_can( $profile, 'payment' ) && self::profile_can( $profile, 'check_in' ) ) : ?>
+					<?php self::action_form( $event_id, $registration, 'receive_payment_and_check_in', __( 'Receive payment and check in', 'taka-platform' ), 'button-primary taka-operations-action--primary' ); ?>
 				<?php endif; ?>
-				<?php if ( 'paid' !== $payment_status ) : ?>
+				<?php if ( self::profile_can( $profile, 'check_in' ) ) : ?>
+					<?php if ( 'checked_in' !== $attendance_state ) : ?>
+						<?php self::action_form( $event_id, $registration, 'check_in', __( 'Check in', 'taka-platform' ), 'button-primary' ); ?>
+					<?php else : ?>
+						<?php self::action_form( $event_id, $registration, 'undo_check_in', __( 'Undo', 'taka-platform' ), '' ); ?>
+					<?php endif; ?>
+				<?php endif; ?>
+				<?php if ( 'paid' !== $payment_status && self::profile_can( $profile, 'payment' ) ) : ?>
 					<?php self::action_form( $event_id, $registration, 'receive_payment', __( 'Receive payment', 'taka-platform' ), '' ); ?>
 				<?php endif; ?>
-				<?php self::action_form( $event_id, $registration, 'mark_no_show', __( 'No-show', 'taka-platform' ), '' ); ?>
+				<?php if ( self::profile_can( $profile, 'check_in' ) ) : ?>
+					<?php self::action_form( $event_id, $registration, 'mark_no_show', __( 'No-show', 'taka-platform' ), '' ); ?>
+				<?php endif; ?>
 			</div>
 			<div class="taka-operations-qr-card">
 				<h4><?php echo esc_html__( 'Registration QR payload', 'taka-platform' ); ?></h4>
@@ -479,6 +553,76 @@ class TAKA_Event_Operations_Module {
 			$parts[] = max( 1, absint( $product['quantity'] ?? 1 ) ) . 'x ' . sanitize_text_field( $product['title'] ?? '' );
 		}
 		return implode( ', ', array_filter( $parts ) );
+	}
+
+	private static function current_mode() {
+		$mode = sanitize_key( wp_unslash( $_GET['mode'] ?? 'standard' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return 'volunteer' === $mode ? 'volunteer' : 'standard';
+	}
+
+	private static function current_profile() {
+		$profile = sanitize_key( wp_unslash( $_GET['profile'] ?? 'registration' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return isset( self::volunteer_profiles()[ $profile ] ) ? $profile : 'registration';
+	}
+
+	private static function volunteer_profiles() {
+		return array(
+			'registration' => array(
+				'label'   => __( 'Registration Desk', 'taka-platform' ),
+				'modules' => array( 'search', 'list', 'walk_in', 'participant', 'summary' ),
+			),
+			'payment'      => array(
+				'label'   => __( 'Payment Desk', 'taka-platform' ),
+				'modules' => array( 'search', 'list', 'participant', 'payment', 'summary' ),
+			),
+			'entrance'     => array(
+				'label'   => __( 'Entrance Check-in', 'taka-platform' ),
+				'modules' => array( 'search', 'qr', 'list', 'participant', 'check_in', 'summary' ),
+			),
+			'info'         => array(
+				'label'   => __( 'Information Desk', 'taka-platform' ),
+				'modules' => array( 'search', 'list', 'participant', 'summary' ),
+			),
+			'all'          => array(
+				'label'   => __( 'All Operations', 'taka-platform' ),
+				'modules' => array( 'search', 'qr', 'list', 'walk_in', 'participant', 'payment', 'check_in', 'summary' ),
+			),
+		);
+	}
+
+	private static function profile_can( $profile, $module ) {
+		if ( 'standard' === (string) $profile ) {
+			return true;
+		}
+		$profiles = self::volunteer_profiles();
+		if ( ! isset( $profiles[ $profile ] ) ) {
+			return true;
+		}
+		return in_array( sanitize_key( $module ), (array) ( $profiles[ $profile ]['modules'] ?? array() ), true );
+	}
+
+	private static function maybe_activate_volunteer_chrome( $mode ) {
+		if ( 'volunteer' !== $mode ) {
+			return;
+		}
+		echo '<script>document.documentElement.classList.add("taka-operations-volunteer-root");document.addEventListener("DOMContentLoaded",function(){document.body.classList.add("taka-operations-volunteer-mode");});</script>';
+	}
+
+	private static function registration_search_index( $registration, $card ) {
+		$person = is_array( $card['person'] ?? null ) ? $card['person'] : array();
+		$order = is_array( $card['order'] ?? null ) ? $card['order'] : array();
+		$parts = array(
+			TAKA_People_Person::full_name( $person ),
+			$person['email'] ?? '',
+			$person['dojo'] ?? '',
+			$person['country'] ?? '',
+			$person['rank'] ?? '',
+			$registration['order_number'] ?? '',
+			$order['order_number'] ?? '',
+			$card['ticket_label'] ?? '',
+			implode( ' ', (array) ( $person['tags'] ?? array() ) ),
+		);
+		return strtolower( remove_accents( implode( ' ', array_filter( array_map( 'sanitize_text_field', $parts ) ) ) ) );
 	}
 
 	private static function events_for_operations() {
