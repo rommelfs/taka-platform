@@ -308,6 +308,10 @@
     "apply_promotion": "Appliquer",
     "promotion_applied": "Promotion appliquée.",
     "promotion_reapply": "Appliquez à nouveau le code promotionnel après avoir changé de billet.",
+    "optional_add_ons": "Options supplémentaires",
+    "product": "Produit",
+    "quantity": "Quantité",
+    "order_items": "Articles de commande",
     "review_order": "Vérifier la réservation",
     "event": "Événement",
     "ticket": "Billet",
@@ -380,6 +384,9 @@
     "error_promotion_scope": "Cette promotion ne peut pas être utilisée pour le billet sélectionné.",
     "error_promotion_used_up": "Cette promotion a déjà été entièrement utilisée.",
     "error_promotion_person_limit": "Cette promotion a déjà été utilisée avec cette adresse e-mail.",
+    "error_product_missing": "Produit introuvable.",
+    "error_product_unavailable": "Ce produit n'est plus disponible.",
+    "error_product_capacity": "La quantité sélectionnée pour cette option n'est plus disponible.",
     "error_session_expired": "Votre session de réservation a expiré. Veuillez réessayer."
   },
   "content_sections": {

@@ -130,6 +130,8 @@ The module reserves these capabilities:
 - `view_taka_orders`
 - `edit_taka_orders`
 - `checkin_taka_participants`
+- `manage_taka_promotions`
+- `manage_taka_products`
 
 Administrators receive these capabilities. Later phases can assign subsets to ticketing managers, check-in staff or organizer-specific roles.
 
@@ -137,7 +139,7 @@ Administrators receive these capabilities. Later phases can assign subsets to ti
 
 WordPress export data includes native ticket type configuration as `native_ticket_types` on each event. Import restores the same data into `_taka_native_ticket_types`.
 
-The export also includes the global `ticketing` settings block for native checkout consent labels, booking terms URL and privacy notice URL. The `ticketing` export block contains `settings` and `promotions`; older exports where `ticketing` is only the settings object remain importable. Promotion definitions are included so voucher and benefit configuration can be backed up and restored. Private order and participant records are intentionally not included in the public config export.
+The export also includes the global `ticketing` settings block for native checkout consent labels, booking terms URL and privacy notice URL. The `ticketing` export block contains `settings`, `products` and `promotions`; older exports where `ticketing` is only the settings object remain importable. Product and promotion definitions are included so purchasable product and voucher/benefit configuration can be backed up and restored. Private order and participant records are intentionally not included in the public config export.
 
 ## Phase 2 Scope
 
@@ -145,6 +147,7 @@ Phase 2 adds:
 
 - Public native checkout rendering for Events using `native_taka_ticketing`.
 - Ticket type selection with capacity display.
+- Optional checkout add-on products such as meals, parties, merch or donations.
 - Promotion/voucher code application through the shared pricing service.
 - Buyer information capture with country select options.
 - Participant information capture with buyer-is-participant default, optional dojo/rank details and dietary preference select options.
@@ -171,6 +174,20 @@ Supported benefits are free ticket, percentage discount, fixed amount discount, 
 Checkout does not calculate discounts directly. It calls `TAKA_Ticketing_Pricing_Service`, which starts with the base ticket price, validates the promotion through `TAKA_Ticketing_Promotion_Repository`, applies benefits, returns the final amount and decides whether a payment provider is required.
 
 If the final amount is zero because of a promotion, no payment provider is selected. The order stores `payment_method = promotion`, `payment_status = paid`, the original amount, discount amount, final amount, voucher code, promotion ID and a snapshot of the applied benefits. Non-monetary benefits are shown in confirmation screens and emails and remain available even if the promotion changes later.
+
+## Products And Add-ons
+
+Native ticketing products are generic purchasable items managed under TAKA Platform -> Ticketing -> Products. They are intentionally separate from seminar ticket types.
+
+Products can be add-ons shown during event checkout or standalone products rendered with `[taka_ticketing_product id="product-id"]`.
+
+Product fields include product ID, title, description, type, price, currency, capacity/stock, sale window, related event, related tour ID, whether an event ticket is required, whether standalone purchase is allowed, checkout visibility, max quantity per order, sort order and status.
+
+Event checkout shows visible active products attached to that event when they require an event ticket. Orders store the seminar ticket and selected products as line items. Product capacity is reserved from active non-cancelled orders and is independent from seminar ticket capacity.
+
+Standalone products can be purchased without selecting a seminar ticket. They use the same private order storage, buyer data, payment providers and confirmation email flow as event checkout.
+
+Promotions are line-item aware. Voucher scope can target the whole order, the ticket only, add-ons only or one specific product. This prepares future benefit logic for product-specific vouchers without hardcoding product rules into checkout.
 
 ## Payment Providers
 
@@ -199,6 +216,7 @@ Order data includes:
 - Ticket type ID and name
 - Buyer data
 - Participant data
+- Line items for tickets, products and promotion discounts
 - Original amount, discount amount, final amount and currency
 - Payment method
 - Payment status

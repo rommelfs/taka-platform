@@ -40,6 +40,15 @@ class TAKA_Ticketing_Promotion {
 		);
 	}
 
+	public static function applies_to_choices() {
+		return array(
+			'entire_order' => __( 'Entire order', 'taka-platform' ),
+			'ticket_only'  => __( 'Ticket only', 'taka-platform' ),
+			'add_ons_only' => __( 'Add-ons only', 'taka-platform' ),
+			'product'      => __( 'Specific product', 'taka-platform' ),
+		);
+	}
+
 	public static function benefit_types() {
 		return array(
 			'free_ticket'              => __( 'Free ticket', 'taka-platform' ),
@@ -84,6 +93,11 @@ class TAKA_Ticketing_Promotion {
 			$scope_type = 'all';
 		}
 
+		$applies_to = sanitize_key( $data['applies_to'] ?? 'entire_order' );
+		if ( ! isset( self::applies_to_choices()[ $applies_to ] ) ) {
+			$applies_to = 'entire_order';
+		}
+
 		return array(
 			'id'                   => absint( $data['id'] ?? 0 ),
 			'code'                 => self::normalize_code( $data['code'] ?? '' ),
@@ -98,6 +112,8 @@ class TAKA_Ticketing_Promotion {
 			'scope_tour_id'        => sanitize_text_field( $data['scope_tour_id'] ?? '' ),
 			'scope_event_id'       => absint( $data['scope_event_id'] ?? 0 ),
 			'scope_ticket_type_id' => sanitize_key( $data['scope_ticket_type_id'] ?? '' ),
+			'scope_product_id'     => TAKA_Ticketing_Product::normalize_product_id( $data['scope_product_id'] ?? '' ),
+			'applies_to'           => $applies_to,
 			'status'               => $status,
 			'benefits'             => self::normalize_benefits( $data['benefits'] ?? array() ),
 		);

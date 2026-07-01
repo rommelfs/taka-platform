@@ -308,6 +308,10 @@
     "apply_promotion": "Anwenden",
     "promotion_applied": "Promotion angewendet.",
     "promotion_reapply": "Wende den Promotion-Code nach dem Wechsel des Tickets erneut an.",
+    "optional_add_ons": "Optionale Zusatzangebote",
+    "product": "Produkt",
+    "quantity": "Anzahl",
+    "order_items": "Bestellpositionen",
     "review_order": "Buchung prüfen",
     "event": "Veranstaltung",
     "ticket": "Ticket",
@@ -380,6 +384,9 @@
     "error_promotion_scope": "Diese Promotion kann für das ausgewählte Ticket nicht genutzt werden.",
     "error_promotion_used_up": "Diese Promotion wurde bereits vollständig genutzt.",
     "error_promotion_person_limit": "Diese Promotion wurde bereits für diese E-Mail-Adresse genutzt.",
+    "error_product_missing": "Produkt nicht gefunden.",
+    "error_product_unavailable": "Dieses Produkt ist nicht mehr verfügbar.",
+    "error_product_capacity": "Die ausgewählte Zusatzmenge ist nicht mehr verfügbar.",
     "error_session_expired": "Deine Buchungssitzung ist abgelaufen. Bitte versuche es erneut."
   },
   "content_sections": {

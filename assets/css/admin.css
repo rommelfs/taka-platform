@@ -259,6 +259,19 @@
 	margin: 0;
 }
 
+.taka-ticketing-product-flags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-top: 12px;
+}
+
+.taka-ticketing-product-flags label {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	padding: 8px 10px;
+}
+
 .taka-ticketing-admin-actions {
 	display: flex;
 	flex-wrap: wrap;

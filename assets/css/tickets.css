@@ -164,6 +164,10 @@
 	margin-top: .2rem;
 }
 
+.taka-native-product-option > input[type="number"] {
+	max-width: 5.5rem;
+}
+
 .taka-native-checkout__wide {
 	grid-column: 1 / -1;
 }
@@ -227,6 +231,11 @@
 	background: #f7f3ec;
 	border-radius: .8rem;
 	padding: .85rem;
+}
+
+.taka-native-confirmation__items {
+	margin: 0;
+	padding-left: 1.2rem;
 }
 
 .taka-native-confirmation__actions {

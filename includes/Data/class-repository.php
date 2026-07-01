@@ -28,6 +28,7 @@ class TAKA_Platform_Data {
 			self::CONTENT_BLOCK_POST_TYPE => __( 'Content Blocks', 'taka-platform' ),
 			self::TOUR_PLANNING_POST_TYPE => __( 'Private Tour Planning', 'taka-platform' ),
 			( defined( 'TAKA_PLATFORM_CPT_TICKET_PROMOTION' ) ? TAKA_PLATFORM_CPT_TICKET_PROMOTION : 'taka_ticket_promo' ) => __( 'Ticket Promotions', 'taka-platform' ),
+			( defined( 'TAKA_PLATFORM_CPT_TICKETING_PRODUCT' ) ? TAKA_PLATFORM_CPT_TICKETING_PRODUCT : 'taka_ticket_product' ) => __( 'Ticketing Products', 'taka-platform' ),
 		);
 	}
 

@@ -68,19 +68,39 @@ class TAKA_Ticketing_Email_Service {
 		$participant = is_array( $data['participant'] ?? null ) ? $data['participant'] : array();
 		$provider = TAKA_Ticketing_Module::payment_provider( $data['payment_method'] ?? '' );
 		$instructions = $provider ? $provider->get_public_instructions( $order ) : array();
+		$line_items = is_array( $data['line_items'] ?? null ) ? $data['line_items'] : array();
 
 		$lines = array(
 			$admin ? self::label( 'ticketing.email_intro_admin', 'A new ticket order has been received.', $lang ) : self::label( 'ticketing.email_intro_buyer', 'Your registration has been received.', $lang ),
 			'',
 			self::label( 'ticketing.order_number', 'Order number', $lang ) . ': ' . ( $data['order_number'] ?? '' ),
-			self::label( 'ticketing.event', 'Event', $lang ) . ': ' . ( $data['event_title'] ?? '' ),
-			self::label( 'ticketing.ticket', 'Ticket', $lang ) . ': ' . ( $data['ticket_type_name'] ?? '' ),
 			self::label( 'ticketing.buyer', 'Buyer', $lang ) . ': ' . self::person_line( $buyer, $lang, true ),
 			self::label( 'ticketing.participant', 'Participant', $lang ) . ': ' . self::person_line( $participant, $lang, false ),
 			self::label( 'ticketing.payment_method', 'Payment method', $lang ) . ': ' . TAKA_Ticketing_Module::payment_method_label( $data['payment_method'] ?? '', $lang ),
 			self::label( 'ticketing.amount', 'Amount', $lang ) . ': ' . TAKA_Ticketing_Module::format_money( $data['amount'] ?? '', $data['currency'] ?? 'EUR' ),
 			self::label( 'ticketing.payment_status', 'Payment status', $lang ) . ': ' . self::payment_status_label( $data['payment_status'] ?? 'pending', $lang ),
 		);
+		if ( '' !== trim( (string) ( $data['ticket_type_name'] ?? '' ) ) ) {
+			array_splice(
+				$lines,
+				3,
+				0,
+				array(
+					self::label( 'ticketing.event', 'Event', $lang ) . ': ' . ( $data['event_title'] ?? '' ),
+					self::label( 'ticketing.ticket', 'Ticket', $lang ) . ': ' . ( $data['ticket_type_name'] ?? '' ),
+				)
+			);
+		} elseif ( '' !== trim( (string) ( $data['event_title'] ?? '' ) ) ) {
+			array_splice( $lines, 3, 0, array( self::label( 'ticketing.event', 'Event', $lang ) . ': ' . ( $data['event_title'] ?? '' ) ) );
+		}
+
+		if ( ! empty( $line_items ) ) {
+			$lines[] = '';
+			$lines[] = self::label( 'ticketing.order_items', 'Order items', $lang ) . ':';
+			foreach ( $line_items as $item ) {
+				$lines[] = '- ' . TAKA_Ticketing_Module::line_item_label( $item );
+			}
+		}
 
 		if ( '' !== trim( (string) ( $data['applied_voucher_code'] ?? '' ) ) ) {
 			array_splice(

@@ -308,6 +308,10 @@
     "apply_promotion": "Uwenden",
     "promotion_applied": "Promotioun ugewannt.",
     "promotion_reapply": "Wend de Promotiounscode nom Wiessel vum Ticket nach eng Kéier un.",
+    "optional_add_ons": "Optional Zousazofferen",
+    "product": "Produkt",
+    "quantity": "Unzuel",
+    "order_items": "Bestellpositiounen",
     "review_order": "Buchung iwwerpréiwen",
     "event": "Event",
     "ticket": "Ticket",
@@ -380,6 +384,9 @@
     "error_promotion_scope": "Dës Promotioun kann net fir den ausgewielten Ticket benotzt ginn.",
     "error_promotion_used_up": "Dës Promotioun gouf schonn komplett benotzt.",
     "error_promotion_person_limit": "Dës Promotioun gouf scho fir dës E-Mail-Adress benotzt.",
+    "error_product_missing": "Produkt net fonnt.",
+    "error_product_unavailable": "Dëst Produkt ass net méi verfügbar.",
+    "error_product_capacity": "Déi ausgewielt Zousazquantitéit ass net méi verfügbar.",
     "error_session_expired": "Deng Buchungssessioun ass ofgelaf. Probéier et w.e.g. nach eng Kéier."
   },
   "content_sections": {

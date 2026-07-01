@@ -308,6 +308,10 @@
     "apply_promotion": "Toepassen",
     "promotion_applied": "Promotie toegepast.",
     "promotion_reapply": "Pas de promotiecode opnieuw toe na het wijzigen van het ticket.",
+    "optional_add_ons": "Optionele extra's",
+    "product": "Product",
+    "quantity": "Aantal",
+    "order_items": "Bestelregels",
     "review_order": "Boeking controleren",
     "event": "Evenement",
     "ticket": "Ticket",
@@ -380,6 +384,9 @@
     "error_promotion_scope": "Deze promotie kan niet worden gebruikt voor het geselecteerde ticket.",
     "error_promotion_used_up": "Deze promotie is al volledig gebruikt.",
     "error_promotion_person_limit": "Deze promotie is al gebruikt met dit e-mailadres.",
+    "error_product_missing": "Product niet gevonden.",
+    "error_product_unavailable": "Dit product is niet meer beschikbaar.",
+    "error_product_capacity": "De geselecteerde hoeveelheid voor deze extra is niet meer beschikbaar.",
     "error_session_expired": "Je boekingssessie is verlopen. Probeer het opnieuw."
   },
   "content_sections": {

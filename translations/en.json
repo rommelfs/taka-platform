@@ -308,6 +308,10 @@
     "apply_promotion": "Apply",
     "promotion_applied": "Promotion applied.",
     "promotion_reapply": "Apply the promotion code again after changing the ticket.",
+    "optional_add_ons": "Optional add-ons",
+    "product": "Product",
+    "quantity": "Quantity",
+    "order_items": "Order items",
     "review_order": "Review order",
     "event": "Event",
     "ticket": "Ticket",
@@ -380,6 +384,9 @@
     "error_promotion_scope": "This promotion cannot be used for the selected ticket.",
     "error_promotion_used_up": "This promotion has already been used up.",
     "error_promotion_person_limit": "This promotion was already used for this email address.",
+    "error_product_missing": "Product not found.",
+    "error_product_unavailable": "This product is no longer available.",
+    "error_product_capacity": "The selected add-on quantity is no longer available.",
     "error_session_expired": "Your booking session expired. Please try again."
   },
   "content_sections": {

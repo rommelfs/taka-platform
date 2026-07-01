@@ -308,6 +308,10 @@
     "apply_promotion": "Käytä",
     "promotion_applied": "Kampanja käytetty.",
     "promotion_reapply": "Käytä kampanjakoodi uudelleen lipun vaihtamisen jälkeen.",
+    "optional_add_ons": "Valinnaiset lisät",
+    "product": "Tuote",
+    "quantity": "Määrä",
+    "order_items": "Tilausrivit",
     "review_order": "Tarkista varaus",
     "event": "Tapahtuma",
     "ticket": "Lippu",
@@ -380,6 +384,9 @@
     "error_promotion_scope": "Tätä kampanjaa ei voi käyttää valitulle lipulle.",
     "error_promotion_used_up": "Tämä kampanja on jo käytetty loppuun.",
     "error_promotion_person_limit": "Tätä kampanjaa on jo käytetty tällä sähköpostiosoitteella.",
+    "error_product_missing": "Tuotetta ei löytynyt.",
+    "error_product_unavailable": "Tämä tuote ei ole enää saatavilla.",
+    "error_product_capacity": "Valittua lisämäärää ei ole enää saatavilla.",
     "error_session_expired": "Varausistuntosi on vanhentunut. Yritä uudelleen."
   },
   "content_sections": {

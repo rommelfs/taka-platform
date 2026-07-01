@@ -308,6 +308,10 @@
     "apply_promotion": "適用",
     "promotion_applied": "プロモーションを適用しました。",
     "promotion_reapply": "チケットを変更した後、プロモーションコードをもう一度適用してください。",
+    "optional_add_ons": "任意の追加項目",
+    "product": "商品",
+    "quantity": "数量",
+    "order_items": "注文項目",
     "review_order": "予約内容を確認",
     "event": "イベント",
     "ticket": "チケット",
@@ -380,6 +384,9 @@
     "error_promotion_scope": "このプロモーションは選択したチケットには使用できません。",
     "error_promotion_used_up": "このプロモーションはすでに使用上限に達しています。",
     "error_promotion_person_limit": "このプロモーションはこのメールアドレスですでに使用されています。",
+    "error_product_missing": "商品が見つかりません。",
+    "error_product_unavailable": "この商品は現在利用できません。",
+    "error_product_capacity": "選択した追加項目の数量は現在利用できません。",
     "error_session_expired": "予約セッションの有効期限が切れました。もう一度お試しください。"
   },
   "content_sections": {
