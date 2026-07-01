@@ -1533,6 +1533,9 @@ class TAKA_Platform_Data {
 				'ticket_door_price_child' => self::sanitize_money_value( get_post_meta( $post->ID, '_taka_ticket_door_price_child', true ) ),
 				'ticket_door_price_member' => self::sanitize_money_value( get_post_meta( $post->ID, '_taka_ticket_door_price_member', true ) ),
 				'native_ticket_types' => class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::ticket_types_for_event( $post->ID ) : array(),
+				'native_payment_methods' => class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::enabled_payment_methods_for_event( $post->ID ) : array(),
+				'native_bank_transfer_settings' => class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::event_bank_transfer_settings( $post->ID ) : array(),
+				'native_pay_at_door_instructions' => (string) get_post_meta( $post->ID, '_taka_native_pay_at_door_instructions', true ),
 				'image_id' => $image_id,
 				'image_url' => (string) get_post_meta( $post->ID, '_taka_image_url', true ),
 				'image' => self::resolve_attachment_url( $image_id, 'large', (string) get_post_meta( $post->ID, '_taka_image_url', true ) ),
@@ -1642,6 +1645,10 @@ class TAKA_Platform_Data {
 			$event['gallery_urls'] = $event['gallery'] ?? array();
 			$event['promo_videos'] = self::normalize_event_videos( $event['promo_videos'] ?? ( $event['videos'] ?? array() ) );
 			$event['native_ticket_types'] = class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::sanitize_ticket_types( $event['native_ticket_types'] ?? ( $event['ticket_types'] ?? array() ) ) : array();
+			$native_payment_methods = (array) ( $event['native_payment_methods'] ?? array( 'bank_transfer' ) );
+			$event['native_payment_methods'] = class_exists( 'TAKA_Ticketing_Module' ) ? array_values( array_filter( array_map( 'sanitize_key', $native_payment_methods ) ) ) : array();
+			$event['native_bank_transfer_settings'] = class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::normalize_bank_transfer_settings( $event['native_bank_transfer_settings'] ?? array() ) : array();
+			$event['native_pay_at_door_instructions'] = sanitize_textarea_field( $event['native_pay_at_door_instructions'] ?? '' );
 			$event['booking_information'] = self::normalize_booking_information( $event['booking_information'] ?? array(), false );
 			$event['content_references'] = is_array( $event['content_references'] ?? null ) ? $event['content_references'] : array();
 			$event['content_references']['event_description'] = self::normalize_content_reference( $event['content_references']['event_description'] ?? array(), 'event_description' );
@@ -3196,8 +3203,21 @@ class TAKA_Platform_Data {
 		return in_array( $lang, array( 'en', 'ja' ), true ) && 'CHF' !== $symbol ? $symbol . $number : $number . ' ' . $symbol;
 	}
 
-	/** Get ticketed public events. */
-	public static function ticketed_seminars() { return array_values( array_filter( self::events_for_language(), static fn( $event ) => '' !== self::pretix_event_url( $event ) ) ); }
+	/** Get public events with any visible ticket or registration state. */
+	public static function ticketed_seminars() {
+		return array_values(
+			array_filter(
+				self::events_for_language(),
+				static function ( $event ) {
+					$mode = self::ticket_mode_for_event( $event );
+					if ( 'native_taka_ticketing' === $mode ) { return true; }
+					if ( '' !== self::pretix_event_url( $event ) ) { return true; }
+					if ( '' !== self::ticket_direct_url( $event ) ) { return true; }
+					return ! empty( self::ticket_information_card( $event ) ) || in_array( $mode, array( 'coming_soon', 'sold_out' ), true );
+				}
+			)
+		);
+	}
 
 	/** Resolve the compact ticket overview image without hardcoded template URLs. */
 	private static function ticket_overview_image( $event ) {
@@ -3603,6 +3623,7 @@ class TAKA_Platform_Data {
 		if ( 'free' === $mode ) { return taka_tour_translate( 'event.ticket_free_entry', 'Free entry', $lang ); }
 		if ( 'none' === $mode ) { return taka_tour_translate( 'event.ticket_no_ticket_shop', 'No ticket shop', $lang ); }
 		if ( 'sold_out' === $mode ) { return taka_tour_translate( 'event.ticket_sold_out_waiting_list', 'Sold out / waiting list', $lang ); }
+		if ( 'native_taka_ticketing' === $mode ) { return taka_tour_translate( 'ticketing.book_tickets', 'Book Tickets', $lang ); }
 		if ( '' !== self::pretix_event_url( $event ) ) { return taka_tour_translate( 'seminar.ticketshop_open_pretix', 'Tickets bei Pretix öffnen', $lang ); }
 		if ( '' !== self::ticket_direct_url( $event ) ) { return taka_tour_translate( 'event.ticketshop_direct', 'Open ticket shop', $lang ); }
 		return taka_tour_translate( 'event.ticketshop_soon', taka_tour_translate( 'seminar.ticketshop_soon', 'Ticketshop folgt', $lang ), $lang );

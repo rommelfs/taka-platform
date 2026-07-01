@@ -3,6 +3,197 @@
 	gap: .85rem;
 }
 
+.taka-native-checkout {
+	display: grid;
+	gap: 1rem;
+}
+
+.taka-native-checkout__toggle,
+.taka-native-checkout__submit,
+.taka-native-confirmation__actions button {
+	appearance: none;
+	background: #BC002D;
+	border: 0;
+	border-radius: .7rem;
+	color: #fff;
+	cursor: pointer;
+	font: 850 .92rem/1 Inter, system-ui, sans-serif;
+	padding: .85rem 1rem;
+	text-align: center;
+}
+
+.taka-native-checkout__form,
+.taka-native-confirmation {
+	background: rgba(255, 255, 255, .94);
+	border: 1px solid rgba(188, 0, 45, .18);
+	border-radius: 1rem;
+	display: grid;
+	gap: 1rem;
+	padding: 1rem;
+}
+
+.taka-native-checkout__form[hidden] {
+	display: none;
+}
+
+.taka-native-checkout__progress {
+	display: grid;
+	gap: .35rem;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.taka-native-checkout__progress li {
+	background: #f7f3ec;
+	border-radius: .55rem;
+	color: #111;
+	font-size: .78rem;
+	font-weight: 800;
+	padding: .5rem;
+	text-align: center;
+}
+
+.taka-native-checkout__step {
+	border-top: 1px solid rgba(17, 17, 17, .08);
+	display: grid;
+	gap: .75rem;
+	padding-top: 1rem;
+}
+
+.taka-native-checkout__step h4,
+.taka-native-confirmation h3,
+.taka-native-confirmation h4 {
+	margin: 0;
+}
+
+.taka-native-ticket-options,
+.taka-native-payment-options,
+.taka-native-checkout__grid {
+	display: grid;
+	gap: .7rem;
+}
+
+.taka-native-checkout__grid {
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.taka-native-checkout label {
+	display: grid;
+	gap: .3rem;
+	font-weight: 700;
+}
+
+.taka-native-checkout input,
+.taka-native-checkout textarea {
+	border: 1px solid rgba(17, 17, 17, .22);
+	border-radius: .5rem;
+	font: inherit;
+	padding: .62rem .7rem;
+	width: 100%;
+}
+
+.taka-native-checkout__checkbox,
+.taka-native-payment-options label,
+.taka-native-ticket-option {
+	align-items: start;
+	display: grid;
+	gap: .6rem;
+	grid-template-columns: auto minmax(0, 1fr);
+}
+
+.taka-native-ticket-option {
+	background: #f7f3ec;
+	border: 1px solid rgba(17, 17, 17, .08);
+	border-radius: .8rem;
+	padding: .8rem;
+}
+
+.taka-native-ticket-option em,
+.taka-native-ticket-option small {
+	display: block;
+	font-style: normal;
+	font-weight: 500;
+	margin-top: .2rem;
+}
+
+.taka-native-checkout__wide {
+	grid-column: 1 / -1;
+}
+
+.taka-native-checkout__errors {
+	background: #fff3f3;
+	border-left: 4px solid #BC002D;
+	color: #111;
+	padding: .8rem;
+}
+
+.taka-native-checkout__review dl {
+	background: #f7f3ec;
+	border-radius: .8rem;
+	display: grid;
+	gap: .4rem;
+	margin: 0;
+	padding: .85rem;
+}
+
+.taka-native-checkout__review dl div {
+	display: grid;
+	gap: .5rem;
+	grid-template-columns: minmax(110px, .42fr) 1fr;
+}
+
+.taka-native-checkout__review dt {
+	font-weight: 850;
+}
+
+.taka-native-checkout__review dd {
+	margin: 0;
+}
+
+.taka-native-checkout__honeypot {
+	left: -9999px;
+	position: absolute;
+}
+
+.taka-native-confirmation dl {
+	display: grid;
+	gap: .5rem;
+	margin: 0;
+}
+
+.taka-native-confirmation dl div {
+	display: grid;
+	grid-template-columns: minmax(120px, .45fr) 1fr;
+	gap: .75rem;
+}
+
+.taka-native-confirmation dt {
+	font-weight: 850;
+}
+
+.taka-native-confirmation dd {
+	margin: 0;
+}
+
+.taka-native-confirmation__instructions {
+	background: #f7f3ec;
+	border-radius: .8rem;
+	padding: .85rem;
+}
+
+.taka-native-confirmation__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .6rem;
+}
+
+.taka-native-confirmation__actions button[disabled] {
+	cursor: not-allowed;
+	opacity: .55;
+}
+
 .taka-ticket-info-actions {
 	display: flex;
 	flex-wrap: wrap;
@@ -193,6 +384,11 @@
 @media (max-width: 720px) {
 	.taka-ticket-info-actions {
 		display: grid;
+		grid-template-columns: 1fr;
+	}
+
+	.taka-native-checkout__progress,
+	.taka-native-confirmation dl div {
 		grid-template-columns: 1fr;
 	}
 

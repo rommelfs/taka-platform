@@ -12,6 +12,7 @@ $show_actions = isset( $show_actions ) ? (bool) $show_actions : true;
 $event_key = sanitize_html_class( (string) ( $seminar['slug'] ?? $seminar['id'] ?? md5( $event_url ) ) );
 $ticket_card = ! empty( $seminar ) ? TAKA_Platform_Data::ticket_information_card( $seminar ) : array();
 $direct_url = empty( $ticket_card ) && ! empty( $seminar ) ? TAKA_Platform_Data::ticket_direct_url( $seminar ) : '';
+$native_checkout = ( empty( $ticket_card ) && ! empty( $seminar ) && class_exists( 'TAKA_Ticketing_Module' ) && TAKA_Ticketing_Module::event_uses_native_ticketing( $seminar ) ) ? TAKA_Ticketing_Module::render_booking_widget( $seminar ) : '';
 ?>
 <div class="taka-ticket-widget" data-taka-ticket-widget>
 	<?php if ( ! empty( $ticket_card ) ) : ?>
@@ -32,6 +33,8 @@ $direct_url = empty( $ticket_card ) && ! empty( $seminar ) ? TAKA_Platform_Data:
 				<p class="taka-ticket-status__note"><?php echo esc_html( $ticket_card['note'] ); ?></p>
 			<?php endif; ?>
 		</div>
+	<?php elseif ( '' !== $native_checkout ) : ?>
+		<?php echo $native_checkout; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 	<?php elseif ( '' !== $event_url ) : ?>
 		<?php echo taka_tour_render_template( 'partials/pretix-widget.php', array( 'event' => $event_url, 'label' => $label ?? ( $seminar['title'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		<a class="taka-ticket-direct-link" href="<?php echo esc_url( $event_url ); ?>" rel="noopener noreferrer"><?php echo esc_html( taka_tour_translate( 'event.ticketshop_direct', 'Ticketshop direkt öffnen' ) ); ?></a>

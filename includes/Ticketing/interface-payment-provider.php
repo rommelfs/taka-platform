@@ -2,8 +2,8 @@
 /**
  * Native TAKA Ticketing payment provider contract.
  *
- * Providers are only scaffolded in Phase 1. Checkout, order creation and
- * webhook handling arrive in later phases and should implement this contract.
+ * Checkout providers implement this contract so bank transfer, pay at the door
+ * and future API providers share one payment surface.
  */
 
 defined( 'ABSPATH' ) || exit;

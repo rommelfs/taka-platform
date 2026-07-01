@@ -975,7 +975,7 @@ class TAKA_Platform_Admin_Event_Assistant {
 		self::text_field( $context, 'ticket_door_price_member', __( 'Member door price', 'taka-platform' ) );
 		echo '<p class="description">' . esc_html__( 'For pay-at-door events, the booking URL is not required. Add the event-specific note in Website translations so it can be translated per language.', 'taka-platform' ) . '</p>';
 		if ( class_exists( 'TAKA_Ticketing_Module' ) ) {
-			echo '<p class="description">' . esc_html__( 'Native TAKA Ticketing can be selected here. Repeatable ticket types are configured in the shared native ticketing section after the draft exists.', 'taka-platform' ) . '</p>';
+			echo '<p class="description">' . esc_html__( 'Native TAKA Ticketing can be selected here. Repeatable ticket types and payment methods are configured in the shared native ticketing section after the draft exists.', 'taka-platform' ) . '</p>';
 		}
 	}
 

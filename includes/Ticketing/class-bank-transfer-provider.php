@@ -1,6 +1,6 @@
 <?php
 /**
- * Bank transfer payment provider scaffold for native TAKA Ticketing.
+ * Bank transfer payment provider for native TAKA Ticketing.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -15,12 +15,12 @@ class TAKA_Ticketing_Bank_Transfer_Provider implements TAKA_Ticketing_Payment_Pr
 	}
 
 	public function is_enabled() {
-		$settings = $this->settings();
-		return ! empty( $settings['enabled'] );
+		return true;
 	}
 
 	public function get_public_instructions( $order ) {
-		$settings = $this->settings();
+		$order_data = is_object( $order ) && method_exists( $order, 'to_array' ) ? $order->to_array() : (array) $order;
+		$settings = $this->settings_for_event( absint( $order_data['event_id'] ?? 0 ) );
 		$reference = $this->payment_reference( $order, $settings['payment_reference_template'] ?? '' );
 
 		return array(
@@ -35,9 +35,9 @@ class TAKA_Ticketing_Bank_Transfer_Provider implements TAKA_Ticketing_Payment_Pr
 
 	public function create_payment( $order ) {
 		return array(
-			'provider' => $this->get_id(),
-			'status'   => 'pending',
-			'order'    => $order,
+			'provider'   => $this->get_id(),
+			'status'     => 'pending',
+			'created_at' => current_time( 'mysql' ),
 		);
 	}
 
@@ -76,6 +76,12 @@ class TAKA_Ticketing_Bank_Transfer_Provider implements TAKA_Ticketing_Payment_Pr
 	public function settings() {
 		$stored = get_option( TAKA_Ticketing_Module::BANK_TRANSFER_OPTION, array() );
 		return TAKA_Ticketing_Module::normalize_bank_transfer_settings( is_array( $stored ) ? $stored : array() );
+	}
+
+	public function settings_for_event( $event_id ) {
+		$global = $this->settings();
+		$event = $event_id ? TAKA_Ticketing_Module::event_bank_transfer_settings( $event_id ) : array();
+		return TAKA_Ticketing_Module::normalize_bank_transfer_settings( array_merge( $global, array_filter( $event, static function ( $value ) { return '' !== trim( (string) $value ); } ) ) );
 	}
 
 	private function payment_reference( $order, $template ) {

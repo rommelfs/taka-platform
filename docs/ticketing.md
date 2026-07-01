@@ -8,9 +8,9 @@ It is intentionally smaller than a full ticketing suite. The goal is a focused f
 
 Phase 1: ticketing architecture and event configuration.
 
-Phase 2: frontend order flow with bank transfer.
+Phase 2: frontend order flow with bank transfer and pay at the door.
 
-Phase 3: admin order management.
+Phase 3: expanded admin order management.
 
 Phase 4: participant list, CSV export and basic check-in.
 
@@ -20,9 +20,9 @@ Phase 6: PayPal provider.
 
 Phase 7: invoices, discounts, refunds and advanced features.
 
-Only Phase 1 is implemented now.
+Phases 1 and 2 are implemented now.
 
-## Phase 1 Scope
+## Implemented Scope
 
 Phase 1 adds:
 
@@ -101,7 +101,7 @@ Later phases are expected to use dedicated storage for operational data:
 - Payments
 - Check-in records
 
-The placeholder classes `TAKA_Ticketing_Order`, `TAKA_Ticketing_Participant` and `TAKA_Ticketing_Payment` document the intended fields without creating public workflows yet.
+The value objects `TAKA_Ticketing_Order`, `TAKA_Ticketing_Participant` and `TAKA_Ticketing_Payment` document the intended fields and keep checkout, admin and future table-backed repositories on the same data shape.
 
 ## Payment Providers
 
@@ -120,7 +120,7 @@ The interface prepares for:
 - `refund( $order )`
 - `get_admin_fields()`
 
-The Phase 1 bank transfer provider registers the configuration shape for account holder, IBAN, BIC, bank name, payment reference template and instructions text. It does not create frontend orders yet.
+Bank transfer and pay-at-the-door both use this interface. Future API providers such as PayPal, Stripe and Mollie should implement the same contract.
 
 ## Capabilities
 
@@ -138,3 +138,64 @@ Administrators receive these capabilities. Later phases can assign subsets to ti
 WordPress export data includes native ticket type configuration as `native_ticket_types` on each event. Import restores the same data into `_taka_native_ticket_types`.
 
 No private order or participant data exists in Phase 1.
+
+## Phase 2 Scope
+
+Phase 2 adds:
+
+- Public native checkout rendering for Events using `native_taka_ticketing`.
+- Ticket type selection with capacity display.
+- Buyer information capture.
+- Participant information capture with buyer-is-participant default.
+- Payment method selection.
+- Pending order creation.
+- Participant reservation and capacity checks.
+- Confirmation screen with payment instructions.
+- Confirmation email to the buyer.
+- New order email notification to administrators.
+- Private admin order list and detail view under TAKA Platform -> Ticketing.
+- Mark paid, cancel and delete actions for privileged users.
+
+The checkout currently supports one participant per order. The order shape keeps participant data separate so later phases can add multiple participants without changing the provider contract.
+
+## Payment Providers
+
+Phase 2 includes two first-class providers:
+
+- `bank_transfer`
+- `pay_at_door`
+
+Both implement `TAKA_Ticketing_Payment_Provider_Interface`.
+
+Bank transfer displays account holder, IBAN, BIC, bank name, payment reference and instructions after order submission.
+
+Pay at the Door reserves capacity immediately, keeps payment status pending, and tells the visitor that payment is collected at the venue before participation.
+
+Events choose enabled providers in the Event editor's Native TAKA Ticketing section.
+
+## Orders
+
+Native ticketing orders are stored in the private `taka_ticket_order` post type. This is a Phase 2 repository implementation detail, not a public content type.
+
+Order data includes:
+
+- Order number
+- Public confirmation token
+- Event ID and event title
+- Ticket type ID and name
+- Buyer data
+- Participant data
+- Amount and currency
+- Payment method
+- Payment status
+- Order status
+- Check-in status placeholder
+- Timeline entries
+
+The post type is private, hidden from public queries and not exposed through REST.
+
+## Capacity
+
+Capacity is reserved when an order is created. Available capacity is calculated from active non-cancelled orders for the same event and ticket type.
+
+Cancelling an order releases the reserved capacity because cancelled orders are ignored by the capacity calculation.
