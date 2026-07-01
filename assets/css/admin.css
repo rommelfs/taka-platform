@@ -80,6 +80,87 @@
 	margin: 8px 0 16px;
 }
 
+.taka-admin-grid {
+	display: grid;
+	gap: 16px;
+	margin-top: 16px;
+}
+
+.taka-admin-grid--two {
+	grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+}
+
+.taka-admin-panel {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 16px;
+}
+
+.taka-admin-panel > h2:first-child {
+	margin-top: 0;
+}
+
+.taka-admin-field-grid {
+	display: grid;
+	gap: 12px 16px;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.taka-admin-field-grid label span {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.taka-admin-field-grid input[type="text"],
+.taka-admin-field-grid input[type="email"],
+.taka-admin-field-grid input[type="number"],
+.taka-admin-field-grid input[type="date"],
+.taka-admin-field-grid input[type="datetime-local"],
+.taka-admin-field-grid select,
+.taka-admin-field-grid textarea {
+	max-width: 100%;
+	width: 100%;
+}
+
+.taka-admin-field-grid__wide {
+	grid-column: 1 / -1;
+}
+
+.taka-admin-checkbox {
+	align-items: center;
+	display: flex;
+	gap: 8px;
+}
+
+.taka-admin-checkbox span {
+	margin-bottom: 0;
+}
+
+.taka-admin-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.taka-communication-filters,
+.taka-communication-preview {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	margin-top: 16px;
+	padding: 12px;
+}
+
+.taka-communication-preview pre {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	margin: 8px 0 0;
+	padding: 10px;
+	white-space: pre-wrap;
+}
+
 .taka-native-ticket-types {
 	display: grid;
 	gap: 12px;

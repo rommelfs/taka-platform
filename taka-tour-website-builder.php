@@ -23,6 +23,9 @@ define( 'TAKA_PLATFORM_CPT_REGISTRATION', 'taka_registration' );
 define( 'TAKA_PLATFORM_CPT_TICKET_ORDER', 'taka_ticket_order' );
 define( 'TAKA_PLATFORM_CPT_TICKET_PROMOTION', 'taka_ticket_promo' );
 define( 'TAKA_PLATFORM_CPT_TICKETING_PRODUCT', 'taka_ticket_product' );
+define( 'TAKA_PLATFORM_CPT_COMMUNICATION_TEMPLATE', 'taka_comm_template' );
+define( 'TAKA_PLATFORM_CPT_COMMUNICATION_CAMPAIGN', 'taka_comm_campaign' );
+define( 'TAKA_PLATFORM_CPT_COMMUNICATION_MESSAGE', 'taka_comm_message' );
 
 // Backward-compatible constants for existing TAKA Tour installations and templates.
 define( 'TAKA_TOUR_VERSION', TAKA_PLATFORM_VERSION );
@@ -61,6 +64,7 @@ require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-order-service.
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-ticketing-module.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Operations/class-attendance-service.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Operations/class-event-operations-module.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Communication/class-communication-module.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Rendering/class-tour-map-label-layout.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Data/class-repository.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/ImportExport/class-translation-packages.php';
@@ -87,10 +91,12 @@ register_activation_hook(
 		TAKA_Platform_Admin::register_post_types();
 		TAKA_People_Module::register_post_types();
 		TAKA_Ticketing_Module::register_post_types();
+		TAKA_Communication_Module::register_post_types();
 		TAKA_Platform_Admin::ensure_capabilities();
 		TAKA_People_Module::ensure_capabilities();
 		TAKA_Ticketing_Module::ensure_capabilities();
 		TAKA_Event_Operations_Module::ensure_capabilities();
+		TAKA_Communication_Module::ensure_capabilities();
 		if ( function_exists( 'flush_rewrite_rules' ) ) {
 			flush_rewrite_rules();
 		}
@@ -126,6 +132,7 @@ add_action(
 		TAKA_Ticketing_Module::init();
 		if ( is_admin() ) {
 			TAKA_Event_Operations_Module::init();
+			TAKA_Communication_Module::init();
 			TAKA_Platform_Tour_Planning::init();
 			TAKA_Platform_Admin::init();
 		}
