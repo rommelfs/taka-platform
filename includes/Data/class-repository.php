@@ -10,6 +10,7 @@ class TAKA_Platform_Data {
 	const ORGANIZER_POST_TYPE = TAKA_PLATFORM_CPT_ORGANIZER;
 	const VENUE_POST_TYPE = TAKA_PLATFORM_CPT_VENUE;
 	const CONTENT_BLOCK_POST_TYPE = TAKA_PLATFORM_CPT_CONTENT_BLOCK;
+	const TOUR_PLANNING_POST_TYPE = TAKA_PLATFORM_CPT_TOUR_PLANNING;
 	const MEDIA_OPTION = 'taka_tour_media_settings';
 	const HERO_OPTION = 'taka_platform_hero_settings';
 	const SECTIONS_OPTION = 'taka_platform_content_sections';
@@ -25,6 +26,7 @@ class TAKA_Platform_Data {
 			self::ORGANIZER_POST_TYPE => __( 'Organizers', 'taka-platform' ),
 			self::VENUE_POST_TYPE => __( 'Venues', 'taka-platform' ),
 			self::CONTENT_BLOCK_POST_TYPE => __( 'Content Blocks', 'taka-platform' ),
+			self::TOUR_PLANNING_POST_TYPE => __( 'Private Tour Planning', 'taka-platform' ),
 		);
 	}
 
@@ -3542,7 +3544,18 @@ class TAKA_Platform_Data {
 	}
 
 	/** Export current WordPress data into config-compatible array. */
-	public static function export_config_from_wp() { return array( 'organizers' => self::export_organizers(), 'venues' => self::export_venues(), 'events' => self::load_events_from_wp(), 'content_sections' => array_values( self::get_content_sections( false ) ) ); }
+	public static function export_config_from_wp() {
+		$export = array(
+			'organizers' => self::export_organizers(),
+			'venues' => self::export_venues(),
+			'events' => self::load_events_from_wp(),
+			'content_sections' => array_values( self::get_content_sections( false ) ),
+		);
+		if ( class_exists( 'TAKA_Platform_Tour_Planning' ) ) {
+			$export['private_tour_planning'] = TAKA_Platform_Tour_Planning::export_items();
+		}
+		return $export;
+	}
 	private static function export_organizers() { $items = self::load_organizers_from_wp(); $out = array(); foreach ( $items as $key => $item ) { if ( (string) $key !== (string) ( $item['id'] ?? '' ) ) { continue; } $out[ $item['config_id'] ?: $item['id'] ] = $item; } return $out; }
 	private static function export_venues() { $items = self::load_venues_from_wp(); $out = array(); foreach ( $items as $key => $item ) { if ( (string) $key !== (string) ( $item['id'] ?? '' ) ) { continue; } $out[ $item['config_id'] ?: $item['id'] ] = $item; } return $out; }
 

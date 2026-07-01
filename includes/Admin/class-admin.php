@@ -145,6 +145,9 @@ class TAKA_Platform_Admin {
 	/** Ensure platform roles and capabilities are available. */
 	public static function ensure_capabilities() {
 		if ( ! function_exists( 'get_role' ) ) { return; }
+		if ( class_exists( 'TAKA_Platform_Tour_Planning' ) ) {
+			TAKA_Platform_Tour_Planning::ensure_capabilities();
+		}
 		$editor_caps = array(
 			'read',
 			'upload_files',
@@ -206,6 +209,9 @@ class TAKA_Platform_Admin {
 		self::register_post_type( TAKA_PLATFORM_CPT_ORGANIZER, __( 'Organizers', 'taka-platform' ), __( 'Organizer hinzufügen', 'taka-platform' ), 'dashicons-groups' );
 		self::register_post_type( TAKA_PLATFORM_CPT_VENUE, __( 'Venues', 'taka-platform' ), __( 'Venue hinzufügen', 'taka-platform' ), 'dashicons-location-alt' );
 		self::register_post_type( TAKA_PLATFORM_CPT_CONTENT_BLOCK, __( 'Content Blocks', 'taka-platform' ), __( 'Content Block hinzufügen', 'taka-platform' ), 'dashicons-editor-table' );
+		if ( class_exists( 'TAKA_Platform_Tour_Planning' ) ) {
+			TAKA_Platform_Tour_Planning::register_post_type();
+		}
 	}
 
 	/** Register one event-tour CPT. */
@@ -1975,6 +1981,9 @@ class TAKA_Platform_Admin {
 		if ( ! is_array( $data ) || ! isset( $data['organizers'], $data['venues'], $data['events'] ) || ! is_array( $data['organizers'] ) || ! is_array( $data['venues'] ) || ! is_array( $data['events'] ) ) {
 			return new WP_Error( 'taka_tour_invalid_config', __( 'Import data must contain organizers, venues and events arrays.', 'taka-platform' ) );
 		}
+		if ( isset( $data['private_tour_planning'] ) && ! is_array( $data['private_tour_planning'] ) ) {
+			return new WP_Error( 'taka_tour_invalid_planning_config', __( 'Private tour planning import data must be an array.', 'taka-platform' ) );
+		}
 		return $data;
 	}
 
@@ -1982,7 +1991,7 @@ class TAKA_Platform_Admin {
 	private static function import_config( $mode, $dry_run, $delete_existing, $config = null ) {
 		self::register_post_types();
 		$config = is_array( $config ) ? $config : TAKA_Platform_Data::load_config();
-		$summary = array( 'organizers' => array( 'created' => 0, 'updated' => 0, 'skipped' => 0 ), 'venues' => array( 'created' => 0, 'updated' => 0, 'skipped' => 0 ), 'events' => array( 'created' => 0, 'updated' => 0, 'skipped' => 0 ), 'warnings' => array() );
+		$summary = array( 'organizers' => array( 'created' => 0, 'updated' => 0, 'skipped' => 0 ), 'venues' => array( 'created' => 0, 'updated' => 0, 'skipped' => 0 ), 'events' => array( 'created' => 0, 'updated' => 0, 'skipped' => 0 ), 'tour_planning' => array( 'created' => 0, 'updated' => 0, 'skipped' => 0 ), 'warnings' => array() );
 		if ( $delete_existing && ! $dry_run ) { self::delete_plugin_posts(); }
 		foreach ( $config['organizers'] ?? array() as $id => $item ) { self::upsert_config_post( TAKA_PLATFORM_CPT_ORGANIZER, $id, $item['name'] ?? $id, '', self::organizer_meta_from_config( $item ), $mode, $dry_run, $summary['organizers'] ); }
 		foreach ( $config['venues'] ?? array() as $id => $item ) { self::upsert_config_post( TAKA_PLATFORM_CPT_VENUE, $id, $item['name'] ?? $id, $item['notes'] ?? '', self::venue_meta_from_config( $item ), $mode, $dry_run, $summary['venues'] ); }
@@ -2010,6 +2019,9 @@ class TAKA_Platform_Admin {
 				$existing_sections[ $key ]['key'] = $key;
 			}
 			update_option( TAKA_Platform_Data::SECTIONS_OPTION, $existing_sections, false );
+		}
+		if ( class_exists( 'TAKA_Platform_Tour_Planning' ) && ! empty( $config['private_tour_planning'] ) ) {
+			TAKA_Platform_Tour_Planning::import_items( $config['private_tour_planning'], $mode, $dry_run, $summary['tour_planning'] );
 		}
 		return $summary;
 	}
@@ -2202,7 +2214,7 @@ class TAKA_Platform_Admin {
 
 	private static function contact_persons_to_lines( $people ) { return implode( "\n", array_map( static function ( $person ) { return is_array( $person ) ? trim( ( $person['name'] ?? '' ) . ' | ' . ( $person['email'] ?? '' ) . ' | ' . ( $person['role'] ?? '' ) ) : (string) $person; }, $people ) ); }
 	private static function find_post_id_by_config_id( $post_type, $config_id ) { if ( '' === (string) $config_id ) { return 0; } $posts = get_posts( array( 'post_type' => $post_type, 'post_status' => 'any', 'posts_per_page' => 1, 'fields' => 'ids', 'meta_key' => '_taka_config_id', 'meta_value' => $config_id ) ); return ! empty( $posts ) ? (int) $posts[0] : 0; }
-	private static function delete_plugin_posts() { foreach ( array( TAKA_PLATFORM_CPT_EVENT, TAKA_PLATFORM_CPT_ORGANIZER, TAKA_PLATFORM_CPT_VENUE ) as $type ) { $ids = get_posts( array( 'post_type' => $type, 'post_status' => 'any', 'posts_per_page' => -1, 'fields' => 'ids' ) ); foreach ( $ids as $id ) { wp_delete_post( $id, true ); } } }
+	private static function delete_plugin_posts() { foreach ( array_filter( array( TAKA_PLATFORM_CPT_EVENT, TAKA_PLATFORM_CPT_ORGANIZER, TAKA_PLATFORM_CPT_VENUE, defined( 'TAKA_PLATFORM_CPT_TOUR_PLANNING' ) ? TAKA_PLATFORM_CPT_TOUR_PLANNING : '' ) ) as $type ) { $ids = get_posts( array( 'post_type' => $type, 'post_status' => 'any', 'posts_per_page' => -1, 'fields' => 'ids' ) ); foreach ( $ids as $id ) { wp_delete_post( $id, true ); } } }
 
 	/** Organizer meta. */
 	public static function render_organizer_meta_box( $post ) {
@@ -2300,6 +2312,10 @@ class TAKA_Platform_Admin {
 		self::organizer_relation( $post->ID, 'organizer_id', __( 'Primary organizer', 'taka-platform' ) );
 		self::render_event_organizer_relationship_fields( $post->ID );
 		self::admin_section_close();
+
+		if ( class_exists( 'TAKA_Platform_Tour_Planning' ) ) {
+			TAKA_Platform_Tour_Planning::render_event_section( $post->ID );
+		}
 
 		self::admin_section_open( __( 'Source language & website translations', 'taka-platform' ), __( 'Edit the original public event text and its website translations.', 'taka-platform' ), true, 'taka-admin-section--essential', 'event-source-language-translations' );
 		self::render_object_source_language_field( $post->ID );

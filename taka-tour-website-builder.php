@@ -17,6 +17,7 @@ define( 'TAKA_PLATFORM_CPT_EVENT', 'taka_event' );
 define( 'TAKA_PLATFORM_CPT_ORGANIZER', 'taka_organizer' );
 define( 'TAKA_PLATFORM_CPT_VENUE', 'taka_venue' );
 define( 'TAKA_PLATFORM_CPT_CONTENT_BLOCK', 'taka_content_block' );
+define( 'TAKA_PLATFORM_CPT_TOUR_PLANNING', 'taka_tour_plan' );
 
 // Backward-compatible constants for existing TAKA Tour installations and templates.
 define( 'TAKA_TOUR_VERSION', TAKA_PLATFORM_VERSION );
@@ -45,6 +46,7 @@ require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Frontend/class-renderer.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Core/class-plugin.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Admin/class-collapsible-section.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Admin/class-event-assistant.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Planning/class-tour-planning.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Admin/class-admin.php';
 
 add_action( 'init', array( 'TAKA_Platform_Admin', 'register_post_types' ), 0 );
@@ -86,6 +88,7 @@ add_action(
 		TAKA_Platform_Events_Manager_Integration::init();
 		TAKA_Platform_Plugin::instance();
 		if ( is_admin() ) {
+			TAKA_Platform_Tour_Planning::init();
 			TAKA_Platform_Admin::init();
 		}
 	}

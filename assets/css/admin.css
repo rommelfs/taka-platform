@@ -80,6 +80,36 @@
 	margin: 8px 0 16px;
 }
 
+.taka-tour-planning-filters {
+	align-items: end;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	margin: 16px 0;
+	padding: 12px;
+}
+
+.taka-tour-planning-filters label {
+	display: block;
+	font-weight: 600;
+}
+
+.taka-tour-planning-filters input,
+.taka-tour-planning-filters select {
+	margin-top: 4px;
+	width: 100%;
+}
+
+.taka-tour-planning-table .dashicons {
+	color: #50575e;
+	font-size: 18px;
+	height: 18px;
+	vertical-align: text-bottom;
+	width: 18px;
+}
+
 #taka_event_details .handlediv {
 	display: none;
 }

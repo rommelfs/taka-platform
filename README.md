@@ -89,6 +89,8 @@ Events support tour/event concepts such as title, subtitle, description, organiz
 
 Organizers support legal names, websites, logos, contact data, social links and repeatable co-organizers with their own logo, website, email, description and active/sort controls. Events can also use global or event-specific booking information for groups, multi-event discounts, payment and cancellation notes. Homepage content sections can be exported as portable config data and used as fallback/demo editorial content. Venues support addresses, websites, parking/accessibility notes, geo data and venue/parking images.
 
+Private tour logistics are managed separately in **TAKA Platform -> Tour Planning**. Planning items can track accommodation, transfers, meals, free time, excursions and internal appointments linked to events without exposing them on public pages. See [docs/tour-planning.md](docs/tour-planning.md).
+
 ## Option lists
 
 Recurring fields such as ticket provider, ticket status, format, audience, level, country and currency use configurable option lists from **TAKA Platform -> Option Lists**. Events, organizers and venues store stable country keys where possible, while unknown legacy text values remain valid and are reported for review. Option labels have a source language, translations, aliases, optional icons, sort order and enabled state, and are included in TAKA Translation Packages. See [docs/option-lists.md](docs/option-lists.md).
