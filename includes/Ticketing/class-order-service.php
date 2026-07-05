@@ -62,16 +62,11 @@ class TAKA_Ticketing_Order_Service {
 			}
 		}
 
-		$participant_posted = $posted;
-		if ( ! empty( $posted['self_participates'] ) ) {
-			$participant_posted['participant_is_buyer'] = '1';
-		}
-		if ( '' !== $standalone_product_id && ! isset( $participant_posted['participant_is_buyer'] ) ) {
-			$participant_posted['participant_is_buyer'] = '1';
-		}
 		$buyer = self::buyer_from_post( $posted );
-		$participant = self::participant_from_post( $participant_posted, $buyer );
-		$error = self::validate_people( $buyer, $participant, ! empty( $participant_posted['participant_is_buyer'] ), $lang );
+		$participant_posted = self::participant_post_data( $posted, $standalone_product_id, $ticket_quantity );
+		$participants = self::participants_from_post( $participant_posted, $buyer, '' === $standalone_product_id ? $ticket_quantity : 1 );
+		$participant = $participants[0] ?? self::participant_from_post( $participant_posted, $buyer );
+		$error = self::validate_people( $buyer, $participant, ! empty( $participant_posted['participant_is_buyer'] ), $lang, $participants );
 		if ( is_wp_error( $error ) ) {
 			return $error;
 		}
@@ -109,7 +104,7 @@ class TAKA_Ticketing_Order_Service {
 			);
 		}
 		$line_items = is_array( $pricing['line_items'] ?? null ) ? $pricing['line_items'] : array();
-		$line_items = self::line_items_with_ticket_recipients( $line_items, $buyer, $participant, self::recipient_emails_from_value( $posted['ticket_recipient_emails'] ?? '', $ticket_quantity ) );
+		$line_items = self::line_items_with_ticket_recipients( $line_items, $buyer, $participant, self::participant_emails( $participants ) );
 		if ( TAKA_Ticketing_Pricing_Service::money_to_float( $pricing['discount_amount'] ?? '0' ) > 0 ) {
 			$line_items[] = array(
 				'item_type'        => 'discount',
@@ -137,6 +132,7 @@ class TAKA_Ticketing_Order_Service {
 				'line_items'          => $line_items,
 				'buyer'               => $buyer,
 				'participant'         => $participant,
+				'participants'        => $participants,
 				'original_amount'     => $pricing['original_amount'],
 				'discount_amount'     => $pricing['discount_amount'],
 				'amount'              => $pricing['final_amount'],
@@ -306,7 +302,7 @@ class TAKA_Ticketing_Order_Service {
 		return $items;
 	}
 
-	private static function line_items_with_ticket_recipients( $line_items, $buyer, $participant, $ticket_recipient_emails ) {
+	private static function line_items_with_ticket_recipients( $line_items, $buyer, $participant, $participant_emails ) {
 		foreach ( $line_items as $index => $item ) {
 			if ( 'ticket' !== (string) ( $item['item_type'] ?? '' ) || ! empty( $item['recipient_emails'] ) ) {
 				continue;
@@ -315,7 +311,7 @@ class TAKA_Ticketing_Order_Service {
 			if ( '' === $email ) {
 				$email = sanitize_email( $buyer['email'] ?? '' );
 			}
-			$recipients = (array) $ticket_recipient_emails;
+			$recipients = (array) $participant_emails;
 			if ( '' !== $email ) {
 				$recipients[] = $email;
 			}
@@ -324,19 +320,69 @@ class TAKA_Ticketing_Order_Service {
 		return $line_items;
 	}
 
-	private static function recipient_emails_from_value( $value, $limit = 0 ) {
-		if ( is_string( $value ) ) {
-			$value = preg_split( '/[\s,;]+/', $value );
+	private static function participant_post_data( $posted, $standalone_product_id, $ticket_quantity ) {
+		$posted = is_array( $posted ) ? $posted : array();
+		if ( '' !== $standalone_product_id || $ticket_quantity <= 1 ) {
+			if ( ! empty( $posted['self_participates'] ) ) {
+				$posted['participant_is_buyer'] = '1';
+			}
+			if ( '' !== $standalone_product_id && ! isset( $posted['participant_is_buyer'] ) ) {
+				$posted['participant_is_buyer'] = '1';
+			}
+		} else {
+			unset( $posted['participant_is_buyer'], $posted['self_participates'] );
 		}
+		return $posted;
+	}
+
+	private static function participants_from_post( $posted, $buyer, $ticket_quantity ) {
+		$ticket_quantity = max( 1, absint( $ticket_quantity ) );
+		if ( $ticket_quantity <= 1 ) {
+			return array( self::participant_from_post( $posted, $buyer ) );
+		}
+
+		$items = isset( $posted['ticket_participants'] ) && is_array( $posted['ticket_participants'] ) ? $posted['ticket_participants'] : array();
+		$participants = array();
+		for ( $index = 0; $index < $ticket_quantity; $index++ ) {
+			$row = is_array( $items[ $index ] ?? null ) ? $items[ $index ] : array();
+			$participants[] = self::participant_from_row( $row );
+		}
+		return $participants;
+	}
+
+	private static function participant_from_row( $row ) {
+		$row = is_array( $row ) ? $row : array();
+		return array_merge(
+			array(
+				'first_name' => sanitize_text_field( $row['first_name'] ?? '' ),
+				'last_name'  => sanitize_text_field( $row['last_name'] ?? '' ),
+				'email'      => sanitize_email( $row['email'] ?? '' ),
+				'country'    => self::country_from_post( $row['country'] ?? '' ),
+			),
+			self::participant_extra_from_post(
+				array(
+					'participant_dojo'               => $row['dojo'] ?? '',
+					'participant_association'        => $row['association'] ?? '',
+					'participant_style'              => $row['style'] ?? '',
+					'participant_rank'               => $row['rank'] ?? '',
+					'participant_dietary_preference' => $row['dietary_preference'] ?? 'none',
+					'participant_dietary_notes'      => $row['dietary_notes'] ?? '',
+					'participant_allergies'          => $row['allergies'] ?? '',
+					'participant_notes'              => $row['notes'] ?? '',
+				)
+			)
+		);
+	}
+
+	private static function participant_emails( $participants ) {
 		$emails = array();
-		foreach ( (array) $value as $email ) {
-			$email = sanitize_email( $email );
+		foreach ( (array) $participants as $participant ) {
+			$email = sanitize_email( is_array( $participant ) ? ( $participant['email'] ?? '' ) : '' );
 			if ( '' !== $email && is_email( $email ) ) {
 				$emails[] = $email;
 			}
 		}
-		$emails = array_values( array_unique( $emails ) );
-		return $limit > 0 ? array_slice( $emails, 0, absint( $limit ) ) : $emails;
+		return array_values( array_unique( $emails ) );
 	}
 
 	private static function buyer_from_post( $posted ) {
@@ -391,7 +437,7 @@ class TAKA_Ticketing_Order_Service {
 		);
 	}
 
-	private static function validate_people( $buyer, $participant, $participant_is_buyer, $lang ) {
+	private static function validate_people( $buyer, $participant, $participant_is_buyer, $lang, $participants = array() ) {
 		foreach ( array( 'first_name', 'last_name', 'email', 'country' ) as $field ) {
 			if ( '' === trim( (string) ( $buyer[ $field ] ?? '' ) ) ) {
 				return new WP_Error( 'taka_ticketing_buyer_missing', TAKA_Ticketing_Module::text( 'ticketing.error_buyer_missing', 'Please complete all required buyer fields.', $lang ) );
@@ -399,6 +445,19 @@ class TAKA_Ticketing_Order_Service {
 		}
 		if ( ! is_email( $buyer['email'] ) ) {
 			return new WP_Error( 'taka_ticketing_buyer_email', TAKA_Ticketing_Module::text( 'ticketing.error_buyer_email', 'Please enter a valid buyer email address.', $lang ) );
+		}
+		if ( count( (array) $participants ) > 1 ) {
+			foreach ( (array) $participants as $item ) {
+				foreach ( array( 'first_name', 'last_name', 'country' ) as $field ) {
+					if ( '' === trim( (string) ( $item[ $field ] ?? '' ) ) ) {
+						return new WP_Error( 'taka_ticketing_participants_missing', TAKA_Ticketing_Module::text( 'ticketing.error_participants_missing', 'Please complete the required participant fields for every ticket.', $lang ) );
+					}
+				}
+				if ( '' !== trim( (string) ( $item['email'] ?? '' ) ) && ! is_email( $item['email'] ) ) {
+					return new WP_Error( 'taka_ticketing_participant_email', TAKA_Ticketing_Module::text( 'ticketing.error_participant_email', 'Please enter a valid participant email address.', $lang ) );
+				}
+			}
+			return true;
 		}
 		if ( ! $participant_is_buyer ) {
 			foreach ( array( 'first_name', 'last_name', 'country' ) as $field ) {

@@ -15,6 +15,7 @@ class TAKA_People_Registration {
 			'event_title'         => sanitize_text_field( $data['event_title'] ?? '' ),
 			'ticket_type_id'      => sanitize_key( $data['ticket_type_id'] ?? '' ),
 			'ticket_type_name'    => sanitize_text_field( $data['ticket_type_name'] ?? '' ),
+			'participant_index'   => absint( $data['participant_index'] ?? 0 ),
 			'order_id'            => absint( $data['order_id'] ?? 0 ),
 			'order_number'        => sanitize_text_field( $data['order_number'] ?? '' ),
 			'payment_method'      => sanitize_key( $data['payment_method'] ?? '' ),
@@ -44,6 +45,7 @@ class TAKA_People_Registration {
 				'event_title'         => $order_data['event_title'] ?? '',
 				'ticket_type_id'      => $order_data['ticket_type_id'] ?? '',
 				'ticket_type_name'    => $order_data['ticket_type_name'] ?? '',
+				'participant_index'   => absint( $order_data['participant_index'] ?? 0 ),
 				'order_id'            => $order_data['id'] ?? 0,
 				'order_number'        => $order_data['order_number'] ?? '',
 				'payment_method'      => $order_data['payment_method'] ?? '',
@@ -63,7 +65,7 @@ class TAKA_People_Registration {
 		if ( ! $registration['person_id'] || ! $registration['order_id'] ) {
 			return '';
 		}
-		return sanitize_key( implode( '|', array( $registration['person_id'], $registration['event_id'], $registration['order_id'], $registration['ticket_type_id'] ) ) );
+		return sanitize_key( implode( '|', array( $registration['person_id'], $registration['event_id'], $registration['order_id'], $registration['ticket_type_id'], $registration['participant_index'] ) ) );
 	}
 
 	private static function registration_status_from_order( $order_data ) {

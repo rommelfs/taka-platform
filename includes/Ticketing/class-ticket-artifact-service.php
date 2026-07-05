@@ -432,7 +432,7 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 					'product_id'       => TAKA_Ticketing_Product::normalize_product_id( $item['product_id'] ?? '' ),
 					'ticket_type_id'   => sanitize_key( $item['ticket_type_id'] ?? '' ),
 					'related_event_id' => absint( $item['related_event_id'] ?? ( $data['event_id'] ?? 0 ) ),
-					'registration_id'  => absint( $ticket['registration_id'] ?? ( $registration_ids[0] ?? 0 ) ),
+					'registration_id'  => absint( $ticket['registration_id'] ?? self::registration_id_for_ticket( $registration_ids, $item, $sequence ) ),
 					'recipient_email'  => $recipient['email'],
 					'recipient_name'   => $recipient['name'],
 					'status'           => sanitize_key( $ticket['status'] ?? 'valid' ),
@@ -446,9 +446,25 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 		return $tickets;
 	}
 
+	private static function registration_id_for_ticket( $registration_ids, $item, $sequence ) {
+		if ( 'ticket' !== (string) ( $item['item_type'] ?? '' ) ) {
+			return absint( $registration_ids[0] ?? 0 );
+		}
+		return absint( $registration_ids[ max( 0, absint( $sequence ) - 1 ) ] ?? ( $registration_ids[0] ?? 0 ) );
+	}
+
 	private static function recipient_for_line_item( $data, $item, $sequence ) {
 		$buyer = is_array( $data['buyer'] ?? null ) ? $data['buyer'] : array();
 		$participant = is_array( $data['participant'] ?? null ) ? $data['participant'] : array();
+		$participants = is_array( $data['participants'] ?? null ) ? array_values( $data['participants'] ) : array();
+		if ( 'ticket' === (string) ( $item['item_type'] ?? '' ) && ! empty( $participants[ max( 0, absint( $sequence ) - 1 ) ] ) && is_array( $participants[ max( 0, absint( $sequence ) - 1 ) ] ) ) {
+			$person = $participants[ max( 0, absint( $sequence ) - 1 ) ];
+			$email = sanitize_email( $person['email'] ?? '' );
+			if ( '' === $email ) {
+				$email = sanitize_email( $buyer['email'] ?? '' );
+			}
+			return array( 'email' => $email, 'name' => self::person_name( $person ) );
+		}
 		$recipient_emails = self::normalize_emails( $item['recipient_emails'] ?? array() );
 		$email = sanitize_email( $recipient_emails[ max( 0, $sequence - 1 ) ] ?? '' );
 

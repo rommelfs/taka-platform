@@ -117,6 +117,26 @@
 		noteWrap.hidden = 'other' !== select.value;
 	}
 
+	function parseJsonAttribute(element, name, fallback) {
+		if (!element) {
+			return fallback;
+		}
+		try {
+			return JSON.parse(element.getAttribute(name) || '');
+		} catch (error) {
+			return fallback;
+		}
+	}
+
+	function setSectionDisabled(section, disabled) {
+		if (!section) {
+			return;
+		}
+		section.querySelectorAll('input, select, textarea, button').forEach(function (field) {
+			field.disabled = !!disabled;
+		});
+	}
+
 	function fieldValue(root, name) {
 		var field = root.querySelector('[name="' + name + '"]');
 		return field ? field.value.trim() : '';
@@ -191,6 +211,141 @@
 		} else {
 			field.removeAttribute('max');
 		}
+	}
+
+	function participantSectionLabel(section, key, fallback) {
+		return section ? (section.getAttribute('data-taka-label-' + key) || fallback) : fallback;
+	}
+
+	function currentTicketParticipants(root) {
+		var rows = [];
+		root.querySelectorAll('[data-taka-ticket-participant-row]').forEach(function (row) {
+			var index = parseInt(row.getAttribute('data-taka-ticket-participant-row') || '0', 10) || 0;
+			rows[index] = {};
+			row.querySelectorAll('[data-taka-ticket-participant-field]').forEach(function (field) {
+				rows[index][field.getAttribute('data-taka-ticket-participant-field')] = field.value;
+			});
+		});
+		return rows;
+	}
+
+	function buyerParticipantDefaults(root) {
+		return {
+			first_name: fieldValue(root, 'buyer_first_name'),
+			last_name: fieldValue(root, 'buyer_last_name'),
+			email: fieldValue(root, 'buyer_email'),
+			country: fieldValue(root, 'buyer_country'),
+			dojo: '',
+			rank: '',
+			dietary_preference: 'none'
+		};
+	}
+
+	function makeInput(name, value, required, type, fieldKey) {
+		var input = document.createElement('input');
+		input.type = type || 'text';
+		input.name = name;
+		input.value = value || '';
+		input.setAttribute('data-taka-ticket-participant-field', fieldKey);
+		if (required) {
+			input.required = true;
+			input.setAttribute('aria-required', 'true');
+		}
+		return input;
+	}
+
+	function makeSelect(name, value, options, required, fieldKey) {
+		var select = document.createElement('select');
+		select.name = name;
+		select.setAttribute('data-taka-ticket-participant-field', fieldKey);
+		if (required) {
+			select.required = true;
+			select.setAttribute('aria-required', 'true');
+		}
+		Object.keys(options || {}).forEach(function (optionValue) {
+			var option = document.createElement('option');
+			option.value = optionValue;
+			option.textContent = options[optionValue];
+			option.selected = String(value || '') === String(optionValue);
+			select.appendChild(option);
+		});
+		return select;
+	}
+
+	function appendParticipantField(grid, labelText, control) {
+		var label = document.createElement('label');
+		var span = document.createElement('span');
+		span.textContent = labelText;
+		if (control.required) {
+			var marker = document.createElement('span');
+			marker.className = 'taka-native-checkout__required';
+			marker.setAttribute('aria-hidden', 'true');
+			marker.textContent = ' *';
+			span.appendChild(marker);
+		}
+		label.appendChild(span);
+		label.appendChild(control);
+		grid.appendChild(label);
+	}
+
+	function renderTicketParticipants(root) {
+		var quantity = ticketQuantity(root);
+		var multi = root.querySelector('[data-taka-multi-participant-section]');
+		var single = root.querySelector('[data-taka-single-participant-section]');
+		if (!multi || !single) {
+			return;
+		}
+
+		if (quantity <= 1) {
+			multi.hidden = true;
+			setSectionDisabled(multi, true);
+			single.hidden = false;
+			setSectionDisabled(single, false);
+			syncParticipantFields(root);
+			return;
+		}
+
+		var target = multi.querySelector('[data-taka-ticket-participants]');
+		if (!target) {
+			return;
+		}
+		var existing = currentTicketParticipants(root);
+		var prefill = existing.length ? existing : parseJsonAttribute(multi, 'data-taka-participants-prefill', []);
+		var countries = parseJsonAttribute(multi, 'data-taka-country-options', {});
+		var dietary = parseJsonAttribute(multi, 'data-taka-dietary-options', {});
+		var buyerDefaults = buyerParticipantDefaults(root);
+
+		target.innerHTML = '';
+		for (var index = 0; index < quantity; index++) {
+			var rowData = prefill[index] || {};
+			if (0 === index && !rowData.first_name && !rowData.last_name && root.querySelector('[data-taka-participant-self]:checked')) {
+				rowData = Object.assign({}, buyerDefaults, rowData);
+			}
+			var article = document.createElement('article');
+			article.className = 'taka-native-participant-card';
+			article.setAttribute('data-taka-ticket-participant-row', String(index));
+			var heading = document.createElement('h5');
+			heading.textContent = participantSectionLabel(multi, 'participant', 'Participant') + ' ' + (index + 1);
+			article.appendChild(heading);
+
+			var grid = document.createElement('div');
+			grid.className = 'taka-native-checkout__grid';
+			appendParticipantField(grid, participantSectionLabel(multi, 'first-name', 'First name'), makeInput('ticket_participants[' + index + '][first_name]', rowData.first_name || '', true, 'text', 'first_name'));
+			appendParticipantField(grid, participantSectionLabel(multi, 'last-name', 'Last name'), makeInput('ticket_participants[' + index + '][last_name]', rowData.last_name || '', true, 'text', 'last_name'));
+			appendParticipantField(grid, participantSectionLabel(multi, 'email', 'Email (optional)'), makeInput('ticket_participants[' + index + '][email]', rowData.email || '', false, 'email', 'email'));
+			appendParticipantField(grid, participantSectionLabel(multi, 'country', 'Country'), makeSelect('ticket_participants[' + index + '][country]', rowData.country || '', countries, true, 'country'));
+			appendParticipantField(grid, participantSectionLabel(multi, 'dojo', 'Dojo / Club'), makeInput('ticket_participants[' + index + '][dojo]', rowData.dojo || '', false, 'text', 'dojo'));
+			appendParticipantField(grid, participantSectionLabel(multi, 'rank', 'Rank / Belt'), makeInput('ticket_participants[' + index + '][rank]', rowData.rank || '', false, 'text', 'rank'));
+			appendParticipantField(grid, participantSectionLabel(multi, 'dietary', 'Dietary preference'), makeSelect('ticket_participants[' + index + '][dietary_preference]', rowData.dietary_preference || 'none', dietary, false, 'dietary_preference'));
+			article.appendChild(grid);
+			target.appendChild(article);
+		}
+
+		single.hidden = true;
+		setSectionDisabled(single, true);
+		multi.hidden = false;
+		setSectionDisabled(multi, false);
+		refreshCheckoutReview(root);
 	}
 
 	function setPromotionMessage(root, message, isError) {
@@ -367,7 +522,11 @@
 		var participantSelf = root.querySelector('[data-taka-participant-self]');
 		var participantName = '';
 
-		if (participantSelf && participantSelf.checked) {
+		if (quantity > 1) {
+			participantName = currentTicketParticipants(root).map(function (participant) {
+				return fullName(participant.first_name || '', participant.last_name || '');
+			}).filter(Boolean).join(', ');
+		} else if (participantSelf && participantSelf.checked) {
 			participantName = buyerName;
 		} else {
 			participantName = fullName(fieldValue(root, 'participant_first_name'), fieldValue(root, 'participant_last_name'));
@@ -555,6 +714,7 @@
 	document.querySelectorAll('[data-taka-native-checkout]').forEach(function (root) {
 		syncCheckoutRedirect(root);
 		syncTicketQuantityBounds(root);
+		renderTicketParticipants(root);
 		syncParticipantFields(root);
 		syncDietaryNote(root);
 		refreshCheckoutReview(root);
@@ -572,8 +732,10 @@
 		}
 		if (event.target.matches('[name="ticket_type_id"], [data-taka-ticket-quantity], [data-taka-product-quantity]')) {
 			syncTicketQuantityBounds(root);
+			renderTicketParticipants(root);
 			requestPricing(root, false);
 		} else if (event.target.matches('[data-taka-participant-self]')) {
+			renderTicketParticipants(root);
 			syncParticipantFields(root);
 		} else if (event.target.matches('[data-taka-dietary-preference]')) {
 			syncDietaryNote(root);
@@ -619,6 +781,7 @@
 			if (event.target.matches('[data-taka-promotion-code]')) {
 				clearPromotion(root, '');
 			} else if (event.target.matches('[data-taka-ticket-quantity], [data-taka-product-quantity]')) {
+				renderTicketParticipants(root);
 				requestPricing(root, false);
 			}
 			if (root.querySelector('[data-taka-participant-self]:checked')) {

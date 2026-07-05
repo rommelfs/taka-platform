@@ -130,25 +130,45 @@ class TAKA_People_Module {
 		$data = $order->to_array();
 		$buyer = is_array( $data['buyer'] ?? null ) ? $data['buyer'] : array();
 		$participant = is_array( $data['participant'] ?? null ) ? $data['participant'] : array();
+		$participants = is_array( $data['participants'] ?? null ) && ! empty( $data['participants'] ) ? array_values( $data['participants'] ) : array( $participant );
 		$buyer_person = self::person_repository()->create_or_update_from_person_data( TAKA_People_Person::from_buyer( $buyer ) );
-		$participant_person = self::person_repository()->create_or_update_from_person_data( TAKA_People_Person::from_participant( $participant ) );
 
-		if ( is_wp_error( $buyer_person ) || is_wp_error( $participant_person ) ) {
+		if ( is_wp_error( $buyer_person ) ) {
 			return $order;
 		}
 
 		$data['buyer_person_id'] = absint( $buyer_person['id'] ?? 0 );
-		$data['participant_person_id'] = absint( $participant_person['id'] ?? 0 );
+		$data['participant_person_ids'] = array();
 		$registration_ids = array_values( array_filter( array_map( 'absint', (array) ( $data['registration_ids'] ?? array() ) ) ) );
 
-		if ( ! empty( $data['event_id'] ) && ! empty( $participant_person['id'] ) ) {
-			$registration = TAKA_People_Registration::from_order_data( $data, absint( $participant_person['id'] ) );
-			$saved_registration = self::registration_repository()->save( $registration );
-			if ( ! is_wp_error( $saved_registration ) && ! empty( $saved_registration['id'] ) ) {
-				$registration_ids[] = absint( $saved_registration['id'] );
+		foreach ( $participants as $index => $participant_item ) {
+			$participant_item = is_array( $participant_item ) ? $participant_item : array();
+			$participant_person = self::person_repository()->create_or_update_from_person_data( TAKA_People_Person::from_participant( $participant_item ) );
+			if ( is_wp_error( $participant_person ) ) {
+				continue;
+			}
+			$person_id = absint( $participant_person['id'] ?? 0 );
+			if ( ! $person_id ) {
+				continue;
+			}
+			if ( 0 === $index ) {
+				$data['participant_person_id'] = $person_id;
+				$data['participant'] = $participant_item;
+			}
+			$data['participant_person_ids'][] = $person_id;
+
+			if ( ! empty( $data['event_id'] ) ) {
+				$registration_data = $data;
+				$registration_data['participant_index'] = $index;
+				$registration = TAKA_People_Registration::from_order_data( $registration_data, $person_id );
+				$saved_registration = self::registration_repository()->save( $registration );
+				if ( ! is_wp_error( $saved_registration ) && ! empty( $saved_registration['id'] ) ) {
+					$registration_ids[] = absint( $saved_registration['id'] );
+				}
 			}
 		}
 
+		$data['participant_person_ids'] = array_values( array_filter( array_map( 'absint', $data['participant_person_ids'] ) ) );
 		$data['registration_ids'] = array_values( array_unique( $registration_ids ) );
 		return TAKA_Ticketing_Module::order_repository()->save( new TAKA_Ticketing_Order( $data ) );
 	}

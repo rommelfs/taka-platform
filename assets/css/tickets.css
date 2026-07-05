@@ -234,6 +234,25 @@
 	grid-column: 1 / -1;
 }
 
+.taka-native-participants {
+	display: grid;
+	gap: .85rem;
+}
+
+.taka-native-participant-card {
+	background: #f7f3ec;
+	border: 1px solid rgba(17, 17, 17, .08);
+	border-radius: .8rem;
+	display: grid;
+	gap: .7rem;
+	padding: .85rem;
+}
+
+.taka-native-participant-card h5 {
+	font-size: .98rem;
+	margin: 0;
+}
+
 .taka-native-checkout__errors {
 	background: #fff3f3;
 	border-left: 4px solid #BC002D;

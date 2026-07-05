@@ -871,11 +871,11 @@ class TAKA_Ticketing_Module {
 		$prefill = array(
 			'ticket_type_id'      => '',
 			'ticket_quantity'     => 1,
-			'ticket_recipient_emails' => '',
 			'payment_method'      => '',
 			'promotion_code'      => '',
 			'buyer'               => array(),
 			'participant'         => array(),
+			'participants'        => array(),
 			'participant_is_buyer' => true,
 			'product_quantities'  => array(),
 			'standalone_product_quantity' => 1,
@@ -887,15 +887,12 @@ class TAKA_Ticketing_Module {
 		$data = $order->to_array();
 		$buyer = is_array( $data['buyer'] ?? null ) ? $data['buyer'] : array();
 		$participant = is_array( $data['participant'] ?? null ) ? $data['participant'] : array();
+		$participants = is_array( $data['participants'] ?? null ) && ! empty( $data['participants'] ) ? array_values( $data['participants'] ) : array( $participant );
 		$ticket_quantity = 1;
-		$ticket_recipient_emails = '';
 		$product_quantities = array();
 		foreach ( (array) ( $data['line_items'] ?? array() ) as $item ) {
 			if ( 'ticket' === (string) ( $item['item_type'] ?? '' ) ) {
 				$ticket_quantity = max( 1, absint( $item['quantity'] ?? 1 ) );
-				if ( ! empty( $item['recipient_emails'] ) && is_array( $item['recipient_emails'] ) ) {
-					$ticket_recipient_emails = implode( "\n", array_map( 'sanitize_email', $item['recipient_emails'] ) );
-				}
 				continue;
 			}
 			if ( 'product' !== (string) ( $item['item_type'] ?? '' ) ) {
@@ -916,11 +913,11 @@ class TAKA_Ticketing_Module {
 		return array(
 			'ticket_type_id'      => (string) ( $data['ticket_type_id'] ?? '' ),
 			'ticket_quantity'     => $ticket_quantity,
-			'ticket_recipient_emails' => $ticket_recipient_emails,
 			'payment_method'      => $payment_method,
 			'promotion_code'      => (string) ( $data['applied_voucher_code'] ?? '' ),
 			'buyer'               => $buyer,
 			'participant'         => $participant,
+			'participants'        => $participants,
 			'participant_is_buyer' => self::prefill_participant_is_buyer( $buyer, $participant ),
 			'product_quantities'  => $product_quantities,
 			'standalone_product_quantity' => max( 1, absint( reset( $product_quantities ) ?: 1 ) ),
@@ -1046,7 +1043,6 @@ class TAKA_Ticketing_Module {
 				</div>
 				<div class="taka-native-checkout__grid">
 					<?php self::frontend_input( 'ticket_quantity', self::text( 'ticketing.ticket_quantity', 'Number of tickets', $lang ), 'number', true, $prefill['ticket_quantity'] ?? 1, array( 'min' => '1', 'step' => '1', 'data-taka-ticket-quantity' => '1' ) ); ?>
-					<?php self::frontend_textarea( 'ticket_recipient_emails', self::text( 'ticketing.ticket_recipient_emails', 'Ticket recipient emails (optional)', $lang ), array( 'placeholder' => self::text( 'ticketing.ticket_recipient_emails_placeholder', 'Optional: one email address per ticket', $lang ) ), $prefill['ticket_recipient_emails'] ?? '' ); ?>
 				</div>
 			</section>
 			<?php if ( ! empty( $add_on_products ) ) : ?>
@@ -1079,7 +1075,7 @@ class TAKA_Ticketing_Module {
 					<?php self::frontend_input( 'buyer_phone', taka_tour_translate( 'ticketing.phone', 'Phone' ), 'text', false, $prefill['buyer']['phone'] ?? '', array( 'autocomplete' => 'tel' ) ); ?>
 				</div>
 			</section>
-			<section class="taka-native-checkout__step" data-taka-checkout-step-panel="2">
+			<section class="taka-native-checkout__step" data-taka-checkout-step-panel="2" data-taka-single-participant-section>
 				<h4><?php echo esc_html( taka_tour_translate( 'ticketing.participant_information', 'Participant information' ) ); ?></h4>
 				<label class="taka-native-checkout__checkbox"><input type="checkbox" name="self_participates" value="1" <?php checked( ! empty( $prefill['participant_is_buyer'] ) ); ?> data-taka-participant-self> <span><?php echo esc_html( taka_tour_translate( 'ticketing.participating_myself', 'I am participating myself.' ) ); ?></span></label>
 				<div class="taka-native-checkout__grid" data-taka-participant-identity-fields>
@@ -1098,6 +1094,10 @@ class TAKA_Ticketing_Module {
 					<?php self::frontend_textarea( 'participant_allergies', taka_tour_translate( 'ticketing.allergies', 'Allergies' ), array(), $prefill['participant']['allergies'] ?? '' ); ?>
 					<?php self::frontend_textarea( 'participant_notes', taka_tour_translate( 'ticketing.notes', 'Notes' ), array(), $prefill['participant']['notes'] ?? '' ); ?>
 				</div>
+			</section>
+			<section class="taka-native-checkout__step" data-taka-checkout-step-panel="2" data-taka-multi-participant-section data-taka-participants-prefill="<?php echo esc_attr( wp_json_encode( self::participant_prefill_rows( $prefill['participants'] ?? array() ) ) ); ?>" data-taka-country-options="<?php echo esc_attr( wp_json_encode( $country_choices ) ); ?>" data-taka-dietary-options="<?php echo esc_attr( wp_json_encode( self::dietary_choices( $lang ) ) ); ?>" data-taka-label-participant="<?php echo esc_attr( self::text( 'ticketing.participant', 'Participant', $lang ) ); ?>" data-taka-label-first-name="<?php echo esc_attr( self::text( 'ticketing.first_name', 'First name', $lang ) ); ?>" data-taka-label-last-name="<?php echo esc_attr( self::text( 'ticketing.last_name', 'Last name', $lang ) ); ?>" data-taka-label-email="<?php echo esc_attr( self::text( 'ticketing.email_optional', 'Email (optional)', $lang ) ); ?>" data-taka-label-country="<?php echo esc_attr( self::text( 'ticketing.country', 'Country', $lang ) ); ?>" data-taka-label-dojo="<?php echo esc_attr( self::text( 'ticketing.dojo', 'Dojo / Club', $lang ) ); ?>" data-taka-label-rank="<?php echo esc_attr( self::text( 'ticketing.rank', 'Rank / Belt', $lang ) ); ?>" data-taka-label-dietary="<?php echo esc_attr( self::text( 'ticketing.dietary_preference', 'Dietary preference', $lang ) ); ?>">
+				<h4><?php echo esc_html( self::text( 'ticketing.participants', 'Participants', $lang ) ); ?></h4>
+				<div class="taka-native-participants" data-taka-ticket-participants></div>
 			</section>
 			<section class="taka-native-checkout__step" data-taka-promotion-section data-taka-checkout-step-panel="2">
 				<h4><?php echo esc_html( self::text( 'ticketing.promotion_code', 'Promotion code', $lang ) ); ?></h4>
@@ -1225,6 +1225,28 @@ class TAKA_Ticketing_Module {
 			'vegan'      => self::text( 'ticketing.dietary_vegan', 'Vegan', $lang ),
 			'other'      => self::text( 'ticketing.dietary_other', 'Other / note', $lang ),
 		);
+	}
+
+	private static function participant_prefill_rows( $participants ) {
+		$rows = array();
+		foreach ( (array) $participants as $participant ) {
+			$participant = is_array( $participant ) ? $participant : array();
+			$rows[] = array(
+				'first_name'         => sanitize_text_field( $participant['first_name'] ?? '' ),
+				'last_name'          => sanitize_text_field( $participant['last_name'] ?? '' ),
+				'email'              => sanitize_email( $participant['email'] ?? '' ),
+				'country'            => sanitize_text_field( $participant['country'] ?? '' ),
+				'dojo'               => sanitize_text_field( $participant['dojo'] ?? '' ),
+				'association'        => sanitize_text_field( $participant['association'] ?? '' ),
+				'style'              => sanitize_text_field( $participant['style'] ?? '' ),
+				'rank'               => sanitize_text_field( $participant['rank'] ?? '' ),
+				'dietary_preference' => sanitize_key( $participant['dietary_preference'] ?? 'none' ),
+				'dietary_notes'      => sanitize_textarea_field( $participant['dietary_notes'] ?? '' ),
+				'allergies'          => sanitize_textarea_field( $participant['allergies'] ?? '' ),
+				'notes'              => sanitize_textarea_field( $participant['notes'] ?? '' ),
+			);
+		}
+		return $rows;
 	}
 
 	private static function html_attributes( $attributes ) {
@@ -2561,6 +2583,7 @@ class TAKA_Ticketing_Module {
 		$data = $order->to_array();
 		$buyer = (array) ( $data['buyer'] ?? array() );
 		$participant = (array) ( $data['participant'] ?? array() );
+		$participants = is_array( $data['participants'] ?? null ) ? array_values( $data['participants'] ) : array();
 		$organizer_id = self::order_billing_organizer_id( $order );
 		?>
 		<p><a href="<?php echo esc_url( self::admin_url() ); ?>">&larr; <?php echo esc_html__( 'Back to orders', 'taka-platform' ); ?></a></p>
@@ -2568,6 +2591,16 @@ class TAKA_Ticketing_Module {
 		<div class="taka-ticketing-admin-detail">
 			<section><h3><?php echo esc_html__( 'Buyer', 'taka-platform' ); ?></h3><?php self::admin_person_reference( $data['buyer_person_id'] ?? 0, $buyer ); ?><?php self::admin_person_details( $buyer ); ?></section>
 			<section><h3><?php echo esc_html__( 'Participant', 'taka-platform' ); ?></h3><?php self::admin_person_reference( $data['participant_person_id'] ?? 0, $participant ); ?><?php self::admin_person_details( $participant ); ?></section>
+			<?php if ( count( $participants ) > 1 ) : ?>
+				<section><h3><?php echo esc_html__( 'Participants', 'taka-platform' ); ?></h3>
+					<ol>
+						<?php foreach ( $participants as $index => $item ) : ?>
+							<?php $person_id = absint( (array_values( (array) ( $data['participant_person_ids'] ?? array() ) )[ $index ] ) ?? 0 ); ?>
+							<li><?php echo self::person_admin_link_or_text( $person_id, trim( ( $item['first_name'] ?? '' ) . ' ' . ( $item['last_name'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><?php if ( ! empty( $item['email'] ) ) : ?> &lt;<?php echo esc_html( $item['email'] ); ?>&gt;<?php endif; ?></li>
+						<?php endforeach; ?>
+					</ol>
+				</section>
+			<?php endif; ?>
 			<section><h3><?php echo esc_html__( 'Order', 'taka-platform' ); ?></h3>
 				<p><strong><?php echo esc_html__( 'Event', 'taka-platform' ); ?>:</strong> <?php echo esc_html( $data['event_title'] ?? '' ); ?></p>
 				<p><strong><?php echo esc_html__( 'Billing organizer', 'taka-platform' ); ?>:</strong> <?php echo esc_html( $organizer_id ? get_the_title( $organizer_id ) : ( $data['organizer_name'] ?? '' ) ); ?></p>

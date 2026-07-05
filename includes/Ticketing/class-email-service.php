@@ -96,6 +96,7 @@ class TAKA_Ticketing_Email_Service {
 		$data = $order->to_array();
 		$buyer = is_array( $data['buyer'] ?? null ) ? $data['buyer'] : array();
 		$participant = is_array( $data['participant'] ?? null ) ? $data['participant'] : array();
+		$participants = is_array( $data['participants'] ?? null ) ? array_values( $data['participants'] ) : array();
 		$provider = TAKA_Ticketing_Module::payment_provider( $data['payment_method'] ?? '' );
 		$instructions = $provider ? $provider->get_public_instructions( $order ) : array();
 		$line_items = is_array( $data['line_items'] ?? null ) ? $data['line_items'] : array();
@@ -129,6 +130,13 @@ class TAKA_Ticketing_Email_Service {
 			$lines[] = self::label( 'ticketing.order_items', 'Order items', $lang ) . ':';
 			foreach ( $line_items as $item ) {
 				$lines[] = '- ' . TAKA_Ticketing_Module::line_item_label( $item );
+			}
+		}
+		if ( count( $participants ) > 1 ) {
+			$lines[] = '';
+			$lines[] = self::label( 'ticketing.participants', 'Participants', $lang ) . ':';
+			foreach ( $participants as $item ) {
+				$lines[] = '- ' . self::person_line( is_array( $item ) ? $item : array(), $lang, true );
 			}
 		}
 		if ( ! $admin && ! empty( self::order_confirmation_attachments( $order ) ) ) {
