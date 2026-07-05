@@ -116,6 +116,7 @@ class TAKA_Ticketing_Order_Service {
 				'related_event_id' => $event_id,
 			);
 		}
+		$billing_context = $event_id ? TAKA_Ticketing_Module::billing_context_for_event( $event_id ) : TAKA_Ticketing_Module::organizer_billing_snapshot( 0 );
 
 		$order = new TAKA_Ticketing_Order(
 			array(
@@ -123,6 +124,9 @@ class TAKA_Ticketing_Order_Service {
 				'public_token'        => wp_generate_password( 32, false, false ),
 				'event_id'            => $event_id,
 				'event_title'         => $event_id ? get_the_title( $event_id ) : '',
+				'organizer_id'        => absint( $billing_context['organizer_id'] ?? 0 ),
+				'organizer_name'      => sanitize_text_field( $billing_context['organizer_name'] ?? '' ),
+				'billing_organizer'   => $billing_context,
 				'ticket_type_id'      => $ticket_type['id'] ?? '',
 				'ticket_type_name'    => $ticket_type['name'] ?? '',
 				'line_items'          => $line_items,

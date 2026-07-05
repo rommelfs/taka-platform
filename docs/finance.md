@@ -22,6 +22,10 @@ Revenue is read from native TAKA Ticketing orders. Paid orders contribute to
 revenue. Pending orders contribute to outstanding payments. Product and add-on
 line items are included in product reports.
 
+Orders carry a billing organizer snapshot. Finance uses the same organizer scope
+as Ticketing: administrators see all organizers, while privileged organizer
+users see only revenue for their assigned organizer IDs.
+
 Expenses come from two sources:
 
 - private Finance expense entries, stored as `taka_fin_expense`
@@ -54,8 +58,10 @@ Administrators receive:
 - `view_taka_finance`
 - `manage_taka_finance`
 
-Future organizer access should restrict reports to tours and events that the
-current user may administer.
+Organizer-specific finance access is intentionally scoped server-side. A user
+with finance capabilities but without administrator privileges only sees orders
+and event-linked expenses connected to their assigned organizers. Manual
+expenses without an accessible event remain hidden from organizer-scoped views.
 
 ## Future Phases
 

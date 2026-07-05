@@ -77,6 +77,21 @@ class TAKA_Finance_Module {
 		return add_query_arg( array_merge( array( 'page' => self::ADMIN_PAGE_SLUG ), $args ), admin_url( 'admin.php' ) );
 	}
 
+	private static function current_user_can_manage_all_finance() {
+		return current_user_can( 'manage_options' );
+	}
+
+	private static function current_user_organizer_ids() {
+		if ( class_exists( 'TAKA_Ticketing_Module' ) ) {
+			return TAKA_Ticketing_Module::current_user_ticketing_organizer_ids();
+		}
+		$ids = get_user_meta( get_current_user_id(), '_taka_platform_organizer_ids', true );
+		if ( ! is_array( $ids ) ) {
+			$ids = array_filter( preg_split( '/\s*,\s*/', (string) $ids ) );
+		}
+		return array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) );
+	}
+
 	public static function handle_save_expense() {
 		if ( ! current_user_can( 'manage_taka_finance' ) ) {
 			wp_die( esc_html__( 'Insufficient permissions.', 'taka-platform' ) );
@@ -85,6 +100,9 @@ class TAKA_Finance_Module {
 
 		$raw = isset( $_POST['expense'] ) && is_array( $_POST['expense'] ) ? wp_unslash( $_POST['expense'] ) : array();
 		$expense = self::normalize_expense( $raw );
+		if ( ! self::current_user_can_manage_all_finance() && ! self::current_user_can_access_expense( $expense ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'taka-platform' ) );
+		}
 		$result = self::save_expense( $expense );
 		$args = array();
 		if ( is_wp_error( $result ) ) {
@@ -128,6 +146,9 @@ class TAKA_Finance_Module {
 		<div class="wrap taka-finance-admin">
 			<h1><?php esc_html_e( 'Finance & Tour Budget', 'taka-platform' ); ?></h1>
 			<p class="description"><?php esc_html_e( 'Ticketing revenue, tour-planning expenses and cash-flow visibility for private tour operations.', 'taka-platform' ); ?></p>
+			<?php if ( ! self::current_user_can_manage_all_finance() ) : ?>
+				<p class="description"><?php echo esc_html( sprintf( __( 'Showing finance data for: %s', 'taka-platform' ), self::organizer_titles_list( self::current_user_organizer_ids() ) ) ); ?></p>
+			<?php endif; ?>
 			<?php self::render_notices(); ?>
 			<?php self::render_dashboard_cards( $data ); ?>
 			<div class="taka-admin-grid taka-admin-grid--two">
@@ -195,16 +216,7 @@ class TAKA_Finance_Module {
 	}
 
 	private static function render_expense_form() {
-		$events = get_posts(
-			array(
-				'post_type'        => TAKA_PLATFORM_CPT_EVENT,
-				'post_status'      => array( 'publish', 'draft', 'future', 'private' ),
-				'posts_per_page'   => 250,
-				'orderby'          => 'title',
-				'order'            => 'ASC',
-				'suppress_filters' => true,
-			)
-		);
+		$events = self::events_for_current_finance_user();
 		?>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="<?php echo esc_attr( self::SAVE_ACTION ); ?>">
@@ -279,6 +291,54 @@ class TAKA_Finance_Module {
 			<p class="submit"><button class="button button-primary" type="submit"><?php esc_html_e( 'Save expense', 'taka-platform' ); ?></button></p>
 		</form>
 		<?php
+	}
+
+	private static function events_for_current_finance_user() {
+		$events = get_posts(
+			array(
+				'post_type'        => TAKA_PLATFORM_CPT_EVENT,
+				'post_status'      => array( 'publish', 'draft', 'future', 'private' ),
+				'posts_per_page'   => 250,
+				'orderby'          => 'title',
+				'order'            => 'ASC',
+				'suppress_filters' => true,
+			)
+		);
+		if ( self::current_user_can_manage_all_finance() ) {
+			return $events;
+		}
+		$organizer_ids = self::current_user_organizer_ids();
+		return array_values(
+			array_filter(
+				$events,
+				static function ( $event ) use ( $organizer_ids ) {
+					return in_array( self::event_organizer_id( $event->ID ), $organizer_ids, true );
+				}
+			)
+		);
+	}
+
+	private static function current_user_can_access_expense( $expense ) {
+		if ( self::current_user_can_manage_all_finance() ) {
+			return true;
+		}
+		$event_id = absint( $expense['event_id'] ?? 0 );
+		if ( ! $event_id ) {
+			return false;
+		}
+		$organizer_id = self::event_organizer_id( $event_id );
+		return $organizer_id && in_array( $organizer_id, self::current_user_organizer_ids(), true );
+	}
+
+	private static function organizer_titles_list( $organizer_ids ) {
+		$titles = array();
+		foreach ( array_filter( array_map( 'absint', (array) $organizer_ids ) ) as $organizer_id ) {
+			$title = get_the_title( $organizer_id );
+			if ( '' !== trim( (string) $title ) ) {
+				$titles[] = $title;
+			}
+		}
+		return implode( ', ', $titles );
 	}
 
 	private static function render_payment_overview( $overview ) {
@@ -405,7 +465,7 @@ class TAKA_Finance_Module {
 			return $result;
 		}
 
-		foreach ( TAKA_Ticketing_Module::order_repository()->query( array( 'per_page' => -1 ) ) as $order ) {
+		foreach ( TAKA_Ticketing_Module::orders_visible_to_current_user( TAKA_Ticketing_Module::order_repository()->query( array( 'per_page' => -1 ) ) ) as $order ) {
 			$data = $order instanceof TAKA_Ticketing_Order ? $order->to_array() : array();
 			$currency = self::sanitize_currency( $data['currency'] ?? 'EUR' );
 			$amount = self::money_to_float( $data['amount'] ?? $data['final_amount'] ?? '0' );
@@ -416,7 +476,8 @@ class TAKA_Finance_Module {
 				$event_title = get_the_title( $event_id );
 			}
 			$tour_key = self::event_tour_key( $event_id );
-			$organizer = self::event_organizer_label( $event_id );
+			$organizer_id = class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::order_billing_organizer_id( $order ) : self::event_organizer_id( $event_id );
+			$organizer = $organizer_id ? get_the_title( $organizer_id ) : self::event_organizer_label( $event_id );
 			$ticket_type = (string) ( $data['ticket_type_name'] ?? $data['ticket_type_id'] ?? __( 'Ticket', 'taka-platform' ) );
 			$country = self::order_country( $data );
 			$method = sanitize_key( $data['payment_method'] ?? 'unknown' );
@@ -494,6 +555,7 @@ class TAKA_Finance_Module {
 				);
 			}
 		}
+		$expenses = array_values( array_filter( $expenses, array( __CLASS__, 'current_user_can_access_expense' ) ) );
 		usort(
 			$expenses,
 			function ( $a, $b ) {
@@ -749,15 +811,20 @@ class TAKA_Finance_Module {
 	}
 
 	private static function event_organizer_label( $event_id ) {
+		$organizer_id = self::event_organizer_id( $event_id );
+		return $organizer_id ? get_the_title( $organizer_id ) : sanitize_text_field( get_post_meta( absint( $event_id ), 'organizer', true ) );
+	}
+
+	private static function event_organizer_id( $event_id ) {
 		$event_id = absint( $event_id );
 		if ( ! $event_id ) {
-			return '';
+			return 0;
 		}
-		$organizer_id = absint( get_post_meta( $event_id, 'organizer_id', true ) );
-		if ( ! $organizer_id ) {
-			$organizer_id = absint( get_post_meta( $event_id, '_taka_organizer_id', true ) );
+		if ( class_exists( 'TAKA_Ticketing_Module' ) ) {
+			return TAKA_Ticketing_Module::event_billing_organizer_id( $event_id );
 		}
-		return $organizer_id ? get_the_title( $organizer_id ) : sanitize_text_field( get_post_meta( $event_id, 'organizer', true ) );
+		$organizer_id = absint( get_post_meta( $event_id, '_taka_organizer_id', true ) );
+		return $organizer_id ?: absint( get_post_meta( $event_id, 'organizer_id', true ) );
 	}
 
 	private static function order_country( $order ) {

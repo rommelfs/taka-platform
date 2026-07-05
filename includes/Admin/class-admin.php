@@ -2273,6 +2273,12 @@ class TAKA_Platform_Admin {
 		self::textarea( $post->ID, 'contact_persons', __( 'Contact persons (one per line)', 'taka-platform' ) );
 		self::admin_section_close();
 
+		if ( class_exists( 'TAKA_Ticketing_Module' ) ) {
+			self::admin_section_open( __( 'Financial accounts', 'taka-platform' ), __( 'Private bank and PayPal accounts used for native ticketing orders billed in this organizer’s name.', 'taka-platform' ), false, 'taka-admin-section--advanced', 'organizer-financial-accounts' );
+			TAKA_Ticketing_Module::render_organizer_financial_settings( $post->ID );
+			self::admin_section_close();
+		}
+
 		self::admin_section_open( __( 'Social links', 'taka-platform' ), __( 'Optional public social channels.', 'taka-platform' ), false, 'taka-admin-section--advanced', 'organizer-social-links' );
 		self::text( $post->ID, 'instagram', __( 'Instagram', 'taka-platform' ) );
 		self::text( $post->ID, 'facebook', __( 'Facebook', 'taka-platform' ) );
@@ -2451,6 +2457,9 @@ class TAKA_Platform_Admin {
 		self::save_object_country_meta( $post_id );
 		self::save_object_text_translations( $post_id, 'organizer' );
 		self::save_co_organizers( $post_id );
+		if ( class_exists( 'TAKA_Ticketing_Module' ) ) {
+			TAKA_Ticketing_Module::save_organizer_financial_settings( $post_id );
+		}
 	}
 
 	private static function organizer_description_source_text( $post ) {

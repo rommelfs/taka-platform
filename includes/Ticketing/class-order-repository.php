@@ -9,6 +9,7 @@ class TAKA_Ticketing_Order_Repository implements TAKA_Ticketing_Order_Repository
 	const ORDER_META          = '_taka_ticketing_order';
 	const TOKEN_META          = '_taka_ticketing_public_token';
 	const EVENT_ID_META       = '_taka_ticketing_event_id';
+	const ORGANIZER_ID_META   = '_taka_ticketing_organizer_id';
 	const TICKET_TYPE_ID_META = '_taka_ticketing_ticket_type_id';
 	const PROMOTION_ID_META   = '_taka_ticketing_promotion_id';
 	const PROMOTION_CODE_META = '_taka_ticketing_promotion_code';
@@ -130,6 +131,7 @@ class TAKA_Ticketing_Order_Repository implements TAKA_Ticketing_Order_Repository
 		update_post_meta( $order_id, self::ORDER_META, $data );
 		update_post_meta( $order_id, self::TOKEN_META, sanitize_text_field( $data['public_token'] ?? '' ) );
 		update_post_meta( $order_id, self::EVENT_ID_META, (string) absint( $data['event_id'] ?? 0 ) );
+		update_post_meta( $order_id, self::ORGANIZER_ID_META, (string) absint( $data['organizer_id'] ?? 0 ) );
 		update_post_meta( $order_id, self::TICKET_TYPE_ID_META, sanitize_key( $data['ticket_type_id'] ?? '' ) );
 		update_post_meta( $order_id, self::PROMOTION_ID_META, (string) absint( $data['applied_promotion_id'] ?? 0 ) );
 		update_post_meta( $order_id, self::PROMOTION_CODE_META, sanitize_text_field( $data['applied_voucher_code'] ?? '' ) );

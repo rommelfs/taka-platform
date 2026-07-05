@@ -12,6 +12,8 @@ class TAKA_Ticketing_Module {
 	const PAYMENT_METHODS_META = '_taka_native_payment_methods';
 	const PAYMENT_METHODS_CONFIGURED_META = '_taka_native_payment_methods_configured';
 	const BANK_TRANSFER_META   = '_taka_native_bank_transfer_settings';
+	const ORGANIZER_BANK_TRANSFER_META = '_taka_organizer_bank_transfer_settings';
+	const ORGANIZER_PAYPAL_META = '_taka_organizer_paypal_settings';
 	const PAY_AT_DOOR_INSTRUCTIONS_META = '_taka_native_pay_at_door_instructions';
 	const CHECKOUT_ACTION      = 'taka_ticketing_checkout';
 	const PAYPAL_RETURN_ACTION = 'taka_ticketing_paypal_return';
@@ -200,6 +202,18 @@ class TAKA_Ticketing_Module {
 		);
 	}
 
+	public static function normalize_paypal_settings( $settings ) {
+		$settings = is_array( $settings ) ? $settings : array();
+		return array(
+			'enabled'    => ! empty( $settings['enabled'] ) ? '1' : '0',
+			'client_id'  => sanitize_text_field( $settings['client_id'] ?? '' ),
+			'secret'     => sanitize_text_field( $settings['secret'] ?? '' ),
+			'mode'       => 'live' === sanitize_key( $settings['mode'] ?? 'sandbox' ) ? 'live' : 'sandbox',
+			'currency'   => TAKA_Platform_Data::normalize_event_option_value( 'currency', $settings['currency'] ?? 'EUR' ) ?: 'EUR',
+			'webhook_id' => sanitize_text_field( $settings['webhook_id'] ?? '' ),
+		);
+	}
+
 	public static function sanitize_ticket_types( $items ) {
 		return TAKA_Ticketing_Ticket_Types::normalize_ticket_types( $items );
 	}
@@ -230,27 +244,39 @@ class TAKA_Ticketing_Module {
 		$items = array_values( array_unique( array_filter( array_map( 'sanitize_key', (array) $items ) ) ) );
 		$was_configured_after_provider_selection = '1' === (string) get_post_meta( $event_id, self::PAYMENT_METHODS_CONFIGURED_META, true );
 		if ( empty( $items ) || ( ! $was_configured_after_provider_selection && self::is_legacy_default_payment_methods( $items ) ) ) {
-			$items = self::default_payment_methods_for_event();
+			$items = self::default_payment_methods_for_event( $event_id );
 		}
 		return array_values(
 			array_filter(
 				$items,
-				static function ( $method ) use ( $only_active ) {
+				static function ( $method ) use ( $event_id, $only_active ) {
 					if ( ! isset( self::$payment_providers[ $method ] ) ) {
 						return false;
 					}
-					return ! $only_active || self::$payment_providers[ $method ]->is_enabled();
+					return ! $only_active || self::payment_provider_enabled_for_event( $method, $event_id );
 				}
 			)
 		);
 	}
 
-	private static function default_payment_methods_for_event() {
+	private static function default_payment_methods_for_event( $event_id = 0 ) {
 		$methods = array( 'bank_transfer' );
-		if ( isset( self::$payment_providers['paypal'] ) && self::$payment_providers['paypal']->is_enabled() ) {
+		if ( isset( self::$payment_providers['paypal'] ) && self::payment_provider_enabled_for_event( 'paypal', $event_id ) ) {
 			$methods[] = 'paypal';
 		}
 		return array_values( array_unique( $methods ) );
+	}
+
+	public static function payment_provider_enabled_for_event( $method, $event_id = 0 ) {
+		$method = sanitize_key( $method );
+		if ( ! isset( self::$payment_providers[ $method ] ) ) {
+			return false;
+		}
+		if ( 'paypal' === $method ) {
+			$settings = self::paypal_settings_for_event( $event_id );
+			return ! empty( $settings['enabled'] ) && '' !== trim( (string) ( $settings['client_id'] ?? '' ) ) && '' !== trim( (string) ( $settings['secret'] ?? '' ) );
+		}
+		return self::$payment_providers[ $method ]->is_enabled();
 	}
 
 	private static function is_legacy_default_payment_methods( $methods ) {
@@ -261,6 +287,38 @@ class TAKA_Ticketing_Module {
 	public static function event_bank_transfer_settings( $event_id ) {
 		$stored = get_post_meta( absint( $event_id ), self::BANK_TRANSFER_META, true );
 		return self::normalize_bank_transfer_settings( is_array( $stored ) ? $stored : array() );
+	}
+
+	public static function organizer_bank_transfer_settings( $organizer_id ) {
+		$stored = get_post_meta( absint( $organizer_id ), self::ORGANIZER_BANK_TRANSFER_META, true );
+		return self::normalize_bank_transfer_settings( is_array( $stored ) ? $stored : array() );
+	}
+
+	public static function bank_transfer_settings_for_event( $event_id ) {
+		$event_id = absint( $event_id );
+		$global = self::normalize_bank_transfer_settings( get_option( self::BANK_TRANSFER_OPTION, array() ) );
+		$organizer_id = self::event_billing_organizer_id( $event_id );
+		$organizer = $organizer_id ? self::organizer_bank_transfer_settings( $organizer_id ) : array();
+		$event = $event_id ? self::event_bank_transfer_settings( $event_id ) : array();
+
+		if ( $organizer_id ) {
+			$effective = $organizer;
+			$effective['account_scope'] = 'organizer';
+			$effective['organizer_id'] = $organizer_id;
+		} else {
+			$effective = $global;
+			$effective['account_scope'] = 'global';
+			$effective['organizer_id'] = 0;
+		}
+		if ( self::payment_settings_have_values( $event, array( 'account_holder', 'iban', 'bic', 'bank_name', 'instructions_text' ) ) ) {
+			$effective = array_merge( $effective, self::non_empty_settings( $event ) );
+			$effective['account_scope'] = 'event';
+			$effective['organizer_id'] = $organizer_id;
+		}
+		return self::normalize_bank_transfer_settings( $effective ) + array(
+			'account_scope' => sanitize_key( $effective['account_scope'] ?? 'global' ),
+			'organizer_id'  => absint( $effective['organizer_id'] ?? 0 ),
+		);
 	}
 
 	public static function default_settings() {
@@ -338,13 +396,145 @@ class TAKA_Ticketing_Module {
 
 	public static function paypal_settings() {
 		$settings = self::ticketing_settings();
+		return self::normalize_paypal_settings(
+			array(
+				'enabled'    => $settings['paypal_enabled'] ?? '0',
+				'client_id'  => $settings['paypal_client_id'] ?? '',
+				'secret'     => $settings['paypal_secret'] ?? '',
+				'mode'       => $settings['paypal_mode'] ?? 'sandbox',
+				'currency'   => $settings['paypal_currency'] ?? 'EUR',
+				'webhook_id' => $settings['paypal_webhook_id'] ?? '',
+			)
+		) + array(
+			'account_scope' => 'global',
+			'organizer_id'  => 0,
+		);
+	}
+
+	public static function organizer_paypal_settings( $organizer_id ) {
+		$stored = get_post_meta( absint( $organizer_id ), self::ORGANIZER_PAYPAL_META, true );
+		return self::normalize_paypal_settings( is_array( $stored ) ? $stored : array() );
+	}
+
+	public static function paypal_settings_for_event( $event_id ) {
+		$event_id = absint( $event_id );
+		$organizer_id = self::event_billing_organizer_id( $event_id );
+		if ( $organizer_id ) {
+			$organizer = self::organizer_paypal_settings( $organizer_id );
+			return $organizer + array(
+				'account_scope' => 'organizer',
+				'organizer_id'  => $organizer_id,
+			);
+		}
+		return self::paypal_settings();
+	}
+
+	public static function paypal_settings_for_order( $order ) {
+		$data = is_object( $order ) && method_exists( $order, 'to_array' ) ? $order->to_array() : (array) $order;
+		$payment = is_array( $data['payment'] ?? null ) ? $data['payment'] : array();
+		$organizer_id = absint( $payment['organizer_id'] ?? ( $data['organizer_id'] ?? 0 ) );
+		if ( $organizer_id ) {
+			$organizer = self::organizer_paypal_settings( $organizer_id );
+			return $organizer + array(
+				'account_scope' => 'organizer',
+				'organizer_id'  => $organizer_id,
+			);
+		}
+		return self::paypal_settings();
+	}
+
+	public static function paypal_webhook_settings_candidates() {
+		$candidates = array();
+		$global = self::paypal_settings();
+		if ( self::payment_settings_have_values( $global, array( 'client_id', 'secret', 'webhook_id' ) ) ) {
+			$candidates[] = $global;
+		}
+		$organizers = get_posts(
+			array(
+				'post_type'        => TAKA_PLATFORM_CPT_ORGANIZER,
+				'post_status'      => 'any',
+				'posts_per_page'   => -1,
+				'fields'           => 'ids',
+				'suppress_filters' => true,
+			)
+		);
+		foreach ( $organizers as $organizer_id ) {
+			$settings = self::organizer_paypal_settings( $organizer_id );
+			if ( ! self::payment_settings_have_values( $settings, array( 'client_id', 'secret', 'webhook_id' ) ) ) {
+				continue;
+			}
+			$candidates[] = $settings + array(
+				'account_scope' => 'organizer',
+				'organizer_id'  => absint( $organizer_id ),
+			);
+		}
+		return $candidates;
+	}
+
+	public static function event_billing_organizer_id( $event_id ) {
+		$event_id = absint( $event_id );
+		if ( ! $event_id ) {
+			return 0;
+		}
+		$legacy = absint( get_post_meta( $event_id, '_taka_organizer_id', true ) );
+		if ( $legacy ) {
+			return $legacy;
+		}
+		$relationships = TAKA_Platform_Data::normalize_event_organizer_relationships( get_post_meta( $event_id, '_taka_event_organizers', true ), 0 );
+		foreach ( $relationships as $relationship ) {
+			$organizer_id = absint( $relationship['organizer_id'] ?? 0 );
+			if ( $organizer_id ) {
+				return $organizer_id;
+			}
+		}
+		return 0;
+	}
+
+	public static function organizer_billing_snapshot( $organizer_id ) {
+		$organizer_id = absint( $organizer_id );
+		$post = $organizer_id ? get_post( $organizer_id ) : null;
+		if ( ! $post || TAKA_PLATFORM_CPT_ORGANIZER !== $post->post_type ) {
+			return array(
+				'organizer_id'         => 0,
+				'organizer_name'       => '',
+				'organizer_legal_name' => '',
+				'organizer_email'      => '',
+			);
+		}
+		$emails = preg_split( '/\r\n|\r|\n/', (string) get_post_meta( $organizer_id, '_taka_emails', true ) );
+		$email = sanitize_email( $emails[0] ?? '' );
 		return array(
-			'enabled'    => $settings['paypal_enabled'] ?? '0',
-			'client_id'  => $settings['paypal_client_id'] ?? '',
-			'secret'     => $settings['paypal_secret'] ?? '',
-			'mode'       => $settings['paypal_mode'] ?? 'sandbox',
-			'currency'   => $settings['paypal_currency'] ?? 'EUR',
-			'webhook_id' => $settings['paypal_webhook_id'] ?? '',
+			'organizer_id'         => $organizer_id,
+			'organizer_name'       => get_the_title( $organizer_id ),
+			'organizer_legal_name' => sanitize_text_field( get_post_meta( $organizer_id, '_taka_legal_name', true ) ),
+			'organizer_email'      => $email,
+		);
+	}
+
+	public static function billing_context_for_event( $event_id ) {
+		$organizer_id = self::event_billing_organizer_id( $event_id );
+		return self::organizer_billing_snapshot( $organizer_id ) + array(
+			'event_id' => absint( $event_id ),
+			'source'   => $organizer_id ? 'event_primary_organizer' : 'unassigned',
+		);
+	}
+
+	private static function payment_settings_have_values( $settings, $fields ) {
+		$settings = is_array( $settings ) ? $settings : array();
+		foreach ( (array) $fields as $field ) {
+			if ( '' !== trim( (string) ( $settings[ $field ] ?? '' ) ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static function non_empty_settings( $settings ) {
+		return array_filter(
+			is_array( $settings ) ? $settings : array(),
+			static function ( $value ) {
+				return '' !== trim( (string) $value );
+			}
 		);
 	}
 
@@ -519,17 +709,25 @@ class TAKA_Ticketing_Module {
 	private static function render_payment_method_settings( $post_id ) {
 		$enabled = self::enabled_payment_methods_for_event( $post_id, false );
 		$bank = self::event_bank_transfer_settings( $post_id );
+		$effective_bank = self::bank_transfer_settings_for_event( $post_id );
+		$billing = self::billing_context_for_event( $post_id );
 		$pay_at_door_instructions = (string) get_post_meta( $post_id, self::PAY_AT_DOOR_INSTRUCTIONS_META, true );
 		?>
 		<div class="taka-native-payment-settings">
 			<h3><?php echo esc_html__( 'Payment methods', 'taka-platform' ); ?></h3>
 			<p class="description"><?php echo esc_html__( 'Choose which native payment methods visitors may select for this event.', 'taka-platform' ); ?></p>
+			<?php if ( ! empty( $billing['organizer_id'] ) ) : ?>
+				<p class="description"><?php echo esc_html( sprintf( __( 'Payments are processed in the name of the event organizer: %s.', 'taka-platform' ), $billing['organizer_legal_name'] ?: $billing['organizer_name'] ) ); ?></p>
+			<?php else : ?>
+				<p class="description"><?php echo esc_html__( 'Assign a primary organizer so native payments can use organizer-specific financial accounts.', 'taka-platform' ); ?></p>
+			<?php endif; ?>
 			<div class="taka-native-payment-settings__methods">
 				<?php foreach ( self::payment_providers() as $provider_id => $provider ) : ?>
-					<label><input type="checkbox" name="taka_native_payment_methods[]" value="<?php echo esc_attr( $provider_id ); ?>" <?php checked( in_array( $provider_id, $enabled, true ) ); ?>> <?php echo esc_html( self::payment_method_label( $provider_id ) ); ?><?php if ( ! $provider->is_enabled() ) : ?> <span class="description"><?php echo esc_html__( 'Configure globally before public checkout uses it.', 'taka-platform' ); ?></span><?php endif; ?></label>
+					<label><input type="checkbox" name="taka_native_payment_methods[]" value="<?php echo esc_attr( $provider_id ); ?>" <?php checked( in_array( $provider_id, $enabled, true ) ); ?>> <?php echo esc_html( self::payment_method_label( $provider_id ) ); ?><?php if ( ! self::payment_provider_enabled_for_event( $provider_id, $post_id ) ) : ?> <span class="description"><?php echo esc_html__( 'Configure the organizer account before public checkout uses it.', 'taka-platform' ); ?></span><?php endif; ?></label>
 				<?php endforeach; ?>
 			</div>
 			<div class="taka-native-payment-settings__grid">
+				<label class="taka-native-ticket-type__wide"><strong><?php echo esc_html__( 'Bank transfer account source', 'taka-platform' ); ?></strong><input class="widefat" type="text" readonly value="<?php echo esc_attr( self::bank_account_source_label( $effective_bank ) ); ?>"><span class="description"><?php echo esc_html__( 'Use the organizer finance profile for normal operation. Fill the fields below only for a deliberate event-specific override.', 'taka-platform' ); ?></span></label>
 				<?php self::payment_input( 'taka_native_bank_transfer', 'account_holder', __( 'Account holder', 'taka-platform' ), $bank['account_holder'] ?? '' ); ?>
 				<?php self::payment_input( 'taka_native_bank_transfer', 'iban', __( 'IBAN', 'taka-platform' ), $bank['iban'] ?? '' ); ?>
 				<?php self::payment_input( 'taka_native_bank_transfer', 'bic', __( 'BIC', 'taka-platform' ), $bank['bic'] ?? '' ); ?>
@@ -564,6 +762,66 @@ class TAKA_Ticketing_Module {
 
 	private static function payment_input( $prefix, $field, $label, $value ) {
 		echo '<label><strong>' . esc_html( $label ) . '</strong><input class="widefat" type="text" name="' . esc_attr( $prefix . '[' . $field . ']' ) . '" value="' . esc_attr( (string) $value ) . '"></label>';
+	}
+
+	private static function bank_account_source_label( $settings ) {
+		$scope = sanitize_key( $settings['account_scope'] ?? 'global' );
+		if ( 'event' === $scope ) {
+			return __( 'Event-specific override', 'taka-platform' );
+		}
+		if ( 'organizer' === $scope ) {
+			$organizer_id = absint( $settings['organizer_id'] ?? 0 );
+			return $organizer_id ? sprintf( __( 'Organizer account: %s', 'taka-platform' ), get_the_title( $organizer_id ) ) : __( 'Organizer account', 'taka-platform' );
+		}
+		return __( 'Legacy global fallback', 'taka-platform' );
+	}
+
+	public static function render_organizer_financial_settings( $organizer_id ) {
+		$organizer_id = absint( $organizer_id );
+		$bank = self::organizer_bank_transfer_settings( $organizer_id );
+		$paypal = self::organizer_paypal_settings( $organizer_id );
+		$currencies = TAKA_Platform_Data::option_list_choices( 'currency', TAKA_Platform_Data::platform_fallback_language() );
+		if ( ! isset( $currencies[ $paypal['currency'] ?? 'EUR' ] ) ) {
+			$currencies[ $paypal['currency'] ?? 'EUR' ] = $paypal['currency'] ?? 'EUR';
+		}
+		?>
+		<div class="taka-native-payment-settings">
+			<p class="description"><?php echo esc_html__( 'Private finance profile for native ticketing. Orders for events whose primary organizer is this organizer use these accounts and keep a billing snapshot on the order.', 'taka-platform' ); ?></p>
+			<h3><?php echo esc_html__( 'Bank account', 'taka-platform' ); ?></h3>
+			<div class="taka-native-payment-settings__grid">
+				<label><strong><?php echo esc_html__( 'Enable bank transfer account', 'taka-platform' ); ?></strong><input type="checkbox" name="taka_organizer_bank_transfer[enabled]" value="1" <?php checked( '1', (string) ( $bank['enabled'] ?? '0' ) ); ?>></label>
+				<?php self::payment_input( 'taka_organizer_bank_transfer', 'account_holder', __( 'Account holder', 'taka-platform' ), $bank['account_holder'] ?? '' ); ?>
+				<?php self::payment_input( 'taka_organizer_bank_transfer', 'iban', __( 'IBAN', 'taka-platform' ), $bank['iban'] ?? '' ); ?>
+				<?php self::payment_input( 'taka_organizer_bank_transfer', 'bic', __( 'BIC', 'taka-platform' ), $bank['bic'] ?? '' ); ?>
+				<?php self::payment_input( 'taka_organizer_bank_transfer', 'bank_name', __( 'Bank name', 'taka-platform' ), $bank['bank_name'] ?? '' ); ?>
+				<?php self::payment_input( 'taka_organizer_bank_transfer', 'payment_reference_template', __( 'Payment reference template', 'taka-platform' ), $bank['payment_reference_template'] ?? 'TAKA-{order_number}' ); ?>
+				<label class="taka-native-ticket-type__wide"><strong><?php echo esc_html__( 'Bank transfer instructions', 'taka-platform' ); ?></strong><textarea class="widefat" rows="3" name="taka_organizer_bank_transfer[instructions_text]"><?php echo esc_textarea( $bank['instructions_text'] ?? '' ); ?></textarea></label>
+			</div>
+			<h3><?php echo esc_html__( 'PayPal account', 'taka-platform' ); ?></h3>
+			<div class="taka-native-payment-settings__grid">
+				<label><strong><?php echo esc_html__( 'Enable PayPal checkout', 'taka-platform' ); ?></strong><input type="checkbox" name="taka_organizer_paypal[enabled]" value="1" <?php checked( '1', (string) ( $paypal['enabled'] ?? '0' ) ); ?>></label>
+				<label><strong><?php echo esc_html__( 'PayPal client ID', 'taka-platform' ); ?></strong><input class="widefat" type="text" name="taka_organizer_paypal[client_id]" value="<?php echo esc_attr( $paypal['client_id'] ?? '' ); ?>"></label>
+				<label><strong><?php echo esc_html__( 'PayPal secret', 'taka-platform' ); ?></strong><input class="widefat" type="password" autocomplete="new-password" name="taka_organizer_paypal[secret]" value="<?php echo esc_attr( $paypal['secret'] ?? '' ); ?>"></label>
+				<label><strong><?php echo esc_html__( 'Mode', 'taka-platform' ); ?></strong><select class="widefat" name="taka_organizer_paypal[mode]"><option value="sandbox" <?php selected( 'sandbox', $paypal['mode'] ?? 'sandbox' ); ?>><?php echo esc_html__( 'Sandbox', 'taka-platform' ); ?></option><option value="live" <?php selected( 'live', $paypal['mode'] ?? 'sandbox' ); ?>><?php echo esc_html__( 'Live', 'taka-platform' ); ?></option></select></label>
+				<label><strong><?php echo esc_html__( 'Currency', 'taka-platform' ); ?></strong><select class="widefat" name="taka_organizer_paypal[currency]"><?php foreach ( $currencies as $value => $label ) : ?><option value="<?php echo esc_attr( $value ); ?>" <?php selected( (string) ( $paypal['currency'] ?? 'EUR' ), (string) $value ); ?>><?php echo esc_html( $label ); ?></option><?php endforeach; ?></select></label>
+				<label><strong><?php echo esc_html__( 'Webhook ID', 'taka-platform' ); ?></strong><input class="widefat" type="text" name="taka_organizer_paypal[webhook_id]" value="<?php echo esc_attr( $paypal['webhook_id'] ?? '' ); ?>"></label>
+				<label class="taka-native-ticket-type__wide"><strong><?php echo esc_html__( 'Webhook URL', 'taka-platform' ); ?></strong><input class="widefat" type="text" readonly value="<?php echo esc_attr( self::paypal_webhook_url() ); ?>"><span class="description"><?php echo esc_html__( 'Use the same endpoint when configuring this organizer account in PayPal.', 'taka-platform' ); ?></span></label>
+			</div>
+		</div>
+		<?php
+	}
+
+	public static function save_organizer_financial_settings( $organizer_id ) {
+		$organizer_id = absint( $organizer_id );
+		if ( ! $organizer_id || ! current_user_can( 'edit_post', $organizer_id ) ) {
+			return;
+		}
+		if ( isset( $_POST['taka_organizer_bank_transfer'] ) && is_array( $_POST['taka_organizer_bank_transfer'] ) ) {
+			update_post_meta( $organizer_id, self::ORGANIZER_BANK_TRANSFER_META, self::normalize_bank_transfer_settings( wp_unslash( $_POST['taka_organizer_bank_transfer'] ) ) );
+		}
+		if ( isset( $_POST['taka_organizer_paypal'] ) && is_array( $_POST['taka_organizer_paypal'] ) ) {
+			update_post_meta( $organizer_id, self::ORGANIZER_PAYPAL_META, self::normalize_paypal_settings( wp_unslash( $_POST['taka_organizer_paypal'] ) ) );
+		}
 	}
 
 	public static function render_booking_widget( $event ) {
@@ -1154,6 +1412,10 @@ class TAKA_Ticketing_Module {
 		check_admin_referer( self::ADMIN_ACTION, '_wpnonce' );
 		$order_id = absint( $_POST['order_id'] ?? 0 );
 		$task = sanitize_key( wp_unslash( $_POST['task'] ?? '' ) );
+		$order = self::order_repository()->find_by_id( $order_id );
+		if ( ! $order || ! self::current_user_can_access_order( $order, true ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'taka-platform' ) );
+		}
 		$result = null;
 
 		if ( 'mark_paid' === $task ) {
@@ -1592,6 +1854,68 @@ class TAKA_Ticketing_Module {
 		return add_query_arg( array_merge( array( 'page' => self::ADMIN_PAGE_SLUG ), $args ), admin_url( 'admin.php' ) );
 	}
 
+	public static function current_user_can_manage_all_ticketing() {
+		return current_user_can( 'manage_options' );
+	}
+
+	public static function current_user_ticketing_organizer_ids() {
+		$ids = get_user_meta( get_current_user_id(), '_taka_platform_organizer_ids', true );
+		if ( ! is_array( $ids ) ) {
+			$ids = array_filter( preg_split( '/\s*,\s*/', (string) $ids ) );
+		}
+		return array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) );
+	}
+
+	public static function order_billing_organizer_id( $order ) {
+		$data = $order instanceof TAKA_Ticketing_Order ? $order->to_array() : (array) $order;
+		$organizer_id = absint( $data['organizer_id'] ?? 0 );
+		if ( $organizer_id ) {
+			return $organizer_id;
+		}
+		$billing = is_array( $data['billing_organizer'] ?? null ) ? $data['billing_organizer'] : array();
+		$organizer_id = absint( $billing['organizer_id'] ?? 0 );
+		if ( $organizer_id ) {
+			return $organizer_id;
+		}
+		return self::event_billing_organizer_id( absint( $data['event_id'] ?? 0 ) );
+	}
+
+	public static function current_user_can_access_order( $order, $edit = false ) {
+		if ( self::current_user_can_manage_all_ticketing() ) {
+			return true;
+		}
+		if ( $edit && ! current_user_can( 'edit_taka_orders' ) ) {
+			return false;
+		}
+		if ( ! $edit && ! current_user_can( 'view_taka_orders' ) && ! current_user_can( 'view_taka_finance' ) ) {
+			return false;
+		}
+		$organizer_id = self::order_billing_organizer_id( $order );
+		return $organizer_id && in_array( $organizer_id, self::current_user_ticketing_organizer_ids(), true );
+	}
+
+	public static function orders_visible_to_current_user( $orders ) {
+		$selected_organizer = self::selected_order_organizer_filter();
+		return array_values(
+			array_filter(
+				(array) $orders,
+				static function ( $order ) use ( $selected_organizer ) {
+					if ( ! self::current_user_can_access_order( $order ) ) {
+						return false;
+					}
+					return ! $selected_organizer || self::order_billing_organizer_id( $order ) === $selected_organizer;
+				}
+			)
+		);
+	}
+
+	private static function selected_order_organizer_filter() {
+		if ( ! self::current_user_can_manage_all_ticketing() ) {
+			return 0;
+		}
+		return absint( $_GET['organizer_id'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	}
+
 	public static function render_admin_page() {
 		if ( ! current_user_can( 'view_taka_orders' ) ) {
 			wp_die( esc_html__( 'Insufficient permissions.', 'taka-platform' ) );
@@ -1700,8 +2024,8 @@ class TAKA_Ticketing_Module {
 				</div>
 				<p class="description"><?php echo esc_html__( 'Use {link} in checkbox labels where the configured link text should appear.', 'taka-platform' ); ?></p>
 				<section class="taka-ticketing-settings__panel">
-					<h3><?php echo esc_html__( 'PayPal', 'taka-platform' ); ?></h3>
-					<p class="description"><?php echo esc_html__( 'PayPal is available as a native payment provider when enabled and configured here. The secret is only used server-side.', 'taka-platform' ); ?></p>
+					<h3><?php echo esc_html__( 'Legacy PayPal fallback', 'taka-platform' ); ?></h3>
+					<p class="description"><?php echo esc_html__( 'Organizer finance profiles are used for normal native ticketing payments. Keep this global PayPal account only as a backwards-compatible fallback for unassigned events and legacy orders. The secret is only used server-side.', 'taka-platform' ); ?></p>
 					<label><input type="checkbox" name="taka_ticketing_settings[paypal_enabled]" value="1" <?php checked( '1', (string) ( $settings['paypal_enabled'] ?? '0' ) ); ?>> <?php echo esc_html__( 'Enable PayPal checkout', 'taka-platform' ); ?></label>
 					<div class="taka-ticketing-settings__grid">
 						<label><span><?php echo esc_html__( 'PayPal client ID', 'taka-platform' ); ?></span><input class="regular-text" type="text" name="taka_ticketing_settings[paypal_client_id]" value="<?php echo esc_attr( $settings['paypal_client_id'] ?? '' ); ?>"></label>
@@ -2063,10 +2387,102 @@ class TAKA_Ticketing_Module {
 		return $summary;
 	}
 
+	private static function render_order_organizer_filter() {
+		if ( ! self::current_user_can_manage_all_ticketing() ) {
+			$organizer_ids = self::current_user_ticketing_organizer_ids();
+			if ( ! empty( $organizer_ids ) ) {
+				echo '<p class="description">' . esc_html( sprintf( __( 'Showing orders for: %s', 'taka-platform' ), self::organizer_titles_list( $organizer_ids ) ) ) . '</p>';
+			}
+			return;
+		}
+		$selected = self::selected_order_organizer_filter();
+		$organizers = get_posts(
+			array(
+				'post_type'        => TAKA_PLATFORM_CPT_ORGANIZER,
+				'post_status'      => 'any',
+				'posts_per_page'   => -1,
+				'orderby'          => 'title',
+				'order'            => 'ASC',
+				'suppress_filters' => true,
+			)
+		);
+		echo '<form method="get" class="taka-ticketing-order-filter">';
+		echo '<input type="hidden" name="page" value="' . esc_attr( self::ADMIN_PAGE_SLUG ) . '">';
+		echo '<label><span>' . esc_html__( 'Organizer view', 'taka-platform' ) . '</span> <select name="organizer_id">';
+		echo '<option value="0">' . esc_html__( 'All organizers', 'taka-platform' ) . '</option>';
+		foreach ( $organizers as $organizer ) {
+			echo '<option value="' . esc_attr( (string) $organizer->ID ) . '" ' . selected( $selected, $organizer->ID, false ) . '>' . esc_html( get_the_title( $organizer ) ) . '</option>';
+		}
+		echo '</select></label> ';
+		echo '<button class="button" type="submit">' . esc_html__( 'Filter', 'taka-platform' ) . '</button>';
+		echo '</form>';
+	}
+
+	private static function render_order_revenue_summary( $orders ) {
+		$paid = array();
+		$pending = array();
+		$refunded = array();
+		foreach ( (array) $orders as $order ) {
+			$data = $order instanceof TAKA_Ticketing_Order ? $order->to_array() : array();
+			$currency = TAKA_Platform_Data::normalize_event_option_value( 'currency', $data['currency'] ?? 'EUR' ) ?: 'EUR';
+			$amount = TAKA_Ticketing_Pricing_Service::money_to_float( $data['amount'] ?? $data['final_amount'] ?? '0' );
+			$status = sanitize_key( $data['payment_status'] ?? 'pending' );
+			if ( 'paid' === $status ) {
+				self::add_money_total( $paid, $currency, $amount );
+			} elseif ( 'refunded' === $status ) {
+				self::add_money_total( $refunded, $currency, $amount );
+			} elseif ( ! in_array( $status, array( 'cancelled' ), true ) ) {
+				self::add_money_total( $pending, $currency, $amount );
+			}
+		}
+		echo '<div class="taka-finance-metrics taka-ticketing-order-metrics">';
+		self::metric_card( __( 'Orders', 'taka-platform' ), (string) count( (array) $orders ) );
+		self::metric_card( __( 'Paid revenue', 'taka-platform' ), self::format_money_totals( $paid ) );
+		self::metric_card( __( 'Outstanding payments', 'taka-platform' ), self::format_money_totals( $pending ) );
+		self::metric_card( __( 'Refunded', 'taka-platform' ), self::format_money_totals( $refunded ) );
+		echo '</div>';
+	}
+
+	private static function add_money_total( &$totals, $currency, $amount ) {
+		$currency = TAKA_Platform_Data::normalize_event_option_value( 'currency', $currency ?: 'EUR' ) ?: 'EUR';
+		if ( ! isset( $totals[ $currency ] ) ) {
+			$totals[ $currency ] = 0.0;
+		}
+		$totals[ $currency ] += (float) $amount;
+	}
+
+	private static function format_money_totals( $totals ) {
+		if ( empty( $totals ) ) {
+			return self::format_money( '0', 'EUR' );
+		}
+		$out = array();
+		foreach ( $totals as $currency => $amount ) {
+			$out[] = self::format_money( (string) round( (float) $amount, 2 ), $currency );
+		}
+		return implode( ' / ', $out );
+	}
+
+	private static function metric_card( $label, $value ) {
+		echo '<div class="taka-finance-card"><span>' . esc_html( $label ) . '</span><strong>' . esc_html( $value ) . '</strong></div>';
+	}
+
+	private static function organizer_titles_list( $organizer_ids ) {
+		$titles = array();
+		foreach ( array_filter( array_map( 'absint', (array) $organizer_ids ) ) as $organizer_id ) {
+			$title = get_the_title( $organizer_id );
+			if ( '' !== trim( (string) $title ) ) {
+				$titles[] = $title;
+			}
+		}
+		return implode( ', ', $titles );
+	}
+
 	private static function render_order_list() {
-		$orders = self::order_repository()->query( array( 'per_page' => 100 ) );
+		$orders = self::orders_visible_to_current_user( self::order_repository()->query( array( 'per_page' => 100 ) ) );
 		?>
 		<h2><?php echo esc_html__( 'Orders', 'taka-platform' ); ?></h2>
+		<?php self::render_order_organizer_filter(); ?>
+		<?php self::render_order_revenue_summary( $orders ); ?>
 		<table class="widefat striped">
 			<thead><tr>
 				<th><?php echo esc_html__( 'Order number', 'taka-platform' ); ?></th>
@@ -2074,6 +2490,7 @@ class TAKA_Ticketing_Module {
 				<th><?php echo esc_html__( 'Buyer', 'taka-platform' ); ?></th>
 				<th><?php echo esc_html__( 'Participant', 'taka-platform' ); ?></th>
 				<th><?php echo esc_html__( 'Event', 'taka-platform' ); ?></th>
+				<th><?php echo esc_html__( 'Organizer', 'taka-platform' ); ?></th>
 				<th><?php echo esc_html__( 'Ticket', 'taka-platform' ); ?></th>
 				<th><?php echo esc_html__( 'Promotion', 'taka-platform' ); ?></th>
 				<th><?php echo esc_html__( 'Amount', 'taka-platform' ); ?></th>
@@ -2084,16 +2501,17 @@ class TAKA_Ticketing_Module {
 			</tr></thead>
 			<tbody>
 				<?php if ( empty( $orders ) ) : ?>
-					<tr><td colspan="12"><?php echo esc_html__( 'No native ticket orders yet.', 'taka-platform' ); ?></td></tr>
+					<tr><td colspan="13"><?php echo esc_html__( 'No native ticket orders yet.', 'taka-platform' ); ?></td></tr>
 				<?php endif; ?>
 				<?php foreach ( $orders as $order ) : ?>
-					<?php $data = $order->to_array(); $buyer = (array) ( $data['buyer'] ?? array() ); $participant = (array) ( $data['participant'] ?? array() ); ?>
+					<?php $data = $order->to_array(); $buyer = (array) ( $data['buyer'] ?? array() ); $participant = (array) ( $data['participant'] ?? array() ); $organizer_id = self::order_billing_organizer_id( $order ); ?>
 					<tr>
 						<td><a href="<?php echo esc_url( self::admin_url( array( 'order_id' => $order->get( 'id' ) ) ) ); ?>"><?php echo esc_html( $data['order_number'] ?? '' ); ?></a></td>
 						<td><?php echo esc_html( $data['created_at'] ?? '' ); ?></td>
 						<td><?php echo self::person_admin_link_or_text( $data['buyer_person_id'] ?? 0, trim( ( $buyer['first_name'] ?? '' ) . ' ' . ( $buyer['last_name'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
 						<td><?php echo self::person_admin_link_or_text( $data['participant_person_id'] ?? 0, trim( ( $participant['first_name'] ?? '' ) . ' ' . ( $participant['last_name'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></td>
 						<td><?php echo esc_html( $data['event_title'] ?? '' ); ?></td>
+						<td><?php echo esc_html( $organizer_id ? get_the_title( $organizer_id ) : ( $data['organizer_name'] ?? '' ) ); ?></td>
 						<td><?php echo esc_html( self::order_items_summary( $data ) ); ?></td>
 						<td><?php echo esc_html( $data['applied_voucher_code'] ?? '' ); ?></td>
 						<td><?php echo esc_html( self::format_money( $data['amount'] ?? '', $data['currency'] ?? 'EUR' ) ); ?></td>
@@ -2114,9 +2532,14 @@ class TAKA_Ticketing_Module {
 			echo '<p>' . esc_html__( 'Order not found.', 'taka-platform' ) . '</p>';
 			return;
 		}
+		if ( ! self::current_user_can_access_order( $order ) ) {
+			echo '<p>' . esc_html__( 'You do not have access to this order.', 'taka-platform' ) . '</p>';
+			return;
+		}
 		$data = $order->to_array();
 		$buyer = (array) ( $data['buyer'] ?? array() );
 		$participant = (array) ( $data['participant'] ?? array() );
+		$organizer_id = self::order_billing_organizer_id( $order );
 		?>
 		<p><a href="<?php echo esc_url( self::admin_url() ); ?>">&larr; <?php echo esc_html__( 'Back to orders', 'taka-platform' ); ?></a></p>
 		<h2><?php echo esc_html( $data['order_number'] ?? '' ); ?></h2>
@@ -2125,6 +2548,7 @@ class TAKA_Ticketing_Module {
 			<section><h3><?php echo esc_html__( 'Participant', 'taka-platform' ); ?></h3><?php self::admin_person_reference( $data['participant_person_id'] ?? 0, $participant ); ?><?php self::admin_person_details( $participant ); ?></section>
 			<section><h3><?php echo esc_html__( 'Order', 'taka-platform' ); ?></h3>
 				<p><strong><?php echo esc_html__( 'Event', 'taka-platform' ); ?>:</strong> <?php echo esc_html( $data['event_title'] ?? '' ); ?></p>
+				<p><strong><?php echo esc_html__( 'Billing organizer', 'taka-platform' ); ?>:</strong> <?php echo esc_html( $organizer_id ? get_the_title( $organizer_id ) : ( $data['organizer_name'] ?? '' ) ); ?></p>
 				<?php if ( '' !== trim( (string) ( $data['ticket_type_name'] ?? '' ) ) ) : ?><p><strong><?php echo esc_html__( 'Ticket', 'taka-platform' ); ?>:</strong> <?php echo esc_html( $data['ticket_type_name'] ?? '' ); ?></p><?php endif; ?>
 				<?php if ( ! empty( $data['line_items'] ) && is_array( $data['line_items'] ) ) : ?>
 					<p><strong><?php echo esc_html__( 'Line items', 'taka-platform' ); ?>:</strong></p>
@@ -2156,7 +2580,7 @@ class TAKA_Ticketing_Module {
 			</section>
 		</div>
 		<div class="taka-ticketing-admin-actions">
-			<?php if ( current_user_can( 'edit_taka_orders' ) ) : ?>
+			<?php if ( current_user_can( 'edit_taka_orders' ) && self::current_user_can_access_order( $order, true ) ) : ?>
 				<?php self::admin_action_form( $order_id, 'mark_paid', __( 'Mark Paid', 'taka-platform' ), 'button-primary' ); ?>
 				<?php if ( self::order_can_refund_paypal( $data ) ) : ?>
 					<?php self::admin_action_form( $order_id, 'refund', __( 'Refund PayPal payment', 'taka-platform' ), '', __( 'Refund this PayPal payment and cancel the order?', 'taka-platform' ) ); ?>

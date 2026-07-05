@@ -20,7 +20,7 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 
 	public function is_enabled() {
 		$settings = $this->settings();
-		return ! empty( $settings['enabled'] ) && '' !== trim( (string) $settings['client_id'] ) && '' !== trim( (string) $settings['secret'] );
+		return $this->settings_enabled( $settings );
 	}
 
 	public function get_public_instructions( $order ) {
@@ -35,23 +35,31 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 	}
 
 	public function create_payment( $order ) {
-		if ( ! $this->is_enabled() ) {
+		$order_data = is_object( $order ) && method_exists( $order, 'to_array' ) ? $order->to_array() : (array) $order;
+		$settings = $this->settings_for_order( $order_data );
+		if ( ! $this->settings_enabled( $settings ) ) {
 			return new WP_Error( 'taka_ticketing_paypal_disabled', __( 'PayPal is not configured yet.', 'taka-platform' ) );
 		}
 
-		$order_data = is_object( $order ) && method_exists( $order, 'to_array' ) ? $order->to_array() : (array) $order;
 		$token = sanitize_text_field( $order_data['public_token'] ?? '' );
 		$return_url = esc_url_raw( $order_data['checkout_return_url'] ?? home_url( '/' ) );
-		$settings = $this->settings();
+		$billing_organizer = is_array( $order_data['billing_organizer'] ?? null ) ? $order_data['billing_organizer'] : array();
+		$brand_name = sanitize_text_field( $billing_organizer['organizer_legal_name'] ?? '' );
+		if ( '' === $brand_name ) {
+			$brand_name = sanitize_text_field( $billing_organizer['organizer_name'] ?? '' );
+		}
+		if ( '' === $brand_name ) {
+			$brand_name = sanitize_text_field( get_bloginfo( 'name' ) );
+		}
 		$currency = TAKA_Platform_Data::normalize_event_option_value( 'currency', $settings['currency'] ?? ( $order_data['currency'] ?? 'EUR' ) ) ?: 'EUR';
 		$amount = $this->paypal_amount( $order_data['amount'] ?? '0' );
-		$access_token = $this->access_token();
+		$access_token = $this->access_token( $settings );
 		if ( is_wp_error( $access_token ) ) {
 			return $access_token;
 		}
 
 		$response = wp_remote_post(
-			$this->api_base_url() . '/v2/checkout/orders',
+			$this->api_base_url( $settings ) . '/v2/checkout/orders',
 			array(
 				'timeout' => 20,
 				'headers' => array(
@@ -73,7 +81,7 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 							),
 						),
 						'application_context' => array(
-							'brand_name'  => sanitize_text_field( get_bloginfo( 'name' ) ),
+							'brand_name'  => $brand_name,
 							'user_action' => 'PAY_NOW',
 							'return_url'  => TAKA_Ticketing_Module::paypal_return_url( $token, $return_url ),
 							'cancel_url'  => TAKA_Ticketing_Module::paypal_cancel_url( $token, $return_url ),
@@ -98,6 +106,10 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 			'status'          => 'pending',
 			'paypal_order_id' => sanitize_text_field( $payload['id'] ?? '' ),
 			'approval_url'    => $approval_url,
+			'account_scope'   => sanitize_key( $settings['account_scope'] ?? 'global' ),
+			'organizer_id'    => absint( $settings['organizer_id'] ?? ( $order_data['organizer_id'] ?? 0 ) ),
+			'mode'            => sanitize_key( $settings['mode'] ?? 'sandbox' ),
+			'currency'        => $currency,
 			'created_at'      => current_time( 'mysql' ),
 		);
 	}
@@ -134,7 +146,7 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 			}
 		}
 
-		$capture = $this->capture_order( $paypal_order_id );
+		$capture = $this->capture_order( $paypal_order_id, $order );
 		if ( is_wp_error( $capture ) ) {
 			return $capture;
 		}
@@ -161,7 +173,7 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 			if ( ! $order ) {
 				return new WP_Error( 'taka_ticketing_paypal_order_missing', __( 'Webhook order could not be matched.', 'taka-platform' ) );
 			}
-			$capture = $this->capture_order( $paypal_order_id );
+			$capture = $this->capture_order( $paypal_order_id, $order );
 			if ( is_wp_error( $capture ) ) {
 				return $capture;
 			}
@@ -189,7 +201,8 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 		if ( ! $order instanceof TAKA_Ticketing_Order ) {
 			return new WP_Error( 'taka_ticketing_paypal_order_missing', __( 'Order not found.', 'taka-platform' ) );
 		}
-		if ( ! $this->is_enabled() ) {
+		$settings = $this->settings_for_order( $order );
+		if ( ! $this->settings_enabled( $settings ) ) {
 			return new WP_Error( 'taka_ticketing_paypal_disabled', __( 'PayPal is not configured yet.', 'taka-platform' ) );
 		}
 
@@ -210,7 +223,7 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 			return new WP_Error( 'taka_ticketing_paypal_capture_missing', __( 'PayPal capture ID is missing, so the refund cannot be created automatically.', 'taka-platform' ) );
 		}
 
-		$access_token = $this->access_token();
+		$access_token = $this->access_token( $settings );
 		if ( is_wp_error( $access_token ) ) {
 			return $access_token;
 		}
@@ -218,7 +231,7 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 		$currency = TAKA_Platform_Data::normalize_event_option_value( 'currency', $data['currency'] ?? 'EUR' ) ?: 'EUR';
 		$amount = $this->paypal_amount( $data['amount'] ?? '0' );
 		$response = wp_remote_post(
-			$this->api_base_url() . '/v2/payments/captures/' . rawurlencode( $capture_id ) . '/refund',
+			$this->api_base_url( $settings ) . '/v2/payments/captures/' . rawurlencode( $capture_id ) . '/refund',
 			array(
 				'timeout' => 20,
 				'headers' => array(
@@ -253,6 +266,8 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 				'refund_status'   => sanitize_text_field( $payload['status'] ?? '' ),
 				'refund_amount'   => $amount,
 				'refund_currency' => $currency,
+				'account_scope'   => sanitize_key( $settings['account_scope'] ?? ( $payment['account_scope'] ?? 'global' ) ),
+				'organizer_id'    => absint( $settings['organizer_id'] ?? ( $payment['organizer_id'] ?? 0 ) ),
 				'refunded_at'     => current_time( 'mysql' ),
 			)
 		);
@@ -283,13 +298,22 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 		return TAKA_Ticketing_Module::paypal_settings();
 	}
 
-	private function api_base_url() {
-		$settings = $this->settings();
+	private function settings_for_order( $order ) {
+		return TAKA_Ticketing_Module::paypal_settings_for_order( $order );
+	}
+
+	private function settings_enabled( $settings ) {
+		$settings = is_array( $settings ) ? $settings : array();
+		return ! empty( $settings['enabled'] ) && '' !== trim( (string) ( $settings['client_id'] ?? '' ) ) && '' !== trim( (string) ( $settings['secret'] ?? '' ) );
+	}
+
+	private function api_base_url( $settings = null ) {
+		$settings = is_array( $settings ) ? $settings : $this->settings();
 		return 'live' === (string) ( $settings['mode'] ?? 'sandbox' ) ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
 	}
 
-	private function access_token() {
-		$settings = $this->settings();
+	private function access_token( $settings = null ) {
+		$settings = is_array( $settings ) ? $settings : $this->settings();
 		$cache_key = 'taka_ticketing_paypal_access_' . md5( (string) ( $settings['mode'] ?? 'sandbox' ) . '|' . (string) ( $settings['client_id'] ?? '' ) );
 		$cached = get_transient( $cache_key );
 		if ( '' !== (string) $cached ) {
@@ -297,7 +321,7 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 		}
 
 		$response = wp_remote_post(
-			$this->api_base_url() . '/v1/oauth2/token',
+			$this->api_base_url( $settings ) . '/v1/oauth2/token',
 			array(
 				'timeout' => 20,
 				'headers' => array(
@@ -319,17 +343,18 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 		return $token;
 	}
 
-	private function capture_order( $paypal_order_id ) {
+	private function capture_order( $paypal_order_id, $order = null ) {
 		$paypal_order_id = sanitize_text_field( $paypal_order_id );
 		if ( '' === $paypal_order_id ) {
 			return new WP_Error( 'taka_ticketing_paypal_order_missing', __( 'Missing PayPal order ID.', 'taka-platform' ) );
 		}
-		$access_token = $this->access_token();
+		$settings = $order ? $this->settings_for_order( $order ) : $this->settings();
+		$access_token = $this->access_token( $settings );
 		if ( is_wp_error( $access_token ) ) {
 			return $access_token;
 		}
 		$response = wp_remote_post(
-			$this->api_base_url() . '/v2/checkout/orders/' . rawurlencode( $paypal_order_id ) . '/capture',
+			$this->api_base_url( $settings ) . '/v2/checkout/orders/' . rawurlencode( $paypal_order_id ) . '/capture',
 			array(
 				'timeout' => 20,
 				'headers' => array(
@@ -352,11 +377,29 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 	}
 
 	private function verify_webhook_signature( $event, $server ) {
-		$settings = $this->settings();
+		$candidates = TAKA_Ticketing_Module::paypal_webhook_settings_candidates();
+		if ( empty( $candidates ) ) {
+			return new WP_Error( 'taka_ticketing_paypal_webhook_unconfigured', __( 'Configure the PayPal webhook ID before webhook confirmations are accepted.', 'taka-platform' ) );
+		}
+		$last_error = null;
+		foreach ( $candidates as $settings ) {
+			$verified = $this->verify_webhook_signature_with_settings( $event, $server, $settings );
+			if ( true === $verified ) {
+				return true;
+			}
+			if ( is_wp_error( $verified ) ) {
+				$last_error = $verified;
+			}
+		}
+		return $last_error ?: new WP_Error( 'taka_ticketing_paypal_webhook_unverified', __( 'PayPal webhook signature could not be verified.', 'taka-platform' ) );
+	}
+
+	private function verify_webhook_signature_with_settings( $event, $server, $settings ) {
+		$settings = is_array( $settings ) ? $settings : array();
 		if ( '' === trim( (string) ( $settings['webhook_id'] ?? '' ) ) ) {
 			return new WP_Error( 'taka_ticketing_paypal_webhook_unconfigured', __( 'Configure the PayPal webhook ID before webhook confirmations are accepted.', 'taka-platform' ) );
 		}
-		$access_token = $this->access_token();
+		$access_token = $this->access_token( $settings );
 		if ( is_wp_error( $access_token ) ) {
 			return $access_token;
 		}
@@ -375,7 +418,7 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 		}
 
 		$response = wp_remote_post(
-			$this->api_base_url() . '/v1/notifications/verify-webhook-signature',
+			$this->api_base_url( $settings ) . '/v1/notifications/verify-webhook-signature',
 			array(
 				'timeout' => 20,
 				'headers' => array(

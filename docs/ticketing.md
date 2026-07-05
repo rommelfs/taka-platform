@@ -227,11 +227,15 @@ Bank transfer displays account holder, IBAN, BIC, bank name, payment reference a
 
 Pay at the Door reserves capacity immediately, keeps payment status pending, and tells the visitor that payment is collected at the venue before participation.
 
-PayPal is configured globally under TAKA Platform -> Ticketing. The provider creates a server-side PayPal order, redirects the visitor to PayPal approval, captures payment on return, stores the PayPal order/transaction IDs and marks the TAKA order paid. Webhook confirmation is supported when the PayPal webhook ID is configured; secrets remain server-side and are never exposed to frontend JavaScript.
+Bank and PayPal accounts are organizer-scoped for normal operation. Each Organizer has a private finance profile with bank transfer data and PayPal credentials. Events resolve their billing organizer from the primary event organizer, create orders with an organizer billing snapshot, and use that organizer's account for checkout and refunds. The global PayPal settings under TAKA Platform -> Ticketing remain only as a backwards-compatible fallback for unassigned events and legacy orders.
+
+PayPal creates a server-side PayPal order, redirects the visitor to PayPal approval, captures payment on return, stores the PayPal order/transaction IDs and marks the TAKA order paid. Webhook confirmation can verify against global and organizer webhook IDs; secrets remain server-side and are never exposed to frontend JavaScript.
 
 Paid PayPal orders can be refunded from the private order detail screen. The refund action calls the PayPal capture refund API using the stored capture/transaction ID, marks the TAKA payment as `refunded`, cancels the order to release capacity and records the PayPal refund ID/status in the order timeline.
 
 Events choose enabled providers in the Event editor's Native TAKA Ticketing section.
+
+Privileged organizer users with ticketing access see only orders whose billing organizer matches their assigned organizer IDs. Administrators keep the cross-organizer overview and can filter orders by organizer.
 
 ## Orders
 
@@ -242,6 +246,7 @@ Order data includes:
 - Order number
 - Public confirmation token
 - Event ID and event title
+- Billing organizer ID and snapshot
 - Ticket type ID and name
 - Buyer person ID
 - Participant person ID

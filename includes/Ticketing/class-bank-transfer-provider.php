@@ -34,10 +34,14 @@ class TAKA_Ticketing_Bank_Transfer_Provider implements TAKA_Ticketing_Payment_Pr
 	}
 
 	public function create_payment( $order ) {
+		$order_data = is_object( $order ) && method_exists( $order, 'to_array' ) ? $order->to_array() : (array) $order;
+		$settings = $this->settings_for_event( absint( $order_data['event_id'] ?? 0 ) );
 		return array(
-			'provider'   => $this->get_id(),
-			'status'     => 'pending',
-			'created_at' => current_time( 'mysql' ),
+			'provider'      => $this->get_id(),
+			'status'        => 'pending',
+			'account_scope' => sanitize_key( $settings['account_scope'] ?? 'global' ),
+			'organizer_id'  => absint( $settings['organizer_id'] ?? ( $order_data['organizer_id'] ?? 0 ) ),
+			'created_at'    => current_time( 'mysql' ),
 		);
 	}
 
@@ -79,9 +83,7 @@ class TAKA_Ticketing_Bank_Transfer_Provider implements TAKA_Ticketing_Payment_Pr
 	}
 
 	public function settings_for_event( $event_id ) {
-		$global = $this->settings();
-		$event = $event_id ? TAKA_Ticketing_Module::event_bank_transfer_settings( $event_id ) : array();
-		return TAKA_Ticketing_Module::normalize_bank_transfer_settings( array_merge( $global, array_filter( $event, static function ( $value ) { return '' !== trim( (string) $value ); } ) ) );
+		return TAKA_Ticketing_Module::bank_transfer_settings_for_event( $event_id );
 	}
 
 	private function payment_reference( $order, $template ) {

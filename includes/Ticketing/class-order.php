@@ -3,7 +3,8 @@
  * Native ticketing order value object placeholder.
  *
  * Intended fields: id, order_number, event_id, ticket_type_id,
- * buyer_person_id, participant_person_id, registration_ids, buyer_data,
+ * organizer_id, billing_organizer snapshot, buyer_person_id,
+ * participant_person_id, registration_ids, buyer_data,
  * participant_data, line_items, original_amount, discount_amount,
  * final amount, currency, payment_method, payment_status, order_status,
  * applied promotion snapshot, created_at and updated_at.
