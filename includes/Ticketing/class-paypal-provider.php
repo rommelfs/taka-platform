@@ -107,8 +107,14 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 		$token = sanitize_text_field( $request['taka_token'] ?? '' );
 		$paypal_order_id = sanitize_text_field( $request['token'] ?? '' );
 		$order = '' !== $token ? TAKA_Ticketing_Module::order_repository()->find_by_public_token( $token ) : null;
+		if ( ! $order && '' !== $paypal_order_id ) {
+			$order = $this->find_order_by_paypal_order_id( $paypal_order_id );
+		}
 		if ( ! $order ) {
 			return new WP_Error( 'taka_ticketing_paypal_order_missing', __( 'PayPal order could not be matched to a TAKA order.', 'taka-platform' ) );
+		}
+		if ( '' === $paypal_order_id ) {
+			return new WP_Error( 'taka_ticketing_paypal_return_missing', __( 'PayPal did not return an order token. Please try the payment again.', 'taka-platform' ) );
 		}
 
 		$data = $order->to_array();
@@ -117,7 +123,15 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 		}
 		$payment = is_array( $data['payment'] ?? null ) ? $data['payment'] : array();
 		if ( '' !== (string) ( $payment['paypal_order_id'] ?? '' ) && (string) $payment['paypal_order_id'] !== $paypal_order_id ) {
-			return new WP_Error( 'taka_ticketing_paypal_order_mismatch', __( 'PayPal returned a different order than expected.', 'taka-platform' ) );
+			$matched_order = $this->find_order_by_paypal_order_id( $paypal_order_id );
+			if ( ! $matched_order ) {
+				return new WP_Error( 'taka_ticketing_paypal_order_mismatch', __( 'PayPal returned a different order than expected.', 'taka-platform' ) );
+			}
+			$order = $matched_order;
+			$data = $order->to_array();
+			if ( 'paid' === (string) ( $data['payment_status'] ?? '' ) ) {
+				return $order;
+			}
 		}
 
 		$capture = $this->capture_order( $paypal_order_id );

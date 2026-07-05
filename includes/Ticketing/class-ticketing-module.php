@@ -993,8 +993,9 @@ class TAKA_Ticketing_Module {
 
 	public static function handle_paypal_return() {
 		$provider = self::payment_provider( 'paypal' );
-		$request_redirect = esc_url_raw( wp_unslash( $_GET['redirect_to'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$redirect = '' !== $request_redirect ? $request_redirect : home_url( '/' );
+		$token = sanitize_text_field( wp_unslash( $_GET['taka_token'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$request_redirect = self::clean_checkout_return_url( wp_unslash( $_GET['redirect_to'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$redirect = self::checkout_redirect_for_token( $token, $request_redirect );
 		if ( ! $provider ) {
 			self::redirect_with_errors( $redirect, array( self::text( 'ticketing.error_payment_method', 'Please choose an available payment method.' ) ) );
 		}
@@ -1004,10 +1005,9 @@ class TAKA_Ticketing_Module {
 			self::redirect_with_errors( $redirect, $result->get_error_messages() );
 		}
 
-		$token = sanitize_text_field( wp_unslash( $_GET['taka_token'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( $result instanceof TAKA_Ticketing_Order ) {
 			$token = $result->get( 'public_token' );
-			$order_redirect = esc_url_raw( $result->get( 'checkout_return_url', '' ) );
+			$order_redirect = self::clean_checkout_return_url( $result->get( 'checkout_return_url', '' ) );
 			if ( '' !== $order_redirect ) {
 				$redirect = $order_redirect;
 			}
@@ -1017,8 +1017,8 @@ class TAKA_Ticketing_Module {
 	}
 
 	public static function handle_paypal_cancel() {
-		$redirect = esc_url_raw( wp_unslash( $_GET['redirect_to'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$token = sanitize_text_field( wp_unslash( $_GET['taka_token'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$redirect = self::checkout_redirect_for_token( $token, self::clean_checkout_return_url( wp_unslash( $_GET['redirect_to'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$order = '' !== $token ? self::order_repository()->find_by_public_token( $token ) : null;
 		if ( $order ) {
 			$data = $order->to_array();
@@ -1027,10 +1027,6 @@ class TAKA_Ticketing_Module {
 			$data['updated_at'] = current_time( 'mysql' );
 			$data['timeline'][] = array( 'time' => current_time( 'mysql' ), 'label' => __( 'PayPal checkout cancelled', 'taka-platform' ) );
 			self::order_repository()->save( new TAKA_Ticketing_Order( $data ) );
-			$order_redirect = esc_url_raw( $order->get( 'checkout_return_url', '' ) );
-			if ( '' !== $order_redirect ) {
-				$redirect = $order_redirect;
-			}
 		}
 		$redirect = '' !== $redirect ? $redirect : home_url( '/' );
 		if ( '' !== $token ) {
@@ -1066,25 +1062,27 @@ class TAKA_Ticketing_Module {
 	}
 
 	public static function paypal_return_url( $public_token, $redirect_to ) {
-		return add_query_arg(
-			array(
-				'action'      => self::PAYPAL_RETURN_ACTION,
-				'taka_token'  => sanitize_text_field( $public_token ),
-				'redirect_to' => esc_url_raw( $redirect_to ),
-			),
-			admin_url( 'admin-post.php' )
+		$args = array(
+			'action'     => self::PAYPAL_RETURN_ACTION,
+			'taka_token' => sanitize_text_field( $public_token ),
 		);
+		$redirect_to = self::url_without_fragment( self::clean_checkout_return_url( $redirect_to ) );
+		if ( '' !== $redirect_to ) {
+			$args['redirect_to'] = $redirect_to;
+		}
+		return add_query_arg( $args, admin_url( 'admin-post.php' ) );
 	}
 
 	public static function paypal_cancel_url( $public_token, $redirect_to ) {
-		return add_query_arg(
-			array(
-				'action'      => self::PAYPAL_CANCEL_ACTION,
-				'taka_token'  => sanitize_text_field( $public_token ),
-				'redirect_to' => esc_url_raw( $redirect_to ),
-			),
-			admin_url( 'admin-post.php' )
+		$args = array(
+			'action'     => self::PAYPAL_CANCEL_ACTION,
+			'taka_token' => sanitize_text_field( $public_token ),
 		);
+		$redirect_to = self::url_without_fragment( self::clean_checkout_return_url( $redirect_to ) );
+		if ( '' !== $redirect_to ) {
+			$args['redirect_to'] = $redirect_to;
+		}
+		return add_query_arg( $args, admin_url( 'admin-post.php' ) );
 	}
 
 	public static function paypal_webhook_url() {
@@ -1296,11 +1294,56 @@ class TAKA_Ticketing_Module {
 		return null;
 	}
 
+	public static function clean_checkout_return_url( $url ) {
+		$url = esc_url_raw( (string) $url );
+		if ( '' === $url ) {
+			return '';
+		}
+		$parts = explode( '#', $url, 2 );
+		$base = remove_query_arg( array( 'taka_ticket_order', 'taka_ticketing_error', 'taka_ticket_payment_cancelled', 'token', 'PayerID' ), $parts[0] );
+		if ( ! isset( $parts[1] ) || '' === trim( (string) $parts[1] ) ) {
+			return $base;
+		}
+		$fragment = self::clean_checkout_fragment( $parts[1] );
+		return '' !== $fragment ? $base . '#' . $fragment : $base;
+	}
+
+	private static function clean_checkout_fragment( $fragment ) {
+		$fragment = ltrim( (string) $fragment, '#' );
+		if ( '' === $fragment ) {
+			return '';
+		}
+		$fragment = preg_replace( '/([?&])(?:token|PayerID)=[^&]*/i', '', $fragment );
+		$fragment = preg_replace( '/\?&/', '?', (string) $fragment );
+		$fragment = preg_replace( '/[?&]+$/', '', (string) $fragment );
+		return trim( (string) $fragment );
+	}
+
+	private static function url_without_fragment( $url ) {
+		$parts = explode( '#', (string) $url, 2 );
+		return esc_url_raw( $parts[0] ?? '' );
+	}
+
+	private static function checkout_redirect_for_token( $token, $fallback = '' ) {
+		$token = sanitize_text_field( $token );
+		if ( '' !== $token ) {
+			$order = self::order_repository()->find_by_public_token( $token );
+			if ( $order ) {
+				$redirect = self::clean_checkout_return_url( $order->get( 'checkout_return_url', '' ) );
+				if ( '' !== $redirect ) {
+					return $redirect;
+				}
+			}
+		}
+		$fallback = self::clean_checkout_return_url( $fallback );
+		return '' !== $fallback ? $fallback : home_url( '/' );
+	}
+
 	private static function current_url() {
 		$scheme = is_ssl() ? 'https://' : 'http://';
 		$host = sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ?? '' ) );
 		$uri = esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) );
-		return remove_query_arg( array( 'taka_ticket_order', 'taka_ticketing_error', 'taka_ticket_payment_cancelled' ), $scheme . $host . $uri );
+		return self::clean_checkout_return_url( $scheme . $host . $uri );
 	}
 
 	private static function render_order_confirmation( TAKA_Ticketing_Order $order ) {

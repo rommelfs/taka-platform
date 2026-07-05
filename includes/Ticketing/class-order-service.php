@@ -143,7 +143,7 @@ class TAKA_Ticketing_Order_Service {
 				'applied_promotion'   => $pricing['promotion_snapshot'] ?? null,
 				'applied_benefits'    => is_array( $pricing['benefits'] ?? null ) ? $pricing['benefits'] : array(),
 				'language'            => $lang,
-				'checkout_return_url' => esc_url_raw( $posted['redirect_to'] ?? '' ),
+				'checkout_return_url' => TAKA_Ticketing_Module::clean_checkout_return_url( $posted['redirect_to'] ?? '' ),
 				'created_at'          => current_time( 'mysql' ),
 				'updated_at'          => current_time( 'mysql' ),
 				'timeline'            => $timeline,

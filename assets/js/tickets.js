@@ -129,9 +129,15 @@
 	function checkoutReturnUrl() {
 		try {
 			var url = new URL(window.location.href);
-			['taka_ticket_order', 'taka_ticketing_error', 'taka_ticket_payment_cancelled'].forEach(function (key) {
+			['taka_ticket_order', 'taka_ticketing_error', 'taka_ticket_payment_cancelled', 'token', 'PayerID'].forEach(function (key) {
 				url.searchParams.delete(key);
 			});
+			if (url.hash) {
+				url.hash = url.hash
+					.replace(/([?&])(?:token|PayerID)=[^&]*/gi, '')
+					.replace(/\?&/, '?')
+					.replace(/[?&]+$/, '');
+			}
 			return url.toString();
 		} catch (error) {
 			return window.location.href;
