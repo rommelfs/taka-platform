@@ -225,6 +225,7 @@ class TAKA_Ticketing_Order_Service {
 			return new WP_Error( 'taka_ticketing_order_missing', __( 'Order not found.', 'taka-platform' ) );
 		}
 		$data = $order->to_array();
+		$already_cancelled = in_array( (string) ( $data['order_status'] ?? '' ), array( 'cancelled' ), true ) || in_array( (string) ( $data['payment_status'] ?? '' ), array( 'cancelled', 'refunded' ), true );
 		$data['order_status'] = 'cancelled';
 		$data['payment_status'] = 'cancelled';
 		$data['updated_at'] = current_time( 'mysql' );
@@ -233,7 +234,15 @@ class TAKA_Ticketing_Order_Service {
 		if ( class_exists( 'TAKA_People_Module' ) && $saved instanceof TAKA_Ticketing_Order ) {
 			$people_synced = TAKA_People_Module::sync_order_people_and_registrations( $saved );
 			if ( $people_synced instanceof TAKA_Ticketing_Order ) {
-				return $people_synced;
+				$saved = $people_synced;
+			}
+		}
+		if ( ! $already_cancelled && $saved instanceof TAKA_Ticketing_Order && TAKA_Ticketing_Email_Service::send_order_cancellation( $saved ) ) {
+			$data = $saved->to_array();
+			$data['timeline'][] = array( 'time' => current_time( 'mysql' ), 'label' => __( 'Cancellation email sent', 'taka-platform' ) );
+			$email_saved = $repository->save( new TAKA_Ticketing_Order( $data ) );
+			if ( ! is_wp_error( $email_saved ) ) {
+				$saved = $email_saved;
 			}
 		}
 		return $saved;

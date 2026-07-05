@@ -280,6 +280,14 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 				$saved = $people_synced;
 			}
 		}
+		if ( $saved instanceof TAKA_Ticketing_Order && TAKA_Ticketing_Email_Service::send_order_cancellation( $saved ) ) {
+			$data = $saved->to_array();
+			$data['timeline'][] = array( 'time' => current_time( 'mysql' ), 'label' => __( 'Cancellation email sent', 'taka-platform' ) );
+			$email_saved = TAKA_Ticketing_Module::order_repository()->save( new TAKA_Ticketing_Order( $data ) );
+			if ( ! is_wp_error( $email_saved ) ) {
+				$saved = $email_saved;
+			}
+		}
 		return $saved;
 	}
 

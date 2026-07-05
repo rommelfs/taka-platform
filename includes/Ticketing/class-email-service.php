@@ -62,6 +62,22 @@ class TAKA_Ticketing_Email_Service {
 		);
 	}
 
+	public static function send_order_cancellation( TAKA_Ticketing_Order $order ) {
+		$data = $order->to_array();
+		$buyer = is_array( $data['buyer'] ?? null ) ? $data['buyer'] : array();
+		$email = sanitize_email( $buyer['email'] ?? '' );
+		$lang = self::order_language( $data );
+		if ( '' === $email ) {
+			return false;
+		}
+
+		return wp_mail(
+			$email,
+			sprintf( self::label( 'ticketing.email_subject_cancelled', 'Your registration %s was cancelled', $lang ), $data['order_number'] ?? '' ),
+			self::cancellation_message( $order, $lang )
+		);
+	}
+
 	private static function order_message( TAKA_Ticketing_Order $order, $admin, $lang ) {
 		$data = $order->to_array();
 		$buyer = is_array( $data['buyer'] ?? null ) ? $data['buyer'] : array();
@@ -149,6 +165,44 @@ class TAKA_Ticketing_Email_Service {
 		} elseif ( in_array( (string) ( $data['payment_method'] ?? '' ), array( 'promotion', 'free' ), true ) ) {
 			$lines[] = '';
 			$lines[] = self::label( 'ticketing.no_payment_required', 'No payment required.', $lang );
+		}
+
+		return implode( "\n", array_filter( $lines, static function ( $line ) { return null !== $line; } ) );
+	}
+
+	private static function cancellation_message( TAKA_Ticketing_Order $order, $lang ) {
+		$data = $order->to_array();
+		$line_items = is_array( $data['line_items'] ?? null ) ? $data['line_items'] : array();
+		$lines = array(
+			self::label( 'ticketing.email_cancelled_intro', 'Your registration has been cancelled.', $lang ),
+			'',
+			self::label( 'ticketing.order_number', 'Order number', $lang ) . ': ' . ( $data['order_number'] ?? '' ),
+		);
+
+		if ( '' !== trim( (string) ( $data['event_title'] ?? '' ) ) ) {
+			$lines[] = self::label( 'ticketing.event', 'Event', $lang ) . ': ' . $data['event_title'];
+		}
+		if ( '' !== trim( (string) ( $data['ticket_type_name'] ?? '' ) ) ) {
+			$lines[] = self::label( 'ticketing.ticket', 'Ticket', $lang ) . ': ' . $data['ticket_type_name'];
+		}
+		if ( ! empty( $line_items ) ) {
+			$lines[] = '';
+			$lines[] = self::label( 'ticketing.order_items', 'Order items', $lang ) . ':';
+			foreach ( $line_items as $item ) {
+				$lines[] = '- ' . TAKA_Ticketing_Module::line_item_label( $item );
+			}
+		}
+
+		$lines[] = '';
+		$lines[] = self::label( 'ticketing.amount', 'Amount', $lang ) . ': ' . TAKA_Ticketing_Module::format_money( $data['amount'] ?? '', $data['currency'] ?? 'EUR' );
+		$lines[] = self::label( 'ticketing.payment_method', 'Payment method', $lang ) . ': ' . TAKA_Ticketing_Module::payment_method_label( $data['payment_method'] ?? '', $lang );
+		$lines[] = self::label( 'ticketing.payment_status', 'Payment status', $lang ) . ': ' . self::payment_status_label( $data['payment_status'] ?? 'cancelled', $lang );
+		$lines[] = '';
+
+		if ( 'refunded' === (string) ( $data['payment_status'] ?? '' ) ) {
+			$lines[] = self::label( 'ticketing.email_refund_processed', 'A refund has been processed for this order.', $lang );
+		} else {
+			$lines[] = self::label( 'ticketing.email_cancelled_follow_up', 'If payment or refund handling is needed, the organizer will follow up separately.', $lang );
 		}
 
 		return implode( "\n", array_filter( $lines, static function ( $line ) { return null !== $line; } ) );
