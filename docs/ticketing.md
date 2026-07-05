@@ -302,7 +302,13 @@ QR payloads contain only the registration ID and validation token:
 
 `TAKA-REG:{registration_id}:{validation_token}`
 
-The default admin UI accepts scanned or pasted QR payloads. Visual QR rendering is exposed through the `taka_event_operations_qr_markup` filter so a later offline-capable QR renderer can be added without changing attendance logic.
+Native ticketing orders also generate per-line-item ticket artifacts for every ticket and product quantity. These artifacts are attached to confirmation emails together with a booking confirmation / invoice document. Product tickets use tokenized payloads:
+
+`TAKA-TICKET:{order_id}:{ticket_id}:{validation_token}`
+
+The ticket payload contains no personal data. Event Operations validates the token server-side and resolves it back to the linked registration/order. This keeps product QR codes compatible with later entry management without exposing buyer or participant details in the QR code itself.
+
+The default admin UI accepts scanned or pasted QR payloads. Visual QR rendering for registration cards is exposed through the `taka_event_operations_qr_markup` filter, while ticket email attachments are generated server-side by `TAKA_Ticketing_Ticket_Artifact_Service`. Apple Wallet and Google Wallet should be added by hooking into `taka_ticketing_wallet_links`, because signed wallet passes require organizer-specific credentials and must not be faked by the core plugin.
 
 Walk-in registration creates or reuses a Person, creates a private ticket order, reserves capacity immediately, syncs a Registration, and marks it as a walk-in. This keeps walk-ins compatible with existing People profiles, order timelines, products, payments and future check-in features.
 

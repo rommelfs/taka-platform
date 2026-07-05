@@ -145,6 +145,9 @@ class TAKA_Event_Operations_Attendance_Service {
 
 		$registration_id = 0;
 		$token = '';
+		if ( preg_match( '/^TAKA-TICKET:/', $payload ) && class_exists( 'TAKA_Ticketing_Ticket_Artifact_Service' ) ) {
+			return TAKA_Ticketing_Ticket_Artifact_Service::registration_from_ticket_payload( $payload );
+		}
 		if ( preg_match( '/^TAKA-REG:(\d+):([A-Za-z0-9]+)/', $payload, $matches ) ) {
 			$registration_id = absint( $matches[1] );
 			$token = sanitize_text_field( $matches[2] );
@@ -569,6 +572,10 @@ class TAKA_Event_Operations_Attendance_Service {
 		}
 		if ( ! empty( $order_data['order_number'] ) ) {
 			$parts[] = $order_data['order_number'];
+		}
+		foreach ( (array) ( $order_data['ticket_artifacts']['tickets'] ?? array() ) as $ticket ) {
+			$parts[] = $ticket['ticket_id'] ?? '';
+			$parts[] = $ticket['payload'] ?? '';
 		}
 		return implode( ' ', array_filter( array_map( 'sanitize_text_field', $parts ) ) );
 	}

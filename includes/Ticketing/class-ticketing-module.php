@@ -876,6 +876,8 @@ class TAKA_Ticketing_Module {
 			'participant'         => array(),
 			'participant_is_buyer' => true,
 			'product_quantities'  => array(),
+			'product_recipient_emails' => array(),
+			'standalone_product_recipient_emails' => '',
 			'standalone_product_quantity' => 1,
 		);
 		if ( ! $order instanceof TAKA_Ticketing_Order ) {
@@ -886,6 +888,7 @@ class TAKA_Ticketing_Module {
 		$buyer = is_array( $data['buyer'] ?? null ) ? $data['buyer'] : array();
 		$participant = is_array( $data['participant'] ?? null ) ? $data['participant'] : array();
 		$product_quantities = array();
+		$product_recipient_emails = array();
 		foreach ( (array) ( $data['line_items'] ?? array() ) as $item ) {
 			if ( 'product' !== (string) ( $item['item_type'] ?? '' ) ) {
 				continue;
@@ -895,6 +898,9 @@ class TAKA_Ticketing_Module {
 				continue;
 			}
 			$product_quantities[ $product_id ] = absint( $product_quantities[ $product_id ] ?? 0 ) + max( 1, absint( $item['quantity'] ?? 1 ) );
+			if ( ! empty( $item['recipient_emails'] ) && is_array( $item['recipient_emails'] ) ) {
+				$product_recipient_emails[ $product_id ] = implode( "\n", array_map( 'sanitize_email', $item['recipient_emails'] ) );
+			}
 		}
 
 		$payment_method = (string) ( $data['payment_method'] ?? '' );
@@ -910,6 +916,8 @@ class TAKA_Ticketing_Module {
 			'participant'         => $participant,
 			'participant_is_buyer' => self::prefill_participant_is_buyer( $buyer, $participant ),
 			'product_quantities'  => $product_quantities,
+			'product_recipient_emails' => $product_recipient_emails,
+			'standalone_product_recipient_emails' => (string) reset( $product_recipient_emails ),
 			'standalone_product_quantity' => max( 1, absint( reset( $product_quantities ) ?: 1 ) ),
 		);
 	}
@@ -957,6 +965,7 @@ class TAKA_Ticketing_Module {
 				<?php else : ?>
 					<input type="hidden" name="standalone_product_quantity" value="1">
 				<?php endif; ?>
+				<?php self::frontend_textarea( 'standalone_product_recipient_emails', self::text( 'ticketing.ticket_recipient_emails', 'Ticket recipient emails (optional)', $lang ), array( 'placeholder' => self::text( 'ticketing.ticket_recipient_emails_placeholder', 'Optional: one email address per ticket', $lang ) ), $prefill['standalone_product_recipient_emails'] ?? '' ); ?>
 			</section>
 			<section class="taka-native-checkout__step" data-taka-checkout-step-panel="2">
 				<h4><?php echo esc_html( self::text( 'ticketing.buyer_information', 'Buyer information', $lang ) ); ?></h4>
@@ -1048,6 +1057,7 @@ class TAKA_Ticketing_Module {
 								<span><?php echo esc_html( self::format_money( $product['price'], $product['currency'] ) ); ?></span>
 								<small><?php echo esc_html( self::availability_label( $availability ) ); ?></small>
 							</label>
+							<?php self::frontend_textarea( 'product_recipient_emails[' . $product['product_id'] . ']', self::text( 'ticketing.ticket_recipient_emails', 'Ticket recipient emails (optional)', $lang ), array( 'placeholder' => self::text( 'ticketing.ticket_recipient_emails_placeholder', 'Optional: one email address per ticket', $lang ), 'data-taka-product-recipient-emails' => '1' ), $prefill['product_recipient_emails'][ $product['product_id'] ] ?? '' ); ?>
 						<?php endforeach; ?>
 					</div>
 				</section>
@@ -2553,6 +2563,20 @@ class TAKA_Ticketing_Module {
 				<?php if ( ! empty( $data['line_items'] ) && is_array( $data['line_items'] ) ) : ?>
 					<p><strong><?php echo esc_html__( 'Line items', 'taka-platform' ); ?>:</strong></p>
 					<ul><?php foreach ( $data['line_items'] as $item ) : ?><li><?php echo esc_html( self::line_item_label( $item ) ); ?></li><?php endforeach; ?></ul>
+				<?php endif; ?>
+				<?php if ( ! empty( $data['ticket_artifacts']['tickets'] ) && is_array( $data['ticket_artifacts']['tickets'] ) ) : ?>
+					<p><strong><?php echo esc_html__( 'Issued tickets', 'taka-platform' ); ?>:</strong></p>
+					<ul>
+						<?php foreach ( $data['ticket_artifacts']['tickets'] as $ticket ) : ?>
+							<li>
+								<?php echo esc_html( trim( ( $ticket['ticket_id'] ?? '' ) . ' - ' . ( $ticket['title'] ?? '' ) ) ); ?>
+								<?php if ( '' !== trim( (string) ( $ticket['recipient_email'] ?? '' ) ) ) : ?>
+									<?php echo esc_html( ' <' . $ticket['recipient_email'] . '>' ); ?>
+								<?php endif; ?>
+								<br><code><?php echo esc_html( $ticket['payload'] ?? '' ); ?></code>
+							</li>
+						<?php endforeach; ?>
+					</ul>
 				<?php endif; ?>
 				<?php if ( '' !== trim( (string) ( $data['applied_voucher_code'] ?? '' ) ) ) : ?>
 					<p><strong><?php echo esc_html__( 'Voucher applied', 'taka-platform' ); ?>:</strong> <?php echo esc_html( $data['applied_voucher_code'] ); ?></p>

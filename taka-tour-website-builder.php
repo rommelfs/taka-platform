@@ -66,6 +66,7 @@ require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-bank-transfer-
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-pay-at-door-provider.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-paypal-provider.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-order-repository.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-ticket-artifact-service.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-email-service.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-order-service.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Ticketing/class-ticketing-module.php';

@@ -148,9 +148,24 @@ class TAKA_Ticketing_Pricing_Service {
 				'total_price'      => $total,
 				'currency'         => TAKA_Platform_Data::normalize_event_option_value( 'currency', $item['currency'] ?? 'EUR' ) ?: 'EUR',
 				'related_event_id' => absint( $item['related_event_id'] ?? 0 ),
+				'recipient_emails' => self::normalize_recipient_emails( $item['recipient_emails'] ?? array() ),
 			);
 		}
 		return $items;
+	}
+
+	private static function normalize_recipient_emails( $value ) {
+		if ( is_string( $value ) ) {
+			$value = preg_split( '/[\s,;]+/', $value );
+		}
+		$emails = array();
+		foreach ( (array) $value as $email ) {
+			$email = sanitize_email( $email );
+			if ( '' !== $email && is_email( $email ) ) {
+				$emails[] = $email;
+			}
+		}
+		return array_values( array_unique( $emails ) );
 	}
 
 	private static function line_items_total( $line_items ) {

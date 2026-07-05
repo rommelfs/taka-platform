@@ -15,11 +15,18 @@ class TAKA_Ticketing_Email_Service {
 			return false;
 		}
 
-		return wp_mail(
+		$attachments = self::order_confirmation_attachments( $order );
+		$sent = wp_mail(
 			$email,
 			sprintf( self::label( 'ticketing.email_subject_registration', 'Your registration %s', $lang ), $data['order_number'] ?? '' ),
-			self::order_message( $order, false, $lang )
+			self::order_message( $order, false, $lang ),
+			'',
+			$attachments
 		);
+		if ( $sent && ! empty( $attachments ) ) {
+			self::send_recipient_ticket_emails( $order, $email, $lang );
+		}
+		return $sent;
 	}
 
 	public static function send_admin_notification( TAKA_Ticketing_Order $order ) {
@@ -46,7 +53,8 @@ class TAKA_Ticketing_Email_Service {
 			return false;
 		}
 
-		return wp_mail(
+		$attachments = 'paypal' === (string) ( $data['payment_method'] ?? '' ) && class_exists( 'TAKA_Ticketing_Ticket_Artifact_Service' ) ? TAKA_Ticketing_Ticket_Artifact_Service::buyer_attachments( $order ) : array();
+		$sent = wp_mail(
 			$email,
 			sprintf( self::label( 'ticketing.email_subject_payment', 'Payment received for %s', $lang ), $data['order_number'] ?? '' ),
 			sprintf(
@@ -58,8 +66,14 @@ class TAKA_Ticketing_Email_Service {
 				$data['event_title'] ?? '',
 				self::label( 'ticketing.amount', 'Amount', $lang ),
 				TAKA_Ticketing_Module::format_money( $data['amount'] ?? '', $data['currency'] ?? 'EUR' )
-			)
+			),
+			'',
+			$attachments
 		);
+		if ( $sent && ! empty( $attachments ) ) {
+			self::send_recipient_ticket_emails( $order, $email, $lang );
+		}
+		return $sent;
 	}
 
 	public static function send_order_cancellation( TAKA_Ticketing_Order $order ) {
@@ -117,6 +131,10 @@ class TAKA_Ticketing_Email_Service {
 				$lines[] = '- ' . TAKA_Ticketing_Module::line_item_label( $item );
 			}
 		}
+		if ( ! $admin && ! empty( self::order_confirmation_attachments( $order ) ) ) {
+			$lines[] = '';
+			$lines[] = self::label( 'ticketing.email_attachments_note', 'Your booking confirmation, invoice and ticket QR codes are attached to this email.', $lang );
+		}
 
 		if ( '' !== trim( (string) ( $data['applied_voucher_code'] ?? '' ) ) ) {
 			array_splice(
@@ -168,6 +186,54 @@ class TAKA_Ticketing_Email_Service {
 		}
 
 		return implode( "\n", array_filter( $lines, static function ( $line ) { return null !== $line; } ) );
+	}
+
+	private static function order_confirmation_attachments( TAKA_Ticketing_Order $order ) {
+		if ( ! class_exists( 'TAKA_Ticketing_Ticket_Artifact_Service' ) ) {
+			return array();
+		}
+		if ( 'paypal' === (string) $order->get( 'payment_method', '' ) && 'paid' !== (string) $order->get( 'payment_status', '' ) ) {
+			return array();
+		}
+		return TAKA_Ticketing_Ticket_Artifact_Service::buyer_attachments( $order );
+	}
+
+	private static function send_recipient_ticket_emails( TAKA_Ticketing_Order $order, $buyer_email, $lang ) {
+		if ( ! class_exists( 'TAKA_Ticketing_Ticket_Artifact_Service' ) ) {
+			return;
+		}
+
+		$buyer_email = sanitize_email( $buyer_email );
+		$data = $order->to_array();
+		$map = TAKA_Ticketing_Ticket_Artifact_Service::recipient_attachment_map( $order );
+		foreach ( $map as $recipient_email => $attachments ) {
+			$recipient_email = sanitize_email( $recipient_email );
+			if ( '' === $recipient_email || 0 === strcasecmp( $recipient_email, $buyer_email ) || empty( $attachments ) ) {
+				continue;
+			}
+			wp_mail(
+				$recipient_email,
+				sprintf( self::label( 'ticketing.email_subject_ticket', 'Your ticket for order %s', $lang ), $data['order_number'] ?? '' ),
+				self::recipient_ticket_message( $order, $lang ),
+				'',
+				$attachments
+			);
+		}
+	}
+
+	private static function recipient_ticket_message( TAKA_Ticketing_Order $order, $lang ) {
+		$data = $order->to_array();
+		$lines = array(
+			self::label( 'ticketing.email_ticket_intro', 'A ticket has been issued for you.', $lang ),
+			'',
+			self::label( 'ticketing.order_number', 'Order number', $lang ) . ': ' . ( $data['order_number'] ?? '' ),
+		);
+		if ( '' !== trim( (string) ( $data['event_title'] ?? '' ) ) ) {
+			$lines[] = self::label( 'ticketing.event', 'Event', $lang ) . ': ' . $data['event_title'];
+		}
+		$lines[] = '';
+		$lines[] = self::label( 'ticketing.email_ticket_attached', 'Your ticket with QR code is attached to this email.', $lang );
+		return implode( "\n", $lines );
 	}
 
 	private static function cancellation_message( TAKA_Ticketing_Order $order, $lang ) {
