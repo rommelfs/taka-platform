@@ -80,7 +80,10 @@
 .taka-native-checkout__progress button:focus-visible,
 .taka-native-checkout__nav-button:focus-visible,
 .taka-native-checkout input[type="checkbox"]:focus-visible,
-.taka-native-checkout input[type="radio"]:focus-visible {
+.taka-native-checkout input[type="radio"]:focus-visible,
+.taka-native-checkout select:focus-visible,
+.taka-native-checkout textarea:focus-visible,
+.taka-native-checkout input:focus-visible {
 	outline: 2px solid rgba(188, 0, 45, .42);
 	outline-offset: 3px;
 }
@@ -128,6 +131,11 @@
 	font: inherit;
 	padding: .62rem .7rem;
 	width: 100%;
+}
+
+.taka-native-checkout__required {
+	color: #BC002D;
+	font-weight: 900;
 }
 
 .taka-native-checkout input[type="checkbox"],

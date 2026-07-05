@@ -339,7 +339,9 @@ class TAKA_Ticketing_Order_Service {
 	}
 
 	private static function country_from_post( $value ) {
-		return TAKA_Platform_Data::normalize_event_option_value( 'country', sanitize_text_field( $value ) );
+		$value = sanitize_text_field( $value );
+		$country_code = TAKA_Platform_Data::country_code_for_value( $value );
+		return '' !== $country_code ? $country_code : TAKA_Platform_Data::normalize_event_option_value( 'country', $value );
 	}
 
 	private static function language_from_post( $posted ) {
