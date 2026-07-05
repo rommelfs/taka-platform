@@ -59,6 +59,9 @@ class TAKA_Ticketing_Order_Service {
 		}
 
 		$participant_posted = $posted;
+		if ( ! empty( $posted['self_participates'] ) ) {
+			$participant_posted['participant_is_buyer'] = '1';
+		}
 		if ( '' !== $standalone_product_id && ! isset( $participant_posted['participant_is_buyer'] ) ) {
 			$participant_posted['participant_is_buyer'] = '1';
 		}
@@ -68,7 +71,9 @@ class TAKA_Ticketing_Order_Service {
 		if ( is_wp_error( $error ) ) {
 			return $error;
 		}
-		if ( empty( $posted['terms_accepted'] ) || empty( $posted['privacy_accepted'] ) ) {
+		$terms_accepted = ! empty( $posted['accept_terms'] ) || ! empty( $posted['terms_accepted'] );
+		$privacy_accepted = ! empty( $posted['accept_privacy'] ) || ! empty( $posted['privacy_accepted'] );
+		if ( ! $terms_accepted || ! $privacy_accepted ) {
 			return new WP_Error( 'taka_ticketing_terms', TAKA_Ticketing_Module::text( 'ticketing.error_terms', 'Please accept the terms and privacy notice.', $lang ) );
 		}
 
@@ -138,6 +143,7 @@ class TAKA_Ticketing_Order_Service {
 				'applied_promotion'   => $pricing['promotion_snapshot'] ?? null,
 				'applied_benefits'    => is_array( $pricing['benefits'] ?? null ) ? $pricing['benefits'] : array(),
 				'language'            => $lang,
+				'checkout_return_url' => esc_url_raw( $posted['redirect_to'] ?? '' ),
 				'created_at'          => current_time( 'mysql' ),
 				'updated_at'          => current_time( 'mysql' ),
 				'timeline'            => $timeline,
@@ -147,7 +153,11 @@ class TAKA_Ticketing_Order_Service {
 		$provider = TAKA_Ticketing_Module::payment_provider( $payment_method );
 		if ( $payment_required && $provider ) {
 			$data = $order->to_array();
-			$data['payment'] = $provider->create_payment( $order );
+			$payment = $provider->create_payment( $order );
+			if ( is_wp_error( $payment ) ) {
+				return $payment;
+			}
+			$data['payment'] = $payment;
 			$order = new TAKA_Ticketing_Order( $data );
 		}
 

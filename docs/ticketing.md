@@ -8,7 +8,7 @@ It is intentionally smaller than a full ticketing suite. The goal is a focused f
 
 Phase 1: ticketing architecture and event configuration.
 
-Phase 2: frontend order flow with bank transfer and pay at the door.
+Phase 2: frontend order flow with bank transfer, pay at the door and line-item add-ons.
 
 Phase 3: expanded admin order management.
 
@@ -16,11 +16,11 @@ Phase 4: participant list, CSV export and basic check-in.
 
 Phase 5: QR code check-in.
 
-Phase 6: PayPal provider.
+Phase 6: PayPal provider and additional hosted/API payment methods.
 
 Phase 7: invoices, discounts, refunds and advanced features.
 
-Phases 1 and 2 are implemented now.
+Phases 1 and 2 are implemented now. PayPal is available as a provider ahead of the broader Phase 6 payment-provider roadmap.
 
 ## Implemented Scope
 
@@ -120,7 +120,7 @@ The interface prepares for:
 - `refund( $order )`
 - `get_admin_fields()`
 
-Bank transfer and pay-at-the-door both use this interface. Future API providers such as PayPal, Stripe and Mollie should implement the same contract.
+Bank transfer, pay-at-the-door and PayPal all use this interface. Future API providers such as Stripe and Mollie should implement the same contract.
 
 ## Capabilities
 
@@ -215,16 +215,19 @@ Promotions are line-item aware. Voucher scope can target the whole order, the ti
 
 ## Payment Providers
 
-Phase 2 includes two first-class providers:
+Native ticketing currently includes three first-class providers:
 
 - `bank_transfer`
 - `pay_at_door`
+- `paypal`
 
-Both implement `TAKA_Ticketing_Payment_Provider_Interface`.
+All implement `TAKA_Ticketing_Payment_Provider_Interface`.
 
 Bank transfer displays account holder, IBAN, BIC, bank name, payment reference and instructions after order submission.
 
 Pay at the Door reserves capacity immediately, keeps payment status pending, and tells the visitor that payment is collected at the venue before participation.
+
+PayPal is configured globally under TAKA Platform -> Ticketing. The provider creates a server-side PayPal order, redirects the visitor to PayPal approval, captures payment on return, stores the PayPal order/transaction IDs and marks the TAKA order paid. Webhook confirmation is supported when the PayPal webhook ID is configured; secrets remain server-side and are never exposed to frontend JavaScript.
 
 Events choose enabled providers in the Event editor's Native TAKA Ticketing section.
 

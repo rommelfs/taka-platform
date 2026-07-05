@@ -334,10 +334,130 @@
 		setReview(root, '[data-taka-review-total]', quote && quote.final_amount_display ? quote.final_amount_display : (ticket ? ticket.getAttribute('data-taka-ticket-price') : ''));
 	}
 
+	function checkoutForm(root) {
+		return root.querySelector('[data-taka-checkout-form]');
+	}
+
+	function currentCheckoutStep(root) {
+		var form = checkoutForm(root);
+		var initial = form ? parseInt(form.getAttribute('data-taka-initial-step') || '1', 10) : 1;
+		return root._takaCheckoutStep || Math.min(3, Math.max(1, initial || 1));
+	}
+
+	function setCheckoutError(root, messages) {
+		var target = root.querySelector('[data-taka-checkout-errors]');
+		if (!target) {
+			return;
+		}
+		target.innerHTML = '';
+		(messages || []).forEach(function (message) {
+			if (!message) {
+				return;
+			}
+			var item = document.createElement('p');
+			item.textContent = message;
+			target.appendChild(item);
+		});
+		target.hidden = !target.children.length;
+	}
+
+	function formError(root, key, fallback) {
+		var form = checkoutForm(root);
+		return form ? (form.getAttribute(key) || fallback) : fallback;
+	}
+
+	function fieldIsVisible(field) {
+		return !field.closest('[hidden]');
+	}
+
+	function validateCheckoutStep(root, step) {
+		var fields = [];
+		root.querySelectorAll('[data-taka-checkout-step-panel="' + step + '"] input, [data-taka-checkout-step-panel="' + step + '"] select, [data-taka-checkout-step-panel="' + step + '"] textarea').forEach(function (field) {
+			if (field.disabled || 'hidden' === field.type || !fieldIsVisible(field)) {
+				return;
+			}
+			fields.push(field);
+		});
+
+		var firstInvalid = null;
+		fields.some(function (field) {
+			if (!field.checkValidity()) {
+				firstInvalid = field;
+				return true;
+			}
+			return false;
+		});
+
+		if (!firstInvalid) {
+			setCheckoutError(root, []);
+			return true;
+		}
+
+		var message = 3 === step && ('checkbox' === firstInvalid.type)
+			? formError(root, 'data-taka-error-terms', 'Please accept the terms and privacy notice.')
+			: (firstInvalid.validationMessage || formError(root, 'data-taka-error-required', 'Please complete the required fields before continuing.'));
+		setCheckoutError(root, [message]);
+		if ('function' === typeof firstInvalid.reportValidity) {
+			firstInvalid.reportValidity();
+		}
+		firstInvalid.focus({ preventScroll: false });
+		return false;
+	}
+
+	function setCheckoutStep(root, step) {
+		step = Math.min(3, Math.max(1, parseInt(step || '1', 10) || 1));
+		root._takaCheckoutStep = step;
+
+		root.querySelectorAll('[data-taka-checkout-step-panel]').forEach(function (panel) {
+			panel.hidden = parseInt(panel.getAttribute('data-taka-checkout-step-panel') || '1', 10) !== step;
+		});
+
+		root.querySelectorAll('[data-taka-checkout-step-indicator]').forEach(function (indicator) {
+			var indicatorStep = parseInt(indicator.getAttribute('data-taka-checkout-step-indicator') || '1', 10) || 1;
+			indicator.classList.toggle('is-active', indicatorStep === step);
+			indicator.classList.toggle('is-complete', indicatorStep < step);
+			if (indicatorStep === step) {
+				indicator.setAttribute('aria-current', 'step');
+			} else {
+				indicator.removeAttribute('aria-current');
+			}
+		});
+
+		root.querySelectorAll('[data-taka-checkout-prev]').forEach(function (button) {
+			button.hidden = step <= 1;
+		});
+		root.querySelectorAll('[data-taka-checkout-next]').forEach(function (button) {
+			button.hidden = step >= 3;
+		});
+		root.querySelectorAll('[data-taka-checkout-submit]').forEach(function (button) {
+			button.hidden = step !== 3;
+		});
+		refreshCheckoutReview(root);
+	}
+
+	function advanceCheckoutStep(root, nextStep) {
+		var current = currentCheckoutStep(root);
+		nextStep = Math.min(3, Math.max(1, parseInt(nextStep || current, 10) || current));
+		if (nextStep > current) {
+			for (var step = current; step < nextStep; step++) {
+				setCheckoutStep(root, step);
+				if (!validateCheckoutStep(root, step)) {
+					return;
+				}
+			}
+		} else {
+			setCheckoutError(root, []);
+		}
+		setCheckoutStep(root, nextStep);
+	}
+
 	document.querySelectorAll('[data-taka-native-checkout]').forEach(function (root) {
 		syncParticipantFields(root);
 		syncDietaryNote(root);
 		refreshCheckoutReview(root);
+		if (checkoutForm(root)) {
+			setCheckoutStep(root, currentCheckoutStep(root));
+		}
 	});
 	document.addEventListener('change', function (event) {
 		var root = event.target.closest('[data-taka-native-checkout]');
@@ -358,6 +478,34 @@
 			refreshCheckoutReview(root);
 		}
 	});
+	document.addEventListener('click', function (event) {
+		var stepTarget = event.target.closest('[data-taka-checkout-step-target]');
+		if (stepTarget) {
+			var root = stepTarget.closest('[data-taka-native-checkout]');
+			if (root) {
+				event.preventDefault();
+				advanceCheckoutStep(root, stepTarget.getAttribute('data-taka-checkout-step-target'));
+			}
+			return;
+		}
+		var next = event.target.closest('[data-taka-checkout-next]');
+		if (next) {
+			var nextRoot = next.closest('[data-taka-native-checkout]');
+			if (nextRoot) {
+				event.preventDefault();
+				advanceCheckoutStep(nextRoot, currentCheckoutStep(nextRoot) + 1);
+			}
+			return;
+		}
+		var prev = event.target.closest('[data-taka-checkout-prev]');
+		if (prev) {
+			var prevRoot = prev.closest('[data-taka-native-checkout]');
+			if (prevRoot) {
+				event.preventDefault();
+				advanceCheckoutStep(prevRoot, currentCheckoutStep(prevRoot) - 1);
+			}
+		}
+	});
 	document.addEventListener('input', function (event) {
 		var root = event.target.closest('[data-taka-native-checkout]');
 		if (root) {
@@ -370,6 +518,24 @@
 				copyBuyerToParticipant(root);
 			}
 			refreshCheckoutReview(root);
+		}
+	});
+	document.addEventListener('submit', function (event) {
+		var root = event.target.closest('[data-taka-native-checkout]');
+		if (!root || !checkoutForm(root)) {
+			return;
+		}
+		if (currentCheckoutStep(root) < 3) {
+			event.preventDefault();
+			advanceCheckoutStep(root, currentCheckoutStep(root) + 1);
+			return;
+		}
+		if (!validateCheckoutStep(root, 3)) {
+			event.preventDefault();
+			return;
+		}
+		if (root.querySelector('[data-taka-participant-self]:checked')) {
+			copyBuyerToParticipant(root);
 		}
 	});
 }());

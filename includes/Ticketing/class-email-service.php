@@ -141,6 +141,11 @@ class TAKA_Ticketing_Email_Service {
 			if ( '' !== trim( (string) ( $instructions['instructions'] ?? '' ) ) ) {
 				$lines[] = $instructions['instructions'];
 			}
+		} elseif ( 'paypal' === (string) ( $data['payment_method'] ?? '' ) ) {
+			$lines[] = '';
+			$lines[] = 'paid' === (string) ( $data['payment_status'] ?? '' )
+				? self::label( 'ticketing.paypal_payment_received', 'Your PayPal payment has been received.', $lang )
+				: self::label( 'ticketing.paypal_email_instructions', 'Please complete payment securely with PayPal.', $lang );
 		} elseif ( in_array( (string) ( $data['payment_method'] ?? '' ), array( 'promotion', 'free' ), true ) ) {
 			$lines[] = '';
 			$lines[] = self::label( 'ticketing.no_payment_required', 'No payment required.', $lang );
