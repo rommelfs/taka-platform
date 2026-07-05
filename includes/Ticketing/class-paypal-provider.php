@@ -186,7 +186,86 @@ class TAKA_Ticketing_PayPal_Provider implements TAKA_Ticketing_Payment_Provider_
 	}
 
 	public function refund( $order ) {
-		return new WP_Error( 'taka_ticketing_refund_not_supported', __( 'PayPal refunds are not implemented yet.', 'taka-platform' ) );
+		if ( ! $order instanceof TAKA_Ticketing_Order ) {
+			return new WP_Error( 'taka_ticketing_paypal_order_missing', __( 'Order not found.', 'taka-platform' ) );
+		}
+		if ( ! $this->is_enabled() ) {
+			return new WP_Error( 'taka_ticketing_paypal_disabled', __( 'PayPal is not configured yet.', 'taka-platform' ) );
+		}
+
+		$data = $order->to_array();
+		if ( 'paypal' !== (string) ( $data['payment_method'] ?? '' ) ) {
+			return new WP_Error( 'taka_ticketing_refund_provider', __( 'This order was not paid with PayPal.', 'taka-platform' ) );
+		}
+		if ( 'refunded' === (string) ( $data['payment_status'] ?? '' ) ) {
+			return new WP_Error( 'taka_ticketing_refund_duplicate', __( 'This order has already been refunded.', 'taka-platform' ) );
+		}
+		if ( 'paid' !== (string) ( $data['payment_status'] ?? '' ) ) {
+			return new WP_Error( 'taka_ticketing_refund_not_paid', __( 'Only paid PayPal orders can be refunded.', 'taka-platform' ) );
+		}
+
+		$payment = is_array( $data['payment'] ?? null ) ? $data['payment'] : array();
+		$capture_id = sanitize_text_field( $payment['transaction_id'] ?? '' );
+		if ( '' === $capture_id ) {
+			return new WP_Error( 'taka_ticketing_paypal_capture_missing', __( 'PayPal capture ID is missing, so the refund cannot be created automatically.', 'taka-platform' ) );
+		}
+
+		$access_token = $this->access_token();
+		if ( is_wp_error( $access_token ) ) {
+			return $access_token;
+		}
+
+		$currency = TAKA_Platform_Data::normalize_event_option_value( 'currency', $data['currency'] ?? 'EUR' ) ?: 'EUR';
+		$amount = $this->paypal_amount( $data['amount'] ?? '0' );
+		$response = wp_remote_post(
+			$this->api_base_url() . '/v2/payments/captures/' . rawurlencode( $capture_id ) . '/refund',
+			array(
+				'timeout' => 20,
+				'headers' => array(
+					'Authorization'     => 'Bearer ' . $access_token,
+					'Content-Type'      => 'application/json',
+					'PayPal-Request-Id' => 'taka-ref-' . substr( md5( (string) ( $data['order_number'] ?? '' ) . '|' . $capture_id ), 0, 24 ),
+				),
+				'body'    => wp_json_encode(
+					array(
+						'amount' => array(
+							'currency_code' => $currency,
+							'value'         => $amount,
+						),
+					)
+				),
+			)
+		);
+
+		$payload = $this->decode_response( $response, array( 200, 201 ) );
+		if ( is_wp_error( $payload ) ) {
+			return $payload;
+		}
+
+		$data['payment_status'] = 'refunded';
+		$data['order_status'] = 'cancelled';
+		$data['updated_at'] = current_time( 'mysql' );
+		$data['payment'] = array_merge(
+			$payment,
+			array(
+				'status'          => 'refunded',
+				'refund_id'       => sanitize_text_field( $payload['id'] ?? '' ),
+				'refund_status'   => sanitize_text_field( $payload['status'] ?? '' ),
+				'refund_amount'   => $amount,
+				'refund_currency' => $currency,
+				'refunded_at'     => current_time( 'mysql' ),
+			)
+		);
+		$data['timeline'][] = array( 'time' => current_time( 'mysql' ), 'label' => __( 'PayPal refund issued', 'taka-platform' ) );
+
+		$saved = TAKA_Ticketing_Module::order_repository()->save( new TAKA_Ticketing_Order( $data ) );
+		if ( class_exists( 'TAKA_People_Module' ) && $saved instanceof TAKA_Ticketing_Order ) {
+			$people_synced = TAKA_People_Module::sync_order_people_and_registrations( $saved );
+			if ( $people_synced instanceof TAKA_Ticketing_Order ) {
+				$saved = $people_synced;
+			}
+		}
+		return $saved;
 	}
 
 	public function get_admin_fields() {

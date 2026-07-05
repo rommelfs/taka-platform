@@ -229,6 +229,8 @@ Pay at the Door reserves capacity immediately, keeps payment status pending, and
 
 PayPal is configured globally under TAKA Platform -> Ticketing. The provider creates a server-side PayPal order, redirects the visitor to PayPal approval, captures payment on return, stores the PayPal order/transaction IDs and marks the TAKA order paid. Webhook confirmation is supported when the PayPal webhook ID is configured; secrets remain server-side and are never exposed to frontend JavaScript.
 
+Paid PayPal orders can be refunded from the private order detail screen. The refund action calls the PayPal capture refund API using the stored capture/transaction ID, marks the TAKA payment as `refunded`, cancels the order to release capacity and records the PayPal refund ID/status in the order timeline.
+
 Events choose enabled providers in the Event editor's Native TAKA Ticketing section.
 
 ## Orders

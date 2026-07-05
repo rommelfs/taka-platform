@@ -1154,18 +1154,28 @@ class TAKA_Ticketing_Module {
 		check_admin_referer( self::ADMIN_ACTION, '_wpnonce' );
 		$order_id = absint( $_POST['order_id'] ?? 0 );
 		$task = sanitize_key( wp_unslash( $_POST['task'] ?? '' ) );
+		$result = null;
 
 		if ( 'mark_paid' === $task ) {
-			TAKA_Ticketing_Order_Service::mark_paid( $order_id );
+			$result = TAKA_Ticketing_Order_Service::mark_paid( $order_id );
 		} elseif ( 'cancel' === $task ) {
-			TAKA_Ticketing_Order_Service::cancel( $order_id );
+			$result = TAKA_Ticketing_Order_Service::cancel( $order_id );
+		} elseif ( 'refund' === $task ) {
+			$result = TAKA_Ticketing_Order_Service::refund( $order_id );
 		} elseif ( 'delete' === $task ) {
 			self::order_repository()->delete_order( $order_id );
 			wp_safe_redirect( self::admin_url( array( 'deleted' => '1' ) ) );
 			exit;
 		}
 
-		wp_safe_redirect( self::admin_url( array( 'order_id' => $order_id, 'updated' => '1' ) ) );
+		$args = array( 'order_id' => $order_id );
+		if ( is_wp_error( $result ) ) {
+			$args['order_error'] = $result->get_error_message();
+		} else {
+			$args['updated'] = '1';
+			$args['order_action'] = $task;
+		}
+		wp_safe_redirect( self::admin_url( $args ) );
 		exit;
 	}
 
@@ -1610,6 +1620,14 @@ class TAKA_Ticketing_Module {
 		}
 		if ( ! empty( $_GET['product_error'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html( sanitize_text_field( wp_unslash( $_GET['product_error'] ) ) ) . '</p></div>';
+		}
+		if ( ! empty( $_GET['order_error'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html( sanitize_text_field( wp_unslash( $_GET['order_error'] ) ) ) . '</p></div>';
+		}
+		if ( ! empty( $_GET['updated'] ) && ! empty( $_GET['order_action'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$order_action = sanitize_key( wp_unslash( $_GET['order_action'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$message = 'refund' === $order_action ? __( 'PayPal refund issued.', 'taka-platform' ) : __( 'Order updated.', 'taka-platform' );
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html( $message ) . '</p></div>';
 		}
 		if ( $order_id ) {
 			self::render_admin_nav( 'orders' );
@@ -2128,6 +2146,8 @@ class TAKA_Ticketing_Module {
 				<?php if ( ! empty( $data['payment'] ) && is_array( $data['payment'] ) ) : ?>
 					<?php if ( ! empty( $data['payment']['paypal_order_id'] ) ) : ?><p><strong><?php echo esc_html__( 'PayPal order ID', 'taka-platform' ); ?>:</strong> <?php echo esc_html( $data['payment']['paypal_order_id'] ); ?></p><?php endif; ?>
 					<?php if ( ! empty( $data['payment']['transaction_id'] ) ) : ?><p><strong><?php echo esc_html__( 'Transaction ID', 'taka-platform' ); ?>:</strong> <?php echo esc_html( $data['payment']['transaction_id'] ); ?></p><?php endif; ?>
+					<?php if ( ! empty( $data['payment']['refund_id'] ) ) : ?><p><strong><?php echo esc_html__( 'Refund ID', 'taka-platform' ); ?>:</strong> <?php echo esc_html( $data['payment']['refund_id'] ); ?></p><?php endif; ?>
+					<?php if ( ! empty( $data['payment']['refund_status'] ) ) : ?><p><strong><?php echo esc_html__( 'Refund status', 'taka-platform' ); ?>:</strong> <?php echo esc_html( $data['payment']['refund_status'] ); ?></p><?php endif; ?>
 				<?php endif; ?>
 				<p><strong><?php echo esc_html__( 'Check-in', 'taka-platform' ); ?>:</strong> <?php echo esc_html( $data['checkin_status'] ?? 'not_checked_in' ); ?></p>
 			</section>
@@ -2138,6 +2158,9 @@ class TAKA_Ticketing_Module {
 		<div class="taka-ticketing-admin-actions">
 			<?php if ( current_user_can( 'edit_taka_orders' ) ) : ?>
 				<?php self::admin_action_form( $order_id, 'mark_paid', __( 'Mark Paid', 'taka-platform' ), 'button-primary' ); ?>
+				<?php if ( self::order_can_refund_paypal( $data ) ) : ?>
+					<?php self::admin_action_form( $order_id, 'refund', __( 'Refund PayPal payment', 'taka-platform' ), '', __( 'Refund this PayPal payment and cancel the order?', 'taka-platform' ) ); ?>
+				<?php endif; ?>
 				<?php self::admin_action_form( $order_id, 'cancel', __( 'Cancel', 'taka-platform' ), '' ); ?>
 				<?php self::admin_action_form( $order_id, 'delete', __( 'Delete', 'taka-platform' ), 'button-link-delete' ); ?>
 			<?php endif; ?>
@@ -2171,6 +2194,14 @@ class TAKA_Ticketing_Module {
 			}
 		}
 		return esc_html( $fallback );
+	}
+
+	private static function order_can_refund_paypal( $data ) {
+		$data = is_array( $data ) ? $data : array();
+		$payment = is_array( $data['payment'] ?? null ) ? $data['payment'] : array();
+		return 'paypal' === (string) ( $data['payment_method'] ?? '' )
+			&& 'paid' === (string) ( $data['payment_status'] ?? '' )
+			&& '' !== trim( (string) ( $payment['transaction_id'] ?? '' ) );
 	}
 
 	public static function benefit_line( $benefit ) {
@@ -2210,13 +2241,13 @@ class TAKA_Ticketing_Module {
 		return implode( ', ', array_slice( $titles, 0, 3 ) );
 	}
 
-	private static function admin_action_form( $order_id, $task, $label, $class ) {
+	private static function admin_action_form( $order_id, $task, $label, $class, $confirm = '' ) {
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" class="taka-ticketing-admin-action">';
 		wp_nonce_field( self::ADMIN_ACTION );
 		echo '<input type="hidden" name="action" value="' . esc_attr( self::ADMIN_ACTION ) . '">';
 		echo '<input type="hidden" name="order_id" value="' . esc_attr( (string) absint( $order_id ) ) . '">';
 		echo '<input type="hidden" name="task" value="' . esc_attr( $task ) . '">';
-		echo '<button type="submit" class="button ' . esc_attr( $class ) . '">' . esc_html( $label ) . '</button>';
+		echo '<button type="submit" class="button ' . esc_attr( $class ) . '"' . ( '' !== (string) $confirm ? ' onclick="return confirm(\'' . esc_js( $confirm ) . '\');"' : '' ) . '>' . esc_html( $label ) . '</button>';
 		echo '</form>';
 	}
 

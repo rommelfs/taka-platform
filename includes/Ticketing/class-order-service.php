@@ -235,6 +235,23 @@ class TAKA_Ticketing_Order_Service {
 		return $saved;
 	}
 
+	public static function refund( $order_id ) {
+		$repository = TAKA_Ticketing_Module::order_repository();
+		$order = $repository->find_by_id( $order_id );
+		if ( ! $order ) {
+			return new WP_Error( 'taka_ticketing_order_missing', __( 'Order not found.', 'taka-platform' ) );
+		}
+		$provider = TAKA_Ticketing_Module::payment_provider( $order->get( 'payment_method', '' ) );
+		if ( ! $provider ) {
+			return new WP_Error( 'taka_ticketing_refund_provider', __( 'Payment provider not found for this order.', 'taka-platform' ) );
+		}
+		$result = $provider->refund( $order );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return $result instanceof TAKA_Ticketing_Order ? $result : $repository->find_by_id( $order_id );
+	}
+
 	private static function product_line_items_from_post( $posted, $event_id, $lang ) {
 		$quantities = isset( $posted['product_quantities'] ) && is_array( $posted['product_quantities'] ) ? $posted['product_quantities'] : array();
 		$items = array();
