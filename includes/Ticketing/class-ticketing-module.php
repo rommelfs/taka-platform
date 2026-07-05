@@ -10,6 +10,7 @@ class TAKA_Ticketing_Module {
 	const BANK_TRANSFER_OPTION = 'taka_ticketing_bank_transfer_settings';
 	const SETTINGS_OPTION      = 'taka_native_ticketing_settings';
 	const PAYMENT_METHODS_META = '_taka_native_payment_methods';
+	const PAYMENT_METHODS_CONFIGURED_META = '_taka_native_payment_methods_configured';
 	const BANK_TRANSFER_META   = '_taka_native_bank_transfer_settings';
 	const PAY_AT_DOOR_INSTRUCTIONS_META = '_taka_native_pay_at_door_instructions';
 	const CHECKOUT_ACTION      = 'taka_ticketing_checkout';
@@ -223,11 +224,13 @@ class TAKA_Ticketing_Module {
 	}
 
 	public static function enabled_payment_methods_for_event( $event_id, $only_active = true ) {
-		$stored = get_post_meta( absint( $event_id ), self::PAYMENT_METHODS_META, true );
+		$event_id = absint( $event_id );
+		$stored = get_post_meta( $event_id, self::PAYMENT_METHODS_META, true );
 		$items = is_array( $stored ) ? $stored : preg_split( '/\s*,\s*/', (string) $stored );
 		$items = array_values( array_unique( array_filter( array_map( 'sanitize_key', (array) $items ) ) ) );
-		if ( empty( $items ) ) {
-			$items = array( 'bank_transfer' );
+		$was_configured_after_provider_selection = '1' === (string) get_post_meta( $event_id, self::PAYMENT_METHODS_CONFIGURED_META, true );
+		if ( empty( $items ) || ( ! $was_configured_after_provider_selection && self::is_legacy_default_payment_methods( $items ) ) ) {
+			$items = self::default_payment_methods_for_event();
 		}
 		return array_values(
 			array_filter(
@@ -240,6 +243,19 @@ class TAKA_Ticketing_Module {
 				}
 			)
 		);
+	}
+
+	private static function default_payment_methods_for_event() {
+		$methods = array( 'bank_transfer' );
+		if ( isset( self::$payment_providers['paypal'] ) && self::$payment_providers['paypal']->is_enabled() ) {
+			$methods[] = 'paypal';
+		}
+		return array_values( array_unique( $methods ) );
+	}
+
+	private static function is_legacy_default_payment_methods( $methods ) {
+		$methods = array_values( array_filter( array_map( 'sanitize_key', (array) $methods ) ) );
+		return 1 === count( $methods ) && 'bank_transfer' === $methods[0];
 	}
 
 	public static function event_bank_transfer_settings( $event_id ) {
@@ -378,6 +394,7 @@ class TAKA_Ticketing_Module {
 			}
 		}
 		update_post_meta( $post_id, self::PAYMENT_METHODS_META, array_values( array_unique( $methods ) ) );
+		update_post_meta( $post_id, self::PAYMENT_METHODS_CONFIGURED_META, '1' );
 
 		$bank_settings = self::normalize_bank_transfer_settings( wp_unslash( $_POST['taka_native_bank_transfer'] ?? array() ) );
 		update_post_meta( $post_id, self::BANK_TRANSFER_META, $bank_settings );

@@ -2220,6 +2220,7 @@ class TAKA_Platform_Admin {
 			'_taka_ticket_door_note' => $item['ticket_door_note'] ?? '',
 			'_taka_native_ticket_types' => class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::sanitize_ticket_types( $item['native_ticket_types'] ?? ( $item['ticket_types'] ?? array() ) ) : array(),
 			'_taka_native_payment_methods' => array_values( array_filter( array_map( 'sanitize_key', (array) ( $item['native_payment_methods'] ?? array( 'bank_transfer' ) ) ) ) ),
+			'_taka_native_payment_methods_configured' => array_key_exists( 'native_payment_methods', $item ) ? '1' : '',
 			'_taka_native_bank_transfer_settings' => class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::normalize_bank_transfer_settings( $item['native_bank_transfer_settings'] ?? array() ) : array(),
 			'_taka_native_pay_at_door_instructions' => sanitize_textarea_field( $item['native_pay_at_door_instructions'] ?? '' ),
 			'_taka_image_id' => (int) ( $item['image_id'] ?? 0 ),
