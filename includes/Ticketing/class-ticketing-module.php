@@ -1029,6 +1029,16 @@ class TAKA_Ticketing_Module {
 			<div class="taka-native-checkout__errors" role="alert" data-taka-checkout-errors <?php echo empty( $errors ) ? 'hidden' : ''; ?>><?php foreach ( $errors as $error ) : ?><p><?php echo esc_html( $error ); ?></p><?php endforeach; ?></div>
 			<?php self::render_checkout_progress( ! empty( $errors ) ? 3 : 1, $lang, true ); ?>
 			<section class="taka-native-checkout__step" data-taka-checkout-step-panel="1">
+				<h4><?php echo esc_html( taka_tour_translate( 'ticketing.buyer_information', 'Buyer information' ) ); ?></h4>
+				<div class="taka-native-checkout__grid">
+					<?php self::frontend_input( 'buyer_first_name', taka_tour_translate( 'ticketing.first_name', 'First name' ), 'text', true, $prefill['buyer']['first_name'] ?? '', array( 'autocomplete' => 'given-name' ) ); ?>
+					<?php self::frontend_input( 'buyer_last_name', taka_tour_translate( 'ticketing.last_name', 'Last name' ), 'text', true, $prefill['buyer']['last_name'] ?? '', array( 'autocomplete' => 'family-name' ) ); ?>
+					<?php self::frontend_input( 'buyer_email', taka_tour_translate( 'ticketing.email', 'Email' ), 'email', true, $prefill['buyer']['email'] ?? '', array( 'autocomplete' => 'email' ) ); ?>
+					<?php self::frontend_select( 'buyer_country', taka_tour_translate( 'ticketing.country', 'Country' ), $country_choices, true, array( 'autocomplete' => 'country-name', 'data-taka-country-select' => '1' ), $prefill['buyer']['country'] ?? '' ); ?>
+					<?php self::frontend_input( 'buyer_phone', taka_tour_translate( 'ticketing.phone', 'Phone' ), 'text', false, $prefill['buyer']['phone'] ?? '', array( 'autocomplete' => 'tel' ) ); ?>
+				</div>
+			</section>
+			<section class="taka-native-checkout__step" data-taka-checkout-step-panel="1">
 				<h4><?php echo esc_html( taka_tour_translate( 'ticketing.select_ticket_type', 'Select ticket type' ) ); ?></h4>
 				<div class="taka-native-ticket-options">
 					<?php foreach ( $ticket_types as $index => $ticket_type ) : ?>
@@ -1065,19 +1075,11 @@ class TAKA_Ticketing_Module {
 					</div>
 				</section>
 			<?php endif; ?>
-			<section class="taka-native-checkout__step" data-taka-checkout-step-panel="2">
-				<h4><?php echo esc_html( taka_tour_translate( 'ticketing.buyer_information', 'Buyer information' ) ); ?></h4>
-				<div class="taka-native-checkout__grid">
-					<?php self::frontend_input( 'buyer_first_name', taka_tour_translate( 'ticketing.first_name', 'First name' ), 'text', true, $prefill['buyer']['first_name'] ?? '', array( 'autocomplete' => 'given-name' ) ); ?>
-					<?php self::frontend_input( 'buyer_last_name', taka_tour_translate( 'ticketing.last_name', 'Last name' ), 'text', true, $prefill['buyer']['last_name'] ?? '', array( 'autocomplete' => 'family-name' ) ); ?>
-					<?php self::frontend_input( 'buyer_email', taka_tour_translate( 'ticketing.email', 'Email' ), 'email', true, $prefill['buyer']['email'] ?? '', array( 'autocomplete' => 'email' ) ); ?>
-					<?php self::frontend_select( 'buyer_country', taka_tour_translate( 'ticketing.country', 'Country' ), $country_choices, true, array( 'autocomplete' => 'country-name', 'data-taka-country-select' => '1' ), $prefill['buyer']['country'] ?? '' ); ?>
-					<?php self::frontend_input( 'buyer_phone', taka_tour_translate( 'ticketing.phone', 'Phone' ), 'text', false, $prefill['buyer']['phone'] ?? '', array( 'autocomplete' => 'tel' ) ); ?>
-				</div>
+			<section class="taka-native-checkout__step" data-taka-checkout-step-panel="2" data-taka-participant-copy-section>
+				<label class="taka-native-checkout__checkbox"><input type="checkbox" name="self_participates" value="1" <?php checked( ! empty( $prefill['participant_is_buyer'] ) ); ?> data-taka-participant-self data-taka-label-single="<?php echo esc_attr( taka_tour_translate( 'ticketing.participating_myself', 'I am participating myself.' ) ); ?>" data-taka-label-multi="<?php echo esc_attr( self::text( 'ticketing.copy_buyer_to_first_participant', 'Use buyer data for the first participant.', $lang ) ); ?>"> <span data-taka-participant-self-label><?php echo esc_html( taka_tour_translate( 'ticketing.participating_myself', 'I am participating myself.' ) ); ?></span></label>
 			</section>
 			<section class="taka-native-checkout__step" data-taka-checkout-step-panel="2" data-taka-single-participant-section>
 				<h4><?php echo esc_html( taka_tour_translate( 'ticketing.participant_information', 'Participant information' ) ); ?></h4>
-				<label class="taka-native-checkout__checkbox"><input type="checkbox" name="self_participates" value="1" <?php checked( ! empty( $prefill['participant_is_buyer'] ) ); ?> data-taka-participant-self> <span><?php echo esc_html( taka_tour_translate( 'ticketing.participating_myself', 'I am participating myself.' ) ); ?></span></label>
 				<div class="taka-native-checkout__grid" data-taka-participant-identity-fields>
 					<?php self::frontend_input( 'participant_first_name', taka_tour_translate( 'ticketing.first_name', 'First name' ), 'text', false, $prefill['participant']['first_name'] ?? '', array( 'autocomplete' => 'given-name' ) ); ?>
 					<?php self::frontend_input( 'participant_last_name', taka_tour_translate( 'ticketing.last_name', 'Last name' ), 'text', false, $prefill['participant']['last_name'] ?? '', array( 'autocomplete' => 'family-name' ) ); ?>
@@ -1142,7 +1144,7 @@ class TAKA_Ticketing_Module {
 	private static function render_checkout_progress( $active_step = 1, $lang = null, $interactive = true ) {
 		$active_step = min( 4, max( 1, absint( $active_step ) ) );
 		$steps = array(
-			1 => self::text( 'ticketing.step_select_ticket', 'Select ticket', $lang ),
+			1 => self::text( 'ticketing.step_select_ticket', 'Booking', $lang ),
 			2 => self::text( 'ticketing.step_participant', 'Participant', $lang ),
 			3 => self::text( 'ticketing.step_review', 'Review', $lang ),
 			4 => self::text( 'ticketing.step_confirmation', 'Confirmation', $lang ),

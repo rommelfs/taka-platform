@@ -83,14 +83,26 @@
 	function syncParticipantFields(root) {
 		var checkbox = root.querySelector('[data-taka-participant-self]');
 		var fields = root.querySelector('[data-taka-participant-identity-fields]');
+		syncParticipantSelfLabel(root);
 		if (!checkbox || !fields) {
 			return;
 		}
 		if (checkbox.checked) {
-			copyBuyerToParticipant(root);
+			copyBuyerToParticipantSelection(root);
 		}
-		fields.hidden = checkbox.checked;
+		fields.hidden = checkbox.checked && ticketQuantity(root) <= 1;
 		refreshCheckoutReview(root);
+	}
+
+	function syncParticipantSelfLabel(root) {
+		var checkbox = root.querySelector('[data-taka-participant-self]');
+		var label = root.querySelector('[data-taka-participant-self-label]');
+		if (!checkbox || !label) {
+			return;
+		}
+		label.textContent = ticketQuantity(root) > 1
+			? (checkbox.getAttribute('data-taka-label-multi') || label.textContent)
+			: (checkbox.getAttribute('data-taka-label-single') || label.textContent);
 	}
 
 	function copyBuyerToParticipant(root) {
@@ -106,6 +118,31 @@
 				target.value = source.value;
 			}
 		});
+	}
+
+	function copyBuyerToFirstTicketParticipant(root) {
+		var firstRow = root.querySelector('[data-taka-ticket-participant-row="0"]');
+		if (!firstRow) {
+			return;
+		}
+		var defaults = buyerParticipantDefaults(root);
+		Object.keys(defaults).forEach(function (fieldKey) {
+			if ('dojo' === fieldKey || 'rank' === fieldKey || 'dietary_preference' === fieldKey) {
+				return;
+			}
+			var target = firstRow.querySelector('[data-taka-ticket-participant-field="' + fieldKey + '"]');
+			if (target) {
+				target.value = defaults[fieldKey] || '';
+			}
+		});
+	}
+
+	function copyBuyerToParticipantSelection(root) {
+		if (ticketQuantity(root) > 1) {
+			copyBuyerToFirstTicketParticipant(root);
+			return;
+		}
+		copyBuyerToParticipant(root);
 	}
 
 	function syncDietaryNote(root) {
@@ -292,6 +329,7 @@
 		var quantity = ticketQuantity(root);
 		var multi = root.querySelector('[data-taka-multi-participant-section]');
 		var single = root.querySelector('[data-taka-single-participant-section]');
+		syncParticipantSelfLabel(root);
 		if (!multi || !single) {
 			return;
 		}
@@ -318,8 +356,13 @@
 		target.innerHTML = '';
 		for (var index = 0; index < quantity; index++) {
 			var rowData = prefill[index] || {};
-			if (0 === index && !rowData.first_name && !rowData.last_name && root.querySelector('[data-taka-participant-self]:checked')) {
-				rowData = Object.assign({}, buyerDefaults, rowData);
+			if (0 === index && root.querySelector('[data-taka-participant-self]:checked')) {
+				rowData = Object.assign({}, rowData, {
+					first_name: buyerDefaults.first_name,
+					last_name: buyerDefaults.last_name,
+					email: buyerDefaults.email,
+					country: buyerDefaults.country
+				});
 			}
 			var article = document.createElement('article');
 			article.className = 'taka-native-participant-card';
@@ -345,6 +388,9 @@
 		setSectionDisabled(single, true);
 		multi.hidden = false;
 		setSectionDisabled(multi, false);
+		if (root.querySelector('[data-taka-participant-self]:checked')) {
+			copyBuyerToFirstTicketParticipant(root);
+		}
 		refreshCheckoutReview(root);
 	}
 
@@ -742,7 +788,7 @@
 			refreshCheckoutReview(root);
 		} else {
 			if (root.querySelector('[data-taka-participant-self]:checked')) {
-				copyBuyerToParticipant(root);
+				copyBuyerToParticipantSelection(root);
 			}
 			refreshCheckoutReview(root);
 		}
@@ -785,7 +831,7 @@
 				requestPricing(root, false);
 			}
 			if (root.querySelector('[data-taka-participant-self]:checked')) {
-				copyBuyerToParticipant(root);
+				copyBuyerToParticipantSelection(root);
 			}
 			refreshCheckoutReview(root);
 		}
@@ -806,7 +852,7 @@
 			return;
 		}
 		if (root.querySelector('[data-taka-participant-self]:checked')) {
-			copyBuyerToParticipant(root);
+			copyBuyerToParticipantSelection(root);
 		}
 	});
 }());
