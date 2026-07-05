@@ -107,7 +107,13 @@ class TAKA_Ticketing_Order_Repository implements TAKA_Ticketing_Order_Repository
 			if ( 'cancelled' === (string) ( $data['order_status'] ?? '' ) ) {
 				continue;
 			}
-			$count++;
+			$quantity = 0;
+			foreach ( (array) ( $data['line_items'] ?? array() ) as $item ) {
+				if ( 'ticket' === (string) ( $item['item_type'] ?? '' ) && (string) ( $item['ticket_type_id'] ?? '' ) === (string) $ticket_type_id ) {
+					$quantity += max( 1, absint( $item['quantity'] ?? 1 ) );
+				}
+			}
+			$count += $quantity > 0 ? $quantity : 1;
 		}
 		return $count;
 	}

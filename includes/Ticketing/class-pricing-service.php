@@ -10,11 +10,11 @@
 defined( 'ABSPATH' ) || exit;
 
 class TAKA_Ticketing_Pricing_Service {
-	public static function quote( $event_id, $ticket_type, $buyer_email = '', $promotion_code = '', $lang = null, $product_items = array() ) {
+	public static function quote( $event_id, $ticket_type, $buyer_email = '', $promotion_code = '', $lang = null, $product_items = array(), $ticket_quantity = 1 ) {
 		$ticket_type = is_array( $ticket_type ) ? $ticket_type : array();
 		$line_items = array();
 		if ( ! empty( $ticket_type ) ) {
-			$line_items[] = self::ticket_line_item( $event_id, $ticket_type );
+			$line_items[] = self::ticket_line_item( $event_id, $ticket_type, $ticket_quantity );
 		}
 		foreach ( (array) $product_items as $item ) {
 			if ( is_array( $item ) && 'product' === (string) ( $item['item_type'] ?? '' ) ) {
@@ -109,16 +109,18 @@ class TAKA_Ticketing_Pricing_Service {
 		return (float) $amount;
 	}
 
-	public static function ticket_line_item( $event_id, $ticket_type ) {
+	public static function ticket_line_item( $event_id, $ticket_type, $quantity = 1 ) {
 		$ticket_type = is_array( $ticket_type ) ? $ticket_type : array();
+		$quantity = max( 1, absint( $quantity ) );
 		$unit = self::normalize_money( $ticket_type['price'] ?? '0' );
+		$total = self::normalize_money( self::money_to_float( $unit ) * $quantity );
 		return array(
 			'item_type'        => 'ticket',
 			'ticket_type_id'   => sanitize_key( $ticket_type['id'] ?? '' ),
 			'title'            => sanitize_text_field( $ticket_type['name'] ?? '' ),
-			'quantity'         => 1,
+			'quantity'         => $quantity,
 			'unit_price'       => $unit,
-			'total_price'      => $unit,
+			'total_price'      => $total,
 			'currency'         => TAKA_Platform_Data::normalize_event_option_value( 'currency', $ticket_type['currency'] ?? 'EUR' ) ?: 'EUR',
 			'related_event_id' => absint( $event_id ),
 		);

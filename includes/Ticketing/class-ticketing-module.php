@@ -870,14 +870,14 @@ class TAKA_Ticketing_Module {
 	private static function checkout_prefill_from_order( $order = null ) {
 		$prefill = array(
 			'ticket_type_id'      => '',
+			'ticket_quantity'     => 1,
+			'ticket_recipient_emails' => '',
 			'payment_method'      => '',
 			'promotion_code'      => '',
 			'buyer'               => array(),
 			'participant'         => array(),
 			'participant_is_buyer' => true,
 			'product_quantities'  => array(),
-			'product_recipient_emails' => array(),
-			'standalone_product_recipient_emails' => '',
 			'standalone_product_quantity' => 1,
 		);
 		if ( ! $order instanceof TAKA_Ticketing_Order ) {
@@ -887,9 +887,17 @@ class TAKA_Ticketing_Module {
 		$data = $order->to_array();
 		$buyer = is_array( $data['buyer'] ?? null ) ? $data['buyer'] : array();
 		$participant = is_array( $data['participant'] ?? null ) ? $data['participant'] : array();
+		$ticket_quantity = 1;
+		$ticket_recipient_emails = '';
 		$product_quantities = array();
-		$product_recipient_emails = array();
 		foreach ( (array) ( $data['line_items'] ?? array() ) as $item ) {
+			if ( 'ticket' === (string) ( $item['item_type'] ?? '' ) ) {
+				$ticket_quantity = max( 1, absint( $item['quantity'] ?? 1 ) );
+				if ( ! empty( $item['recipient_emails'] ) && is_array( $item['recipient_emails'] ) ) {
+					$ticket_recipient_emails = implode( "\n", array_map( 'sanitize_email', $item['recipient_emails'] ) );
+				}
+				continue;
+			}
 			if ( 'product' !== (string) ( $item['item_type'] ?? '' ) ) {
 				continue;
 			}
@@ -898,9 +906,6 @@ class TAKA_Ticketing_Module {
 				continue;
 			}
 			$product_quantities[ $product_id ] = absint( $product_quantities[ $product_id ] ?? 0 ) + max( 1, absint( $item['quantity'] ?? 1 ) );
-			if ( ! empty( $item['recipient_emails'] ) && is_array( $item['recipient_emails'] ) ) {
-				$product_recipient_emails[ $product_id ] = implode( "\n", array_map( 'sanitize_email', $item['recipient_emails'] ) );
-			}
 		}
 
 		$payment_method = (string) ( $data['payment_method'] ?? '' );
@@ -910,14 +915,14 @@ class TAKA_Ticketing_Module {
 
 		return array(
 			'ticket_type_id'      => (string) ( $data['ticket_type_id'] ?? '' ),
+			'ticket_quantity'     => $ticket_quantity,
+			'ticket_recipient_emails' => $ticket_recipient_emails,
 			'payment_method'      => $payment_method,
 			'promotion_code'      => (string) ( $data['applied_voucher_code'] ?? '' ),
 			'buyer'               => $buyer,
 			'participant'         => $participant,
 			'participant_is_buyer' => self::prefill_participant_is_buyer( $buyer, $participant ),
 			'product_quantities'  => $product_quantities,
-			'product_recipient_emails' => $product_recipient_emails,
-			'standalone_product_recipient_emails' => (string) reset( $product_recipient_emails ),
 			'standalone_product_quantity' => max( 1, absint( reset( $product_quantities ) ?: 1 ) ),
 		);
 	}
@@ -965,7 +970,6 @@ class TAKA_Ticketing_Module {
 				<?php else : ?>
 					<input type="hidden" name="standalone_product_quantity" value="1">
 				<?php endif; ?>
-				<?php self::frontend_textarea( 'standalone_product_recipient_emails', self::text( 'ticketing.ticket_recipient_emails', 'Ticket recipient emails (optional)', $lang ), array( 'placeholder' => self::text( 'ticketing.ticket_recipient_emails_placeholder', 'Optional: one email address per ticket', $lang ) ), $prefill['standalone_product_recipient_emails'] ?? '' ); ?>
 			</section>
 			<section class="taka-native-checkout__step" data-taka-checkout-step-panel="2">
 				<h4><?php echo esc_html( self::text( 'ticketing.buyer_information', 'Buyer information', $lang ) ); ?></h4>
@@ -1033,12 +1037,16 @@ class TAKA_Ticketing_Module {
 					<?php foreach ( $ticket_types as $index => $ticket_type ) : ?>
 						<?php $availability = self::ticket_availability( $event_id, $ticket_type ); ?>
 						<label class="taka-native-ticket-option">
-							<input type="radio" name="ticket_type_id" value="<?php echo esc_attr( $ticket_type['id'] ); ?>" data-taka-ticket-name="<?php echo esc_attr( $ticket_type['name'] ); ?>" data-taka-ticket-price="<?php echo esc_attr( self::format_money( $ticket_type['price'], $ticket_type['currency'] ) ); ?>" data-taka-ticket-unit="<?php echo esc_attr( TAKA_Ticketing_Pricing_Service::normalize_money( $ticket_type['price'] ) ); ?>" <?php checked( ( '' !== $prefill['ticket_type_id'] && $prefill['ticket_type_id'] === (string) $ticket_type['id'] ) || ( '' === $prefill['ticket_type_id'] && ( $single_ticket || 0 === $index ) ) ); ?> required>
+							<input type="radio" name="ticket_type_id" value="<?php echo esc_attr( $ticket_type['id'] ); ?>" data-taka-ticket-name="<?php echo esc_attr( $ticket_type['name'] ); ?>" data-taka-ticket-price="<?php echo esc_attr( self::format_money( $ticket_type['price'], $ticket_type['currency'] ) ); ?>" data-taka-ticket-unit="<?php echo esc_attr( TAKA_Ticketing_Pricing_Service::normalize_money( $ticket_type['price'] ) ); ?>" data-taka-ticket-currency="<?php echo esc_attr( $ticket_type['currency'] ); ?>" data-taka-ticket-max="<?php echo esc_attr( null === ( $availability['remaining'] ?? null ) ? '' : (string) max( 1, absint( $availability['remaining'] ) ) ); ?>" <?php checked( ( '' !== $prefill['ticket_type_id'] && $prefill['ticket_type_id'] === (string) $ticket_type['id'] ) || ( '' === $prefill['ticket_type_id'] && ( $single_ticket || 0 === $index ) ) ); ?> required>
 							<span><strong><?php echo esc_html( $ticket_type['name'] ); ?></strong><?php if ( '' !== trim( (string) $ticket_type['description'] ) ) : ?><em><?php echo esc_html( $ticket_type['description'] ); ?></em><?php endif; ?></span>
 							<span><?php echo esc_html( self::format_money( $ticket_type['price'], $ticket_type['currency'] ) ); ?></span>
 							<small><?php echo esc_html( self::availability_label( $availability ) ); ?></small>
 						</label>
 					<?php endforeach; ?>
+				</div>
+				<div class="taka-native-checkout__grid">
+					<?php self::frontend_input( 'ticket_quantity', self::text( 'ticketing.ticket_quantity', 'Number of tickets', $lang ), 'number', true, $prefill['ticket_quantity'] ?? 1, array( 'min' => '1', 'step' => '1', 'data-taka-ticket-quantity' => '1' ) ); ?>
+					<?php self::frontend_textarea( 'ticket_recipient_emails', self::text( 'ticketing.ticket_recipient_emails', 'Ticket recipient emails (optional)', $lang ), array( 'placeholder' => self::text( 'ticketing.ticket_recipient_emails_placeholder', 'Optional: one email address per ticket', $lang ) ), $prefill['ticket_recipient_emails'] ?? '' ); ?>
 				</div>
 			</section>
 			<?php if ( ! empty( $add_on_products ) ) : ?>
@@ -1057,7 +1065,6 @@ class TAKA_Ticketing_Module {
 								<span><?php echo esc_html( self::format_money( $product['price'], $product['currency'] ) ); ?></span>
 								<small><?php echo esc_html( self::availability_label( $availability ) ); ?></small>
 							</label>
-							<?php self::frontend_textarea( 'product_recipient_emails[' . $product['product_id'] . ']', self::text( 'ticketing.ticket_recipient_emails', 'Ticket recipient emails (optional)', $lang ), array( 'placeholder' => self::text( 'ticketing.ticket_recipient_emails_placeholder', 'Optional: one email address per ticket', $lang ), 'data-taka-product-recipient-emails' => '1' ), $prefill['product_recipient_emails'][ $product['product_id'] ] ?? '' ); ?>
 						<?php endforeach; ?>
 					</div>
 				</section>
@@ -1369,17 +1376,22 @@ class TAKA_Ticketing_Module {
 		$promotion_code = sanitize_text_field( wp_unslash( $_POST['promotion_code'] ?? '' ) );
 		$buyer_email = sanitize_email( wp_unslash( $_POST['buyer_email'] ?? '' ) );
 		$product_quantities = isset( $_POST['product_quantities'] ) && is_array( $_POST['product_quantities'] ) ? wp_unslash( $_POST['product_quantities'] ) : array();
+		$ticket_quantity = max( 1, absint( $_POST['ticket_quantity'] ?? 1 ) );
 
 		$ticket_type = self::find_ticket_type( $event_id, $ticket_type_id );
 		if ( ! $ticket_type ) {
 			wp_send_json_error( array( 'message' => self::text( 'ticketing.error_ticket_missing', 'Ticket type not found.', $lang ) ), 404 );
+		}
+		$ticket_availability = self::ticket_availability( $event_id, $ticket_type );
+		if ( null !== ( $ticket_availability['remaining'] ?? null ) && $ticket_quantity > max( 0, absint( $ticket_availability['remaining'] ) ) ) {
+			wp_send_json_error( array( 'message' => self::text( 'ticketing.error_ticket_capacity', 'The selected ticket quantity is no longer available.', $lang ) ), 400 );
 		}
 		$product_items = self::product_line_items_from_quantities( $event_id, $product_quantities, $lang );
 		if ( is_wp_error( $product_items ) ) {
 			wp_send_json_error( array( 'message' => $product_items->get_error_message() ), 400 );
 		}
 
-		$quote = TAKA_Ticketing_Pricing_Service::quote( $event_id, $ticket_type, $buyer_email, $promotion_code, $lang, $product_items );
+		$quote = TAKA_Ticketing_Pricing_Service::quote( $event_id, $ticket_type, $buyer_email, $promotion_code, $lang, $product_items, $ticket_quantity );
 		if ( is_wp_error( $quote ) ) {
 			wp_send_json_error( array( 'message' => $quote->get_error_message() ), 400 );
 		}

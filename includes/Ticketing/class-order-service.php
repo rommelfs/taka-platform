@@ -10,6 +10,7 @@ class TAKA_Ticketing_Order_Service {
 		$posted = is_array( $posted ) ? $posted : array();
 		$event_id = absint( $posted['event_id'] ?? 0 );
 		$ticket_type_id = sanitize_key( $posted['ticket_type_id'] ?? '' );
+		$ticket_quantity = max( 1, absint( $posted['ticket_quantity'] ?? 1 ) );
 		$standalone_product_id = TAKA_Ticketing_Product::normalize_product_id( $posted['standalone_product_id'] ?? '' );
 		$payment_method = sanitize_key( $posted['payment_method'] ?? '' );
 		$lang = self::language_from_post( $posted );
@@ -35,9 +36,7 @@ class TAKA_Ticketing_Order_Service {
 			if ( $quantity > $max ) {
 				return new WP_Error( 'taka_ticketing_product_capacity', TAKA_Ticketing_Module::text( 'ticketing.error_product_capacity', 'The selected add-on quantity is no longer available.', $lang ) );
 			}
-			$item = TAKA_Ticketing_Product::line_item_from_product( $standalone_product, $quantity, $event_id );
-			$item['recipient_emails'] = self::recipient_emails_from_value( $posted['standalone_product_recipient_emails'] ?? '', $quantity );
-			$product_items[] = $item;
+			$product_items[] = TAKA_Ticketing_Product::line_item_from_product( $standalone_product, $quantity, $event_id );
 		} else {
 			if ( ! $event_id || ! get_post( $event_id ) ) {
 				return new WP_Error( 'taka_ticketing_event_missing', TAKA_Ticketing_Module::text( 'ticketing.error_event_missing', 'Event not found.', $lang ) );
@@ -53,6 +52,9 @@ class TAKA_Ticketing_Order_Service {
 			$availability = TAKA_Ticketing_Module::ticket_availability( $event_id, $ticket_type );
 			if ( empty( $availability['available'] ) ) {
 				return new WP_Error( 'taka_ticketing_ticket_unavailable', TAKA_Ticketing_Module::text( 'ticketing.error_ticket_unavailable', 'This ticket type is no longer available.', $lang ) );
+			}
+			if ( null !== ( $availability['remaining'] ?? null ) && $ticket_quantity > max( 0, absint( $availability['remaining'] ) ) ) {
+				return new WP_Error( 'taka_ticketing_ticket_capacity', TAKA_Ticketing_Module::text( 'ticketing.error_ticket_capacity', 'The selected ticket quantity is no longer available.', $lang ) );
 			}
 			$product_items = self::product_line_items_from_post( $posted, $event_id, $lang );
 			if ( is_wp_error( $product_items ) ) {
@@ -79,7 +81,7 @@ class TAKA_Ticketing_Order_Service {
 			return new WP_Error( 'taka_ticketing_terms', TAKA_Ticketing_Module::text( 'ticketing.error_terms', 'Please accept the terms and privacy notice.', $lang ) );
 		}
 
-		$pricing = TAKA_Ticketing_Pricing_Service::quote( $event_id, $ticket_type, $buyer['email'] ?? '', $posted['promotion_code'] ?? '', $lang, $product_items );
+		$pricing = TAKA_Ticketing_Pricing_Service::quote( $event_id, $ticket_type, $buyer['email'] ?? '', $posted['promotion_code'] ?? '', $lang, $product_items, $ticket_quantity );
 		if ( is_wp_error( $pricing ) ) {
 			return $pricing;
 		}
@@ -107,7 +109,7 @@ class TAKA_Ticketing_Order_Service {
 			);
 		}
 		$line_items = is_array( $pricing['line_items'] ?? null ) ? $pricing['line_items'] : array();
-		$line_items = self::line_items_with_default_recipients( $line_items, $buyer, $participant );
+		$line_items = self::line_items_with_ticket_recipients( $line_items, $buyer, $participant, self::recipient_emails_from_value( $posted['ticket_recipient_emails'] ?? '', $ticket_quantity ) );
 		if ( TAKA_Ticketing_Pricing_Service::money_to_float( $pricing['discount_amount'] ?? '0' ) > 0 ) {
 			$line_items[] = array(
 				'item_type'        => 'discount',
@@ -299,14 +301,12 @@ class TAKA_Ticketing_Order_Service {
 			if ( $quantity > $max ) {
 				return new WP_Error( 'taka_ticketing_product_capacity', TAKA_Ticketing_Module::text( 'ticketing.error_product_capacity', 'The selected add-on quantity is no longer available.', $lang ) );
 			}
-			$item = TAKA_Ticketing_Product::line_item_from_product( $product, $quantity, $event_id );
-			$item['recipient_emails'] = self::product_recipient_emails_from_post( $posted, $product_id, $quantity );
-			$items[] = $item;
+			$items[] = TAKA_Ticketing_Product::line_item_from_product( $product, $quantity, $event_id );
 		}
 		return $items;
 	}
 
-	private static function line_items_with_default_recipients( $line_items, $buyer, $participant ) {
+	private static function line_items_with_ticket_recipients( $line_items, $buyer, $participant, $ticket_recipient_emails ) {
 		foreach ( $line_items as $index => $item ) {
 			if ( 'ticket' !== (string) ( $item['item_type'] ?? '' ) || ! empty( $item['recipient_emails'] ) ) {
 				continue;
@@ -315,14 +315,13 @@ class TAKA_Ticketing_Order_Service {
 			if ( '' === $email ) {
 				$email = sanitize_email( $buyer['email'] ?? '' );
 			}
-			$line_items[ $index ]['recipient_emails'] = '' !== $email ? array( $email ) : array();
+			$recipients = (array) $ticket_recipient_emails;
+			if ( '' !== $email ) {
+				$recipients[] = $email;
+			}
+			$line_items[ $index ]['recipient_emails'] = array_values( array_unique( array_filter( $recipients ) ) );
 		}
 		return $line_items;
-	}
-
-	private static function product_recipient_emails_from_post( $posted, $product_id, $quantity ) {
-		$values = isset( $posted['product_recipient_emails'] ) && is_array( $posted['product_recipient_emails'] ) ? $posted['product_recipient_emails'] : array();
-		return self::recipient_emails_from_value( $values[ $product_id ] ?? '', $quantity );
 	}
 
 	private static function recipient_emails_from_value( $value, $limit = 0 ) {

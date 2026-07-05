@@ -171,6 +171,28 @@
 		return root.querySelector('[name="ticket_type_id"]:checked');
 	}
 
+	function ticketQuantity(root) {
+		var field = root.querySelector('[data-taka-ticket-quantity]');
+		return field ? Math.max(1, parseInt(field.value || '1', 10) || 1) : 1;
+	}
+
+	function syncTicketQuantityBounds(root) {
+		var ticket = selectedTicket(root);
+		var field = root.querySelector('[data-taka-ticket-quantity]');
+		if (!ticket || !field) {
+			return;
+		}
+		var max = parseInt(ticket.getAttribute('data-taka-ticket-max') || '0', 10) || 0;
+		if (max > 0) {
+			field.max = String(max);
+			if ((parseInt(field.value || '1', 10) || 1) > max) {
+				field.value = String(max);
+			}
+		} else {
+			field.removeAttribute('max');
+		}
+	}
+
 	function setPromotionMessage(root, message, isError) {
 		var target = root.querySelector('[data-taka-promotion-message]');
 		if (!target) {
@@ -268,7 +290,7 @@
 
 	function shouldRefreshPricingOnInit(root) {
 		var code = root.querySelector('[data-taka-promotion-code]');
-		return collectProductQuantities(root).length > 0 || !!(code && code.value.trim());
+		return ticketQuantity(root) > 1 || collectProductQuantities(root).length > 0 || !!(code && code.value.trim());
 	}
 
 	function requestPricing(root, requirePromotionCode) {
@@ -294,6 +316,7 @@
 		body.set('nonce', form.getAttribute('data-taka-promotion-nonce') || '');
 		body.set('event_id', fieldValue(root, 'event_id'));
 		body.set('ticket_type_id', ticket.value);
+		body.set('ticket_quantity', String(ticketQuantity(root)));
 		body.set('promotion_code', value);
 		body.set('buyer_email', fieldValue(root, 'buyer_email'));
 		body.set('language', fieldValue(root, 'language'));
@@ -337,6 +360,7 @@
 	function refreshCheckoutReview(root) {
 		refreshStandaloneReview(root);
 		var ticket = selectedTicket(root);
+		var quantity = ticketQuantity(root);
 		var payment = root.querySelector('[name="payment_method"]:checked');
 		var quote = root._takaPromotionQuote || null;
 		var buyerName = fullName(fieldValue(root, 'buyer_first_name'), fieldValue(root, 'buyer_last_name'));
@@ -349,8 +373,8 @@
 			participantName = fullName(fieldValue(root, 'participant_first_name'), fieldValue(root, 'participant_last_name'));
 		}
 
-		setReview(root, '[data-taka-review-ticket]', ticket ? ticket.getAttribute('data-taka-ticket-name') : '');
-		setReview(root, '[data-taka-review-price]', ticket ? ticket.getAttribute('data-taka-ticket-price') : '');
+		setReview(root, '[data-taka-review-ticket]', ticket ? ((quantity > 1 ? quantity + ' x ' : '') + ticket.getAttribute('data-taka-ticket-name')) : '');
+		setReview(root, '[data-taka-review-price]', ticket ? fallbackTicketTotal(ticket, quantity) : '');
 		renderReviewLineItems(root, quote);
 		setReviewRow(root, '[data-taka-review-promotion-row]', !!(quote && quote.promotion_code));
 		setReview(root, '[data-taka-review-promotion]', quote && quote.promotion_code ? quote.promotion_code : '');
@@ -364,7 +388,31 @@
 		} else {
 			setReview(root, '[data-taka-review-payment]', payment ? payment.getAttribute('data-taka-payment-label') : '');
 		}
-		setReview(root, '[data-taka-review-total]', quote && quote.final_amount_display ? quote.final_amount_display : (ticket ? ticket.getAttribute('data-taka-ticket-price') : ''));
+		setReview(root, '[data-taka-review-total]', quote && quote.final_amount_display ? quote.final_amount_display : fallbackCheckoutTotal(root, ticket, quantity));
+	}
+
+	function fallbackTicketTotal(ticket, quantity) {
+		if (!ticket) {
+			return '';
+		}
+		var unit = parseFloat(ticket.getAttribute('data-taka-ticket-unit') || '0') || 0;
+		var currency = ticket.getAttribute('data-taka-ticket-currency') || 'EUR';
+		return formatMoney(unit * Math.max(1, quantity || 1), currency);
+	}
+
+	function fallbackCheckoutTotal(root, ticket, quantity) {
+		if (!ticket) {
+			return '';
+		}
+		var currency = ticket.getAttribute('data-taka-ticket-currency') || 'EUR';
+		var total = (parseFloat(ticket.getAttribute('data-taka-ticket-unit') || '0') || 0) * Math.max(1, quantity || 1);
+		collectProductQuantities(root).forEach(function (item) {
+			var field = root.querySelector('[data-taka-product-id="' + item.id + '"]');
+			if (field) {
+				total += (parseFloat(field.getAttribute('data-taka-product-unit') || '0') || 0) * item.quantity;
+			}
+		});
+		return formatMoney(total, currency);
 	}
 
 	function checkoutForm(root) {
@@ -506,6 +554,7 @@
 
 	document.querySelectorAll('[data-taka-native-checkout]').forEach(function (root) {
 		syncCheckoutRedirect(root);
+		syncTicketQuantityBounds(root);
 		syncParticipantFields(root);
 		syncDietaryNote(root);
 		refreshCheckoutReview(root);
@@ -521,7 +570,8 @@
 		if (!root) {
 			return;
 		}
-		if (event.target.matches('[name="ticket_type_id"], [data-taka-product-quantity]')) {
+		if (event.target.matches('[name="ticket_type_id"], [data-taka-ticket-quantity], [data-taka-product-quantity]')) {
+			syncTicketQuantityBounds(root);
 			requestPricing(root, false);
 		} else if (event.target.matches('[data-taka-participant-self]')) {
 			syncParticipantFields(root);
@@ -568,7 +618,7 @@
 		if (root) {
 			if (event.target.matches('[data-taka-promotion-code]')) {
 				clearPromotion(root, '');
-			} else if (event.target.matches('[data-taka-product-quantity]')) {
+			} else if (event.target.matches('[data-taka-ticket-quantity], [data-taka-product-quantity]')) {
 				requestPricing(root, false);
 			}
 			if (root.querySelector('[data-taka-participant-self]:checked')) {
