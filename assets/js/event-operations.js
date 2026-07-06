@@ -26,6 +26,248 @@
     console.warn(logPrefix + context, data || '');
   }
 
+  function formatDetail(detail) {
+    if (!detail) {
+      return '';
+    }
+    if (detail instanceof Error) {
+      return detail.name ? detail.name + ': ' + detail.message : detail.message;
+    }
+    if ('string' === typeof detail) {
+      return detail;
+    }
+    try {
+      return JSON.stringify(detail);
+    } catch (error) {
+      return String(detail);
+    }
+  }
+
+  function debugTime() {
+    return new Date().toLocaleTimeString([], { hour12: false });
+  }
+
+  function appendDebug(root, message, detail) {
+    var target = root.querySelector('[data-taka-debug-log]');
+    var line = debugTime() + ' ' + message;
+    var formatted = formatDetail(detail);
+
+    if (formatted) {
+      line += ': ' + formatted;
+    }
+    root._takaDebugEntries = root._takaDebugEntries || [];
+    root._takaDebugEntries.push(line);
+    if (target) {
+      target.textContent = root._takaDebugEntries.join("\n");
+      target.scrollTop = target.scrollHeight;
+    }
+    if (detail) {
+      console.log(logPrefix + message, detail);
+    } else {
+      console.log(logPrefix + message);
+    }
+  }
+
+  function renderDiagnostics(root) {
+    var target = root.querySelector('[data-taka-camera-status]');
+    var order = root._takaDiagnosticOrder || [];
+    var values = root._takaDiagnostics || {};
+
+    if (!target) {
+      return;
+    }
+    target.innerHTML = '';
+    order.forEach(function (key) {
+      var item = values[key];
+      var row;
+      var badge;
+      var text;
+
+      if (!item || !item.text) {
+        return;
+      }
+      row = document.createElement('li');
+      row.className = 'is-' + (item.state || 'info');
+      badge = document.createElement('span');
+      badge.className = 'taka-operations-camera-diagnostics__badge';
+      badge.textContent = 'warning' === item.state ? 'Warn' : ('error' === item.state ? 'Error' : ('ok' === item.state ? 'OK' : 'Info'));
+      text = document.createElement('span');
+      text.textContent = item.text;
+      row.appendChild(badge);
+      row.appendChild(text);
+      target.appendChild(row);
+    });
+  }
+
+  function setDiagnostic(root, key, state, text) {
+    root._takaDiagnostics = root._takaDiagnostics || {};
+    root._takaDiagnosticOrder = root._takaDiagnosticOrder || [];
+    if (root._takaDiagnosticOrder.indexOf(key) === -1) {
+      root._takaDiagnosticOrder.push(key);
+    }
+    root._takaDiagnostics[key] = {
+      state: state || 'info',
+      text: text || ''
+    };
+    renderDiagnostics(root);
+  }
+
+  function replacePlaceholder(template, value) {
+    return template.replace('%s', value).replace('%d', value);
+  }
+
+  function browserInfo() {
+    var ua = window.navigator.userAgent || '';
+    var browser = 'Unknown browser';
+    var os = 'Unknown OS';
+    var match;
+
+    if ((match = ua.match(/Edg\/([\d.]+)/))) {
+      browser = 'Microsoft Edge ' + match[1];
+    } else if ((match = ua.match(/CriOS\/([\d.]+)/))) {
+      browser = 'Chrome iOS ' + match[1];
+    } else if ((match = ua.match(/Chrome\/([\d.]+)/))) {
+      browser = 'Chrome ' + match[1];
+    } else if ((match = ua.match(/Firefox\/([\d.]+)/))) {
+      browser = 'Firefox ' + match[1];
+    } else if ((match = ua.match(/Version\/([\d.]+).*Safari/))) {
+      browser = 'Safari ' + match[1];
+    }
+
+    if (/iPhone|iPad|iPod/.test(ua)) {
+      os = 'iOS';
+    } else if (/Android/.test(ua)) {
+      os = 'Android';
+    } else if (/Mac OS X/.test(ua)) {
+      os = 'macOS';
+    } else if (/Windows NT/.test(ua)) {
+      os = 'Windows';
+    } else if (/Linux/.test(ua)) {
+      os = 'Linux';
+    }
+
+    return {
+      browser: browser,
+      os: os,
+      userAgent: ua
+    };
+  }
+
+  function initializeDiagnostics(root) {
+    var info = browserInfo();
+    var supportsMedia = !!(window.navigator.mediaDevices && window.navigator.mediaDevices.getUserMedia);
+    var secure = !!window.isSecureContext || ['localhost', '127.0.0.1', '::1'].indexOf(window.location.hostname) !== -1;
+
+    root._takaDebugEntries = root._takaDebugEntries || [];
+    setDiagnostic(root, 'browser', 'info', replacePlaceholder(label(root, 'browser-label', 'Browser: %s'), info.browser));
+    setDiagnostic(root, 'os', 'info', replacePlaceholder(label(root, 'os-label', 'Operating system: %s'), info.os));
+    setDiagnostic(root, 'secure-context', secure ? 'ok' : 'error', replacePlaceholder(label(root, 'secure-context-label', 'Secure Context: %s'), secure ? 'true' : 'false'));
+    setDiagnostic(root, 'https', secure ? 'ok' : 'error', label(root, secure ? 'https-ok' : 'https-fail', secure ? 'HTTPS or localhost detected.' : 'Secure context missing.'));
+    setDiagnostic(root, 'get-user-media', supportsMedia ? 'ok' : 'error', label(root, supportsMedia ? 'get-user-media-ok' : 'get-user-media-fail', supportsMedia ? 'Browser supports getUserMedia.' : 'getUserMedia not supported.'));
+    setDiagnostic(root, 'barcode-detector', 'BarcodeDetector' in window ? 'ok' : 'warning', label(root, 'BarcodeDetector' in window ? 'barcode-ok' : 'barcode-fallback', 'BarcodeDetector not available (using html5-qrcode fallback).'));
+    setDiagnostic(root, 'html5-qrcode', window.Html5Qrcode ? 'ok' : 'warning', label(root, window.Html5Qrcode ? 'html5-ok' : 'html5-fail', window.Html5Qrcode ? 'html5-qrcode loaded.' : 'html5-qrcode not loaded.'));
+    appendDebug(root, 'Diagnostics initialized', { eventId: root.getAttribute('data-event-id'), browser: info.browser, os: info.os, secureContext: window.isSecureContext });
+  }
+
+  function enumerateCameras(root) {
+    appendDebug(root, 'Enumerating devices');
+    if (!window.navigator.mediaDevices || !window.navigator.mediaDevices.enumerateDevices) {
+      setDiagnostic(root, 'camera-count', 'error', label(root, 'camera-not-found', 'No camera device found.'));
+      return Promise.resolve([]);
+    }
+    return window.navigator.mediaDevices.enumerateDevices().then(function (devices) {
+      var cameras = devices.filter(function (device) { return 'videoinput' === device.kind; });
+      appendDebug(root, 'Found cameras', cameras.length);
+      setDiagnostic(root, 'camera-count', cameras.length ? 'ok' : 'error', cameras.length ? labelCount(root, 'camera-found-count', cameras.length, 'Camera found (%d devices).') : label(root, 'camera-not-found', 'No camera device found.'));
+      return cameras;
+    }).catch(function (error) {
+      appendDebug(root, 'enumerateDevices failed', error);
+      setDiagnostic(root, 'camera-count', 'error', error.message || label(root, 'camera-not-found', 'No camera device found.'));
+      return [];
+    });
+  }
+
+  function streamLabel(stream) {
+    var track = stream && stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
+    var settings = track && track.getSettings ? track.getSettings() : {};
+    var labelText = track && track.label ? track.label : 'Camera';
+    var resolution = settings.width && settings.height ? settings.width + 'x' + settings.height : '';
+    var lower = (labelText + ' ' + (settings.facingMode || '')).toLowerCase();
+    var rear = lower.indexOf('back') !== -1 || lower.indexOf('rear') !== -1 || lower.indexOf('environment') !== -1 || lower.indexOf('rueck') !== -1;
+
+    return {
+      label: labelText,
+      resolution: resolution,
+      rear: rear,
+      settings: settings
+    };
+  }
+
+  function updateStreamDiagnostics(root, stream) {
+    var info = streamLabel(stream);
+    var cameraTemplate = label(root, info.rear ? 'rear-camera-opened' : 'camera-opened', info.rear ? 'Rear camera opened: %s' : 'Camera opened: %s');
+
+    setDiagnostic(root, 'permission', 'ok', label(root, 'permission-granted', 'Camera permission granted.'));
+    setDiagnostic(root, 'active-camera', 'ok', replacePlaceholder(cameraTemplate, info.label));
+    if (info.resolution) {
+      setDiagnostic(root, 'resolution', 'ok', replacePlaceholder(label(root, 'resolution-label', 'Resolution: %s'), info.resolution));
+    }
+    appendDebug(root, 'Camera opened', { label: info.label, resolution: info.resolution, settings: info.settings });
+  }
+
+  function diagnoseCameraError(root, error) {
+    var message = error && error._takaCameraMessage ? error._takaCameraMessage : (error && error.message ? error.message : label(root, 'camera-failed', 'Camera could not be opened.'));
+    setDiagnostic(root, 'permission', 'error', message);
+    appendDebug(root, 'getUserMedia failed', error);
+  }
+
+  function copyDebug(root) {
+    var info = browserInfo();
+    var statuses = [];
+    var values = root._takaDiagnostics || {};
+    var order = root._takaDiagnosticOrder || [];
+    var payload;
+
+    order.forEach(function (key) {
+      if (values[key] && values[key].text) {
+        statuses.push((values[key].state || 'info').toUpperCase() + ': ' + values[key].text);
+      }
+    });
+
+    payload = [
+      'TAKA Event Operations Debug',
+      'Timestamp: ' + new Date().toISOString(),
+      'Event ID: ' + (root.getAttribute('data-event-id') || ''),
+      'URL: ' + window.location.href,
+      'Browser: ' + info.browser,
+      'Operating system: ' + info.os,
+      'Secure Context: ' + String(window.isSecureContext),
+      'User Agent: ' + info.userAgent,
+      '',
+      'Status:',
+      statuses.join("\n"),
+      '',
+      'Debug Log:',
+      (root._takaDebugEntries || []).join("\n")
+    ].join("\n");
+
+    function copied() {
+      appendDebug(root, 'Debug information copied');
+      setDiagnostic(root, 'copy-debug', 'ok', label(root, 'copy-debug-copied', 'Debug information copied.'));
+    }
+
+    if (window.navigator.clipboard && window.navigator.clipboard.writeText) {
+      return window.navigator.clipboard.writeText(payload).then(copied).catch(function (error) {
+        appendDebug(root, 'Clipboard copy failed', error);
+        setDiagnostic(root, 'copy-debug', 'error', label(root, 'copy-debug-failed', 'Could not copy debug information.'));
+      });
+    }
+
+    setDiagnostic(root, 'copy-debug', 'error', label(root, 'copy-debug-failed', 'Could not copy debug information.'));
+    appendDebug(root, 'Clipboard API unavailable');
+    return Promise.resolve();
+  }
+
   function setResult(root, status, message, data) {
     var target = root.querySelector('[data-taka-scan-result]');
     var parts = [message || status];
@@ -48,6 +290,7 @@
 
     target.className = 'taka-operations-scan-result is-' + (status || 'info');
     target.textContent = parts.filter(Boolean).join(' / ');
+    appendDebug(root, 'Status: ' + target.textContent);
   }
 
   function setOfflineStatus(root, text) {
@@ -329,14 +572,17 @@
       return Promise.resolve();
     }
 
+    appendDebug(root, 'Sending scan payload to server');
     return ajax(root, root.getAttribute('data-scan-action'), {
       event_id: root.getAttribute('data-event-id'),
       payload: payload,
       device_id: getDeviceId()
     }).then(function (data) {
+      appendDebug(root, 'Server scan result', data);
       setResult(root, data.status, data.message, data);
     }).catch(function (error) {
       logError('Online scan failed', error);
+      appendDebug(root, 'Online scan failed', error);
       setResult(root, 'invalid', error.message || label(root, 'request-failed', 'Request failed.'));
     });
   }
@@ -346,7 +592,9 @@
       return;
     }
     root._takaLastPayload = payload;
+    appendDebug(root, 'Handling QR payload');
     if (!window.navigator.onLine) {
+      appendDebug(root, 'Browser offline; using offline scan');
       offlineScan(root, payload);
       return;
     }
@@ -463,25 +711,41 @@
 
     index = index || 0;
     if (supportError) {
+      appendDebug(root, 'Camera support check failed', supportError);
       return Promise.reject(new Error(supportError));
     }
 
+    appendDebug(root, 'Requesting getUserMedia', constraints[index]);
     return window.navigator.mediaDevices.getUserMedia(constraints[index]).catch(function (error) {
       if (index + 1 < constraints.length && canRetryCameraError(error)) {
         logError('Camera constraint failed, trying fallback ' + (index + 2), error);
+        appendDebug(root, 'Camera constraint failed, trying fallback ' + (index + 2), error);
         return getCameraStream(root, index + 1);
       }
       throw normalizeCameraError(root, error);
     });
   }
 
+  function setModeButtons(root, mode) {
+    var stopCameraButton = root.querySelector('[data-taka-scan-stop]');
+    var stopScanningButton = root.querySelector('[data-taka-stop-scanning]');
+
+    if (stopCameraButton) {
+      stopCameraButton.hidden = 'test' !== mode;
+    }
+    if (stopScanningButton) {
+      stopScanningButton.hidden = 'scan' !== mode;
+    }
+  }
+
   function stopCamera(root, showStatus) {
     var video = root.querySelector('[data-taka-scan-video]');
     var reader = root.querySelector('[data-taka-html5-reader]');
-    var stop = root.querySelector('[data-taka-scan-stop]');
     var html5 = root._takaHtml5Scanner;
+    var wasScanning = 'scan' === root._takaCameraMode;
     var hadActiveCamera = !!root._takaCameraActive || !!root._takaStopCamera || !!html5 || !!(video && video.srcObject);
 
+    appendDebug(root, wasScanning ? 'Stopping scanner' : 'Stopping camera');
     if (root._takaStopCamera) {
       root._takaStopCamera();
       root._takaStopCamera = null;
@@ -497,6 +761,7 @@
       root._takaHtml5Scanner = null;
     }
     root._takaCameraActive = false;
+    root._takaCameraMode = '';
 
     if (video) {
       if (video.srcObject) {
@@ -509,18 +774,15 @@
       reader.hidden = true;
       reader.innerHTML = '';
     }
-    if (stop) {
-      stop.hidden = true;
-    }
+    setModeButtons(root, '');
     if (showStatus) {
-      setResult(root, 'info', hadActiveCamera ? label(root, 'scanner-stopped', 'Camera stopped.') : label(root, 'no-active-camera', 'No active camera.'));
+      setResult(root, 'info', hadActiveCamera ? label(root, wasScanning ? 'scanner-stopped' : 'camera-stopped', wasScanning ? 'Scanner stopped.' : 'Camera stopped.') : label(root, 'no-active-camera', 'No active camera.'));
     }
   }
 
   function showCameraStream(root, stream, mode) {
     var video = root.querySelector('[data-taka-scan-video]');
     var reader = root.querySelector('[data-taka-html5-reader]');
-    var stop = root.querySelector('[data-taka-scan-stop]');
 
     if (!video) {
       stream.getTracks().forEach(function (track) { track.stop(); });
@@ -537,17 +799,16 @@
     video.srcObject = stream;
     video.hidden = false;
     root._takaCameraActive = true;
-    if (stop) {
-      stop.hidden = false;
-    }
+    root._takaCameraMode = mode || 'test';
+    setModeButtons(root, root._takaCameraMode);
+    updateStreamDiagnostics(root, stream);
     root._takaStopCamera = function () {
       stream.getTracks().forEach(function (track) { track.stop(); });
       video.srcObject = null;
       video.hidden = true;
       root._takaCameraActive = false;
-      if (stop) {
-        stop.hidden = true;
-      }
+      root._takaCameraMode = '';
+      setModeButtons(root, '');
     };
 
     return video.play().catch(function (error) {
@@ -556,14 +817,19 @@
   }
 
   function testCamera(root) {
+    appendDebug(root, 'Test Camera requested');
     setResult(root, 'info', label(root, 'camera-test-starting', 'Starting camera test...'));
     stopCamera(root, false);
-    getCameraStream(root, 0).then(function (stream) {
-      return showCameraStream(root, stream, 'Camera test').then(function () {
+    enumerateCameras(root).then(function () {
+      appendDebug(root, 'Requesting permission');
+      return getCameraStream(root, 0);
+    }).then(function (stream) {
+      return showCameraStream(root, stream, 'test').then(function () {
         setResult(root, 'info', label(root, 'camera-test-running', 'Camera test is running.'));
       });
     }).catch(function (error) {
       logError('Camera test failed', error);
+      diagnoseCameraError(root, error);
       setResult(root, 'invalid', error._takaCameraMessage || error.message || label(root, 'camera-failed', 'Camera could not be opened.'));
     });
   }
@@ -615,9 +881,12 @@
     var video = root.querySelector('[data-taka-scan-video]');
 
     if (!Html5Qrcode || !reader) {
+      setDiagnostic(root, 'scanner-library', 'error', label(root, 'html5-fail', 'html5-qrcode not loaded.'));
+      appendDebug(root, 'html5-qrcode library missing');
       setResult(root, 'invalid', label(root, 'scanner-library-missing', 'QR scanner library could not be loaded. Please reload the page.'));
       return false;
     }
+    setDiagnostic(root, 'scanner-library', 'ok', label(root, 'html5-ok', 'html5-qrcode loaded.'));
     if (video) {
       if (video.srcObject) {
         video.srcObject.getTracks().forEach(function (track) { track.stop(); });
@@ -630,12 +899,22 @@
     }
     reader.innerHTML = '';
     reader.hidden = false;
+    root._takaCameraMode = 'scan';
+    setModeButtons(root, 'scan');
+    appendDebug(root, 'Initializing html5-qrcode scanner');
 
     startHtml5Scanner(root, Html5Qrcode, reader, 0).then(function () {
       root._takaCameraActive = true;
+      root._takaCameraMode = 'scan';
+      setModeButtons(root, 'scan');
+      setDiagnostic(root, 'scanner', 'ok', label(root, 'waiting-qr', 'Waiting for QR code...'));
+      appendDebug(root, 'html5-qrcode initialized');
+      appendDebug(root, 'Waiting for QR code');
       setResult(root, 'info', label(root, 'scanner-running', 'Camera scanner is running.'));
     }).catch(function (error) {
       logError('Starting html5-qrcode failed', error);
+      setDiagnostic(root, 'scanner', 'error', error._takaCameraMessage || (error && error.message ? error.message : label(root, 'camera-failed', 'Camera could not be opened.')));
+      appendDebug(root, 'html5-qrcode initialization failed', error);
       setResult(root, 'invalid', error._takaCameraMessage || (error && error.message ? error.message : label(root, 'camera-failed', 'Camera could not be opened.')));
     });
     return true;
@@ -649,32 +928,42 @@
     var detector;
     var active = true;
 
+    appendDebug(root, 'Initializing scanner');
     setResult(root, 'info', label(root, 'scanner-starting', 'Starting camera scanner...'));
     if (!validateConfig(root, 'scan')) {
       return;
     }
     stopCamera(root, false);
+    enumerateCameras(root);
 
     if (supportError) {
+      setDiagnostic(root, 'scanner', 'error', supportError);
+      appendDebug(root, 'Scanner support check failed', supportError);
       setResult(root, 'invalid', supportError);
       return;
     }
 
     if (!('BarcodeDetector' in window)) {
+      setDiagnostic(root, 'barcode-detector', 'warning', label(root, 'barcode-fallback', 'BarcodeDetector not available (using html5-qrcode fallback).'));
+      appendDebug(root, 'BarcodeDetector not available; using html5-qrcode fallback');
       startHtml5ScannerUi(root, Html5Qrcode, reader);
       return;
     }
 
     try {
       detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+      setDiagnostic(root, 'barcode-detector', 'ok', label(root, 'barcode-ok', 'BarcodeDetector available.'));
+      appendDebug(root, 'BarcodeDetector initialized');
     } catch (error) {
       logError('BarcodeDetector initialization failed', error);
+      setDiagnostic(root, 'barcode-detector', 'warning', label(root, 'barcode-fallback', 'BarcodeDetector not available (using html5-qrcode fallback).'));
+      appendDebug(root, 'BarcodeDetector initialization failed; using fallback', error);
       startHtml5ScannerUi(root, Html5Qrcode, reader);
       return;
     }
 
     getCameraStream(root, 0).then(function (stream) {
-      return showCameraStream(root, stream, 'Camera scanner').then(function () {
+      return showCameraStream(root, stream, 'scan').then(function () {
         root._takaStopCamera = (function (originalStop) {
           return function () {
             active = false;
@@ -685,6 +974,8 @@
         })(root._takaStopCamera);
       });
     }).then(function () {
+      setDiagnostic(root, 'scanner', 'ok', label(root, 'waiting-qr', 'Waiting for QR code...'));
+      appendDebug(root, 'Waiting for QR code');
       setResult(root, 'info', label(root, 'scanner-running', 'Camera scanner is running.'));
 
       function tick() {
@@ -693,6 +984,7 @@
         }
         detector.detect(video).then(function (codes) {
           if (codes && codes[0] && codes[0].rawValue) {
+            appendDebug(root, 'QR code detected');
             handlePayload(root, codes[0].rawValue);
           }
         }).catch(function (error) {
@@ -705,6 +997,8 @@
       tick();
     }).catch(function (error) {
       logError('Camera scanner failed', error);
+      diagnoseCameraError(root, error);
+      setDiagnostic(root, 'scanner', 'error', error._takaCameraMessage || error.message || label(root, 'camera-failed', 'Camera could not be opened.'));
       setResult(root, 'invalid', error._takaCameraMessage || error.message || label(root, 'camera-failed', 'Camera could not be opened.'));
     });
   }
@@ -741,12 +1035,17 @@
       } else if ('stop' === action) {
         setResult(root, 'info', label(root, 'stop-clicked', 'Stop camera clicked.'));
         stopCamera(root, true);
+      } else if ('stop-scanning' === action) {
+        setResult(root, 'info', label(root, 'stop-scanning-clicked', 'Stop scanning clicked.'));
+        stopCamera(root, true);
       } else if ('load' === action) {
         setOfflineStatus(root, label(root, 'offline-clicked', 'Load offline clicked.'));
         window.setTimeout(function () { loadOfflineData(root); }, 50);
       } else if ('sync' === action) {
         setOfflineStatus(root, label(root, 'sync-clicked', 'Synchronize clicked.'));
         window.setTimeout(function () { syncOffline(root); }, 50);
+      } else if ('copy-debug' === action) {
+        copyDebug(root);
       }
     } catch (error) {
       logError('Check-in action failed', error);
@@ -779,12 +1078,15 @@
       return;
     }
     setResult(root, 'info', label(root, 'js-loaded', 'Check-in JavaScript loaded.'));
+    initializeDiagnostics(root);
     validateConfig(root, 'all');
     bindButton(root, '#taka-scan-qr', 'start');
     bindButton(root, '#taka-test-camera', 'test');
     bindButton(root, '#taka-stop-camera', 'stop');
+    bindButton(root, '#taka-stop-scanning', 'stop-scanning');
     bindButton(root, '#taka-load-offline', 'load');
     bindButton(root, '#taka-sync-offline', 'sync');
+    bindButton(root, '#taka-copy-debug', 'copy-debug');
     refreshPending(root);
   }
 
@@ -796,9 +1098,11 @@
     var start = closestElement(event.target, '[data-taka-scan-start]');
     var test = closestElement(event.target, '[data-taka-camera-test]');
     var stop = closestElement(event.target, '[data-taka-scan-stop]');
+    var stopScanning = closestElement(event.target, '[data-taka-stop-scanning]');
     var load = closestElement(event.target, '[data-taka-offline-load]');
     var sync = closestElement(event.target, '[data-taka-offline-sync]');
-    var trigger = start || test || stop || load || sync;
+    var copyDebugButton = closestElement(event.target, '[data-taka-copy-debug]');
+    var trigger = start || test || stop || stopScanning || load || sync || copyDebugButton;
     var root = trigger ? scannerRootForTrigger(trigger) : null;
 
     if (!trigger || event._takaEventOperationsHandled) {
@@ -814,10 +1118,14 @@
       handleAction(root, 'test');
     } else if (stop) {
       handleAction(root, 'stop');
+    } else if (stopScanning) {
+      handleAction(root, 'stop-scanning');
     } else if (load) {
       handleAction(root, 'load');
     } else if (sync) {
       handleAction(root, 'sync');
+    } else if (copyDebugButton) {
+      handleAction(root, 'copy-debug');
     }
   }, true);
 

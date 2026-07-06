@@ -627,6 +627,91 @@
 	display: none !important;
 }
 
+.taka-operations-camera-diagnostics {
+	background: #f6f7f7;
+	border: 1px solid var(--taka-ops-border);
+	border-radius: 4px;
+	margin: 10px 0;
+	max-width: 640px;
+	padding: 10px 12px;
+}
+
+.taka-operations-camera-diagnostics__header {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	justify-content: space-between;
+}
+
+.taka-operations-camera-diagnostics__status {
+	display: grid;
+	gap: 4px;
+	list-style: none;
+	margin: 8px 0;
+	padding: 0;
+}
+
+.taka-operations-camera-diagnostics__status li {
+	align-items: flex-start;
+	display: flex;
+	gap: 8px;
+	line-height: 1.4;
+	margin: 0;
+}
+
+.taka-operations-camera-diagnostics__badge {
+	border-radius: 3px;
+	display: inline-block;
+	font-size: 11px;
+	font-weight: 700;
+	min-width: 46px;
+	padding: 1px 5px;
+	text-align: center;
+	text-transform: uppercase;
+}
+
+.taka-operations-camera-diagnostics__status .is-ok .taka-operations-camera-diagnostics__badge {
+	background: #edfaef;
+	color: #075b17;
+}
+
+.taka-operations-camera-diagnostics__status .is-warning .taka-operations-camera-diagnostics__badge {
+	background: #fcf9e8;
+	color: #6c4300;
+}
+
+.taka-operations-camera-diagnostics__status .is-error .taka-operations-camera-diagnostics__badge {
+	background: #fcebea;
+	color: #7a1d1d;
+}
+
+.taka-operations-camera-diagnostics__status .is-info .taka-operations-camera-diagnostics__badge {
+	background: #eaf3ff;
+	color: #0b4b88;
+}
+
+.taka-operations-camera-diagnostics__details {
+	margin-top: 8px;
+}
+
+.taka-operations-camera-diagnostics__details summary {
+	cursor: pointer;
+	font-weight: 700;
+}
+
+.taka-operations-camera-diagnostics__details pre {
+	background: #fff;
+	border: 1px solid var(--taka-ops-border);
+	border-radius: 4px;
+	font-size: 12px;
+	margin: 8px 0 0;
+	max-height: 220px;
+	overflow: auto;
+	padding: 8px;
+	white-space: pre-wrap;
+}
+
 .taka-operations-scanner__video {
 	aspect-ratio: 4 / 3;
 	background: #111;

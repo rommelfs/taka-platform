@@ -415,17 +415,42 @@ class TAKA_Event_Operations_Module {
 			'scan-clicked'         => __( 'Scan button clicked. Starting camera scanner...', 'taka-platform' ),
 			'test-clicked'         => __( 'Test camera clicked. Starting camera test...', 'taka-platform' ),
 			'stop-clicked'         => __( 'Stop camera clicked.', 'taka-platform' ),
+			'stop-scanning-clicked' => __( 'Stop scanning clicked.', 'taka-platform' ),
 			'no-active-camera'     => __( 'No active camera.', 'taka-platform' ),
 			'offline-clicked'      => __( 'Load offline clicked.', 'taka-platform' ),
 			'sync-clicked'         => __( 'Synchronize clicked.', 'taka-platform' ),
 			'barcode-unavailable'  => __( 'BarcodeDetector is not available. Paste the QR payload below or use a browser with QR scanning support.', 'taka-platform' ),
 			'scanner-starting'     => __( 'Starting camera scanner...', 'taka-platform' ),
 			'scanner-running'      => __( 'Camera scanner is running.', 'taka-platform' ),
-			'scanner-stopped'      => __( 'Camera stopped.', 'taka-platform' ),
+			'camera-stopped'       => __( 'Camera stopped.', 'taka-platform' ),
+			'scanner-stopped'      => __( 'Scanner stopped.', 'taka-platform' ),
 			'scanner-unavailable'  => __( 'QR scanner is not available in this browser.', 'taka-platform' ),
 			'scanner-library-missing' => __( 'QR scanner library could not be loaded. Please reload the page.', 'taka-platform' ),
 			'offline-init-failed'  => __( 'Offline mode is not available in this browser.', 'taka-platform' ),
 			'camera-failed'        => __( 'Camera could not be opened.', 'taka-platform' ),
+			'diagnostics-title'    => __( 'Status:', 'taka-platform' ),
+			'debug-log-title'      => __( 'Debug Log', 'taka-platform' ),
+			'copy-debug'           => __( 'Copy debug information', 'taka-platform' ),
+			'copy-debug-copied'    => __( 'Debug information copied.', 'taka-platform' ),
+			'copy-debug-failed'    => __( 'Could not copy debug information.', 'taka-platform' ),
+			'get-user-media-ok'    => __( 'Browser supports getUserMedia.', 'taka-platform' ),
+			'get-user-media-fail'  => __( 'getUserMedia not supported.', 'taka-platform' ),
+			'https-ok'             => __( 'HTTPS or localhost detected.', 'taka-platform' ),
+			'https-fail'           => __( 'Secure context missing.', 'taka-platform' ),
+			'camera-found-count'   => __( 'Camera found (%d devices).', 'taka-platform' ),
+			'permission-granted'   => __( 'Camera permission granted.', 'taka-platform' ),
+			'permission-denied'    => __( 'Camera permission denied.', 'taka-platform' ),
+			'camera-opened'        => __( 'Camera opened: %s', 'taka-platform' ),
+			'rear-camera-opened'   => __( 'Rear camera opened: %s', 'taka-platform' ),
+			'resolution-label'     => __( 'Resolution: %s', 'taka-platform' ),
+			'browser-label'        => __( 'Browser: %s', 'taka-platform' ),
+			'os-label'             => __( 'Operating system: %s', 'taka-platform' ),
+			'secure-context-label' => __( 'Secure Context: %s', 'taka-platform' ),
+			'barcode-ok'           => __( 'BarcodeDetector available.', 'taka-platform' ),
+			'barcode-fallback'     => __( 'BarcodeDetector not available (using html5-qrcode fallback).', 'taka-platform' ),
+			'html5-ok'             => __( 'html5-qrcode loaded.', 'taka-platform' ),
+			'html5-fail'           => __( 'html5-qrcode not loaded.', 'taka-platform' ),
+			'waiting-qr'           => __( 'Waiting for QR code...', 'taka-platform' ),
 		);
 		?>
 		<section class="taka-operations-panel taka-operations-search-panel" id="taka-operations-search">
@@ -444,8 +469,20 @@ class TAKA_Event_Operations_Module {
 						<button id="taka-scan-qr" class="button button-primary" type="button" data-taka-scan-start><?php echo esc_html__( 'Scan QR code', 'taka-platform' ); ?></button>
 						<button id="taka-test-camera" class="button" type="button" data-taka-camera-test><?php echo esc_html__( 'Test camera', 'taka-platform' ); ?></button>
 						<button id="taka-stop-camera" class="button" type="button" data-taka-scan-stop hidden><?php echo esc_html__( 'Stop camera', 'taka-platform' ); ?></button>
+						<button id="taka-stop-scanning" class="button" type="button" data-taka-stop-scanning hidden><?php echo esc_html__( 'Stop scanning', 'taka-platform' ); ?></button>
 						<button id="taka-load-offline" class="button" type="button" data-taka-offline-load><?php echo esc_html__( 'Load offline data for this event', 'taka-platform' ); ?></button>
 						<button id="taka-sync-offline" class="button" type="button" data-taka-offline-sync><?php echo esc_html__( 'Synchronize', 'taka-platform' ); ?></button>
+					</div>
+					<div class="taka-operations-camera-diagnostics" data-taka-camera-diagnostics>
+						<div class="taka-operations-camera-diagnostics__header">
+							<strong><?php echo esc_html__( 'Status:', 'taka-platform' ); ?></strong>
+							<button id="taka-copy-debug" class="button button-small" type="button" data-taka-copy-debug><?php echo esc_html__( 'Copy debug information', 'taka-platform' ); ?></button>
+						</div>
+						<ul class="taka-operations-camera-diagnostics__status" data-taka-camera-status></ul>
+						<details class="taka-operations-camera-diagnostics__details">
+							<summary><?php echo esc_html__( 'Debug Log', 'taka-platform' ); ?></summary>
+							<pre data-taka-debug-log></pre>
+						</details>
 					</div>
 					<video id="taka-video" class="taka-operations-scanner__video" data-taka-scan-video autoplay playsinline muted hidden></video>
 					<div class="taka-operations-scanner__fallback" data-taka-html5-reader hidden></div>
