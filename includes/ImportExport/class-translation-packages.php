@@ -892,6 +892,23 @@ class TAKA_Platform_Translation_Packages {
 		update_post_meta( $post_id, TAKA_Platform_Data::TEXT_TRANSLATION_SOURCE_HASHES_META, $hashes );
 	}
 
+	public static function confirm_post_text_source_hashes( $post_id, $source_language, $source_values ) {
+		$post_id = absint( $post_id );
+		if ( ! $post_id || ! is_array( $source_values ) || ! function_exists( 'get_post_meta' ) ) { return; }
+		$hashes = get_post_meta( $post_id, TAKA_Platform_Data::TEXT_TRANSLATION_SOURCE_HASHES_META, true );
+		$hashes = is_array( $hashes ) ? $hashes : array();
+		$source_language = self::sanitize_language( $source_language, self::default_source_language() );
+		foreach ( $source_values as $field => $source_text ) {
+			$field = sanitize_key( $field );
+			if ( '' === $field ) { continue; }
+			$hashes[ $field ] = array(
+				'source_language' => $source_language,
+				'source_hash' => self::hash( (string) $source_text ),
+			);
+		}
+		update_post_meta( $post_id, TAKA_Platform_Data::TEXT_TRANSLATION_SOURCE_HASHES_META, $hashes );
+	}
+
 	public static function mark_post_text_source_changed( $post_id, $field, $source_language, $previous_source_text ) {
 		$post_id = absint( $post_id );
 		$field = sanitize_key( $field );

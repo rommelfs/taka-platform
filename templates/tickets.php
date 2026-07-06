@@ -123,7 +123,10 @@ $archive_mode = function_exists( 'taka_platform_is_archive_mode' ) && taka_platf
 								</div>
 							<?php endif; ?>
 						</div>
-						<?php if ( '' !== trim( (string) ( $seminar['description'] ?? '' ) ) ) : ?><section class="taka-ticket-event-description"><h4><?php echo esc_html( taka_tour_translate( 'event.seminar_description', 'Seminar description' ) ); ?></h4><div class="taka-ticket-event-panel__description"><?php echo wp_kses_post( wpautop( $seminar['description'] ) ); ?></div></section><?php endif; ?>
+						<?php if ( '' !== trim( (string) ( $seminar['description'] ?? '' ) ) ) : ?>
+							<?php TAKA_Platform_Data::log_seminar_description_render( $seminar, $seminar['description'] ); ?>
+							<section class="taka-ticket-event-description"><h4><?php echo esc_html( taka_tour_translate( 'event.seminar_description', 'Seminar description' ) ); ?></h4><div class="taka-ticket-event-panel__description"><?php echo wp_kses_post( wpautop( $seminar['description'] ) ); ?></div></section>
+						<?php endif; ?>
 						<?php if ( ! empty( $drawers ) ) : ?>
 							<div class="taka-ticket-info-actions" aria-label="<?php echo esc_attr__( 'Ticket information', 'taka-platform' ); ?>">
 								<?php foreach ( $drawers as $drawer_key => $drawer ) : ?>

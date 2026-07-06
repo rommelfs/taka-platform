@@ -852,9 +852,8 @@ class TAKA_Platform_Data {
 			if ( $source_language === $record_language && hash_equals( (string) $record['source_hash'], $current_hash ) ) {
 				continue;
 			}
-			foreach ( self::content_section_languages() as $lang ) {
-				if ( $lang === $source_language ) { continue; }
-				$translations[ $field ][ $lang ] = '';
+			if ( self::translation_debug_enabled() ) {
+				error_log( sprintf( '[TAKA translation] stale_source_hash post_id=%d field=%s source_language=%s record_language=%s action=kept_saved_website_translations', $post_id, $field, $source_language, $record_language ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			}
 		}
 		return $translations;
@@ -1794,7 +1793,8 @@ class TAKA_Platform_Data {
 			$legacy_organizer_id = (string) absint( get_post_meta( $post->ID, '_taka_organizer_id', true ) );
 			$organizer_relationships = self::normalize_event_organizer_relationships( get_post_meta( $post->ID, '_taka_event_organizers', true ), $legacy_organizer_id );
 			$source_language = (string) get_post_meta( $post->ID, '_taka_source_language', true );
-			$description = (string) get_post_meta( $post->ID, '_taka_short_description', true ) ?: $post->post_content;
+			$short_description_meta = (string) get_post_meta( $post->ID, '_taka_short_description', true );
+			$description = '' !== trim( $short_description_meta ) ? $short_description_meta : (string) $post->post_content;
 			$subtitle = (string) get_post_meta( $post->ID, '_taka_subtitle', true );
 			$long_description = (string) get_post_meta( $post->ID, '_taka_long_description', true );
 			$ticket_card_text = (string) get_post_meta( $post->ID, '_taka_ticket_card_text', true );
@@ -1829,6 +1829,8 @@ class TAKA_Platform_Data {
 				'slug' => $post->post_name,
 				'source_language' => $source_language,
 				'text_translations' => $text_translations,
+				'_taka_debug_description_raw_meta' => $short_description_meta,
+				'_taka_debug_description_post_content' => (string) $post->post_content,
 				'title' => get_the_title( $post ),
 				'subtitle' => $subtitle,
 				'description' => $description,
@@ -2509,6 +2511,37 @@ class TAKA_Platform_Data {
 		);
 
 		error_log( $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+	}
+
+	/** Log the final seminar description render path directly from the public template. */
+	public static function log_seminar_description_render( $event, $final_value = null ) {
+		if ( ! self::translation_debug_enabled() || ! is_array( $event ) ) {
+			return;
+		}
+		$debug = is_array( $event['_taka_debug_seminar_description'] ?? null ) ? $event['_taka_debug_seminar_description'] : array();
+		$debug = array_merge(
+			array(
+				'requested_language' => function_exists( 'taka_tour_current_language' ) ? taka_tour_current_language() : '',
+				'current_language' => function_exists( 'taka_tour_current_language' ) ? taka_tour_current_language() : '',
+				'wp_locale' => function_exists( 'get_locale' ) ? get_locale() : '',
+				'event_id' => (string) ( $event['id'] ?? '' ),
+				'config_id' => (string) ( $event['config_id'] ?? '' ),
+				'wp_post_id' => (string) ( $event['wp_post_id'] ?? '' ),
+				'data_source' => (string) ( $event['data_source'] ?? '' ),
+				'field_key_requested' => 'description',
+				'field_key_aliases' => self::translatable_text_field_aliases( 'event' )['description'] ?? array(),
+				'raw_meta_value' => (string) ( $event['_taka_debug_description_raw_meta'] ?? '' ),
+				'translated_value_returned' => (string) ( $event['description'] ?? '' ),
+				'final_rendered_value' => (string) ( $event['description'] ?? '' ),
+			),
+			$debug
+		);
+		$debug['template_final_value'] = null === $final_value ? (string) ( $event['description'] ?? '' ) : (string) $final_value;
+		if ( function_exists( 'wp_json_encode' ) ) {
+			error_log( '[TAKA seminar_description render] ' . wp_json_encode( $debug ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			return;
+		}
+		error_log( '[TAKA seminar_description render] ' . json_encode( $debug ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 	}
 
 	/** Source language for one content section. */
@@ -3213,12 +3246,14 @@ class TAKA_Platform_Data {
 				$event['subtitle'] = self::legacy_seminar_translation( 'seminars.' . $slug . '.subtitle', $event['subtitle'] ?? '', $lang, $legacy_source_language, 'subtitle', $slug );
 				$event['description'] = self::legacy_seminar_translation( 'seminars.' . $slug . '.description', $event['description'] ?? '', $lang, $legacy_source_language, 'description', $slug );
 			}
+			$inline_description = (string) ( $event['description'] ?? '' );
+			$inline_description_resolution = is_array( $event['_taka_text_resolution']['description'] ?? null ) ? $event['_taka_text_resolution']['description'] : array();
 			$description_source = self::resolve_content_source(
 				array(
 					'content_reference' => $event['content_references']['event_description'] ?? array(),
-					'body' => $event['description'] ?? '',
+					'body' => $inline_description,
 					'_taka_text_resolution' => array(
-						'body' => $event['_taka_text_resolution']['description'] ?? array(),
+						'body' => $inline_description_resolution,
 					),
 				),
 				$lang,
@@ -3232,6 +3267,25 @@ class TAKA_Platform_Data {
 			);
 			$event['description'] = (string) ( $description_source['body'] ?? ( $event['description'] ?? '' ) );
 			$event['description_content_source'] = (string) ( $description_source['content_source'] ?? 'inline' );
+			$event['_taka_debug_seminar_description'] = array(
+				'requested_language' => $lang,
+				'current_language' => function_exists( 'taka_tour_current_language' ) ? taka_tour_current_language() : '',
+				'wp_locale' => function_exists( 'get_locale' ) ? get_locale() : '',
+				'event_id' => (string) ( $event['id'] ?? '' ),
+				'config_id' => (string) ( $event['config_id'] ?? '' ),
+				'wp_post_id' => (string) ( $event['wp_post_id'] ?? '' ),
+				'data_source' => (string) ( $event['data_source'] ?? '' ),
+				'field_key_requested' => 'description',
+				'field_key_aliases' => self::translatable_text_field_aliases( 'event' )['description'] ?? array(),
+				'raw_meta_value' => (string) ( $event['_taka_debug_description_raw_meta'] ?? '' ),
+				'post_content_value' => (string) ( $event['_taka_debug_description_post_content'] ?? '' ),
+				'translated_value_returned' => $inline_description,
+				'translation_resolution' => $inline_description_resolution,
+				'content_source' => (string) ( $description_source['content_source'] ?? 'inline' ),
+				'content_source_value' => (string) ( $description_source['body'] ?? '' ),
+				'content_block_id' => (string) ( $description_source['content_reference']['block_id'] ?? '' ),
+				'final_rendered_value' => $event['description'],
+			);
 			unset( $event['description_content_block'] );
 			if ( 'content_block' === $event['description_content_source'] ) {
 				$event['description_content_block'] = $description_source['referenced_block'] ?? array();

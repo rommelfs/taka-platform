@@ -3411,6 +3411,10 @@ class TAKA_Platform_Admin {
 		$previous = self::canonicalize_posted_text_translation_aliases( $previous, $object_type );
 		self::save_object_source_text_from_translations( $post_id, $object_type, $fields, $posted, $previous, $source_language, $old_source_language );
 		update_post_meta( $post_id, '_taka_text_translations', TAKA_Platform_Data::normalize_object_text_translations( $posted, $fields ) );
+		if ( class_exists( 'TAKA_Platform_Translation_Packages' ) ) {
+			TAKA_Platform_Translation_Packages::confirm_post_text_source_hashes( $post_id, $source_language, self::current_object_source_text_values( $post_id, $object_type, $fields ) );
+		}
+		self::clear_object_text_cache( $post_id );
 	}
 
 	private static function canonicalize_posted_text_translation_aliases( $posted, $object_type ) {
@@ -3426,6 +3430,61 @@ class TAKA_Platform_Admin {
 			}
 		}
 		return $posted;
+	}
+
+	private static function current_object_source_text_values( $post_id, $object_type, $fields ) {
+		$values = array();
+		foreach ( array_keys( (array) $fields ) as $field ) {
+			$values[ $field ] = self::current_object_source_text_value( $post_id, $object_type, $field );
+		}
+		return $values;
+	}
+
+	private static function current_object_source_text_value( $post_id, $object_type, $field ) {
+		if ( 'content_block' === $object_type && 'body' === $field ) {
+			$post = get_post( $post_id );
+			return $post ? (string) $post->post_content : '';
+		}
+		$meta_fields = array(
+			'event' => array(
+				'description' => 'short_description',
+				'subtitle' => 'subtitle',
+				'long_description' => 'long_description',
+				'ticket_card_text' => 'ticket_card_text',
+				'ticket_tab_label' => 'ticket_tab_label',
+				'ticket_door_note' => 'ticket_door_note',
+				'accessibility' => 'accessibility',
+				'notes' => 'notes',
+				'parking' => 'parking',
+			),
+			'venue' => array(
+				'parking' => 'parking',
+				'accessibility' => 'accessibility',
+				'notes' => 'notes',
+			),
+			'organizer' => array(
+				'description' => 'description',
+			),
+			'content_block' => array(
+				'kicker' => 'kicker',
+				'title' => 'block_title',
+				'subtitle' => 'subtitle',
+				'button_label' => 'button_label',
+				'button_url' => 'button_url',
+			),
+		);
+		$meta_field = $meta_fields[ $object_type ][ $field ] ?? '';
+		return '' !== $meta_field ? (string) get_post_meta( $post_id, '_taka_' . $meta_field, true ) : '';
+	}
+
+	private static function clear_object_text_cache( $post_id ) {
+		if ( function_exists( 'clean_post_cache' ) ) {
+			clean_post_cache( $post_id );
+		}
+		if ( function_exists( 'wp_cache_delete' ) ) {
+			wp_cache_delete( $post_id, 'post_meta' );
+			wp_cache_delete( $post_id, 'posts' );
+		}
 	}
 
 	private static function save_object_source_text_from_translations( $post_id, $object_type, $fields, $posted, $previous, $source_language, $old_source_language ) {
