@@ -839,9 +839,22 @@ class TAKA_Platform_Data {
 		if ( empty( $fields ) ) { return $object; }
 		$values = self::object_text_values( $object, $fields );
 		$source_language = self::object_source_language( $object );
+		$resolution = array();
 		foreach ( array_keys( $fields ) as $field ) {
-			$object[ $field ] = self::resolve_dynamic_text( $values[ $field ] ?? '', $lang, $source_language );
+			$result = self::resolve_dynamic_text_result(
+				$values[ $field ] ?? '',
+				$lang,
+				$source_language,
+				array(
+					'object_type' => $object_type,
+					'object_id'   => $object['id'] ?? ( $object['config_id'] ?? ( $object['wp_post_id'] ?? ( $object['slug'] ?? '' ) ) ),
+					'field'       => $field,
+				)
+			);
+			$object[ $field ] = $result['value'];
+			$resolution[ $field ] = $result;
 		}
+		$object['_taka_text_resolution'] = $resolution;
 		return $object;
 	}
 
@@ -976,9 +989,11 @@ class TAKA_Platform_Data {
 			'translations' => $reference['override_translations'] ?? array(),
 		);
 		foreach ( array_keys( self::content_block_text_fields() ) as $field ) {
-			$override = self::resolve_content_section_field( $override_source, $field, $lang );
+			$override_result = self::resolve_content_section_field_result( $override_source, $field, $lang );
+			$override = $override_result['value'];
 			if ( '' !== trim( (string) $override ) ) {
 				$block[ $field ] = $override;
+				$block['_taka_text_resolution'][ $field ] = $override_result;
 			}
 		}
 		$custom_title = self::resolve_dynamic_text( $reference['custom_title'] ?? '', $lang, self::platform_fallback_language() );
@@ -1000,13 +1015,34 @@ class TAKA_Platform_Data {
 		$inline_resolved = ! empty( $args['inline_resolved'] );
 		$reference = self::normalize_content_reference( $object['content_reference'] ?? array(), $context );
 		$block = self::resolve_content_reference( $reference, $lang );
+		$inline = $inline_resolved ? $object : self::resolve_dynamic_section_translations( $object, $lang );
 
 		if ( is_array( $block ) && self::content_source_uses_block( $block, $required_field ) ) {
+			if ( ! empty( $args['prefer_inline_requested_translation'] ) && self::content_source_should_prefer_inline_requested_translation( $inline, $block, $required_field, $lang, $context ) ) {
+				return self::content_source_from_inline( $inline, $reference, $fields );
+			}
 			return self::content_source_from_block( $block, $reference, $fields );
 		}
 
-		$inline = $inline_resolved ? $object : self::resolve_dynamic_section_translations( $object, $lang );
 		return self::content_source_from_inline( $inline, $reference, $fields );
+	}
+
+	/** Prefer an inline requested-language value over a referenced block that only resolved via fallback. */
+	private static function content_source_should_prefer_inline_requested_translation( $inline, $block, $required_field, $lang, $context ) {
+		$required_field = sanitize_key( $required_field );
+		if ( '' === $required_field || '' === trim( (string) ( $inline[ $required_field ] ?? '' ) ) ) {
+			return false;
+		}
+		$inline_resolution = is_array( $inline['_taka_text_resolution'][ $required_field ] ?? null ) ? $inline['_taka_text_resolution'][ $required_field ] : array();
+		$block_resolution = is_array( $block['_taka_text_resolution'][ $required_field ] ?? null ) ? $block['_taka_text_resolution'][ $required_field ] : array();
+		$inline_language = (string) ( $inline_resolution['resolved_language'] ?? '' );
+		$block_language = (string) ( $block_resolution['resolved_language'] ?? '' );
+
+		$prefer_inline = $lang === $inline_language && $lang !== $block_language;
+		if ( $prefer_inline && self::translation_debug_enabled() ) {
+			error_log( sprintf( '[TAKA translation] content_source=%s field=%s requested=%s inline=%s block=%s fallback=inline_requested_translation', (string) $context, $required_field, (string) $lang, $inline_language, $block_language ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		}
+		return $prefer_inline;
 	}
 
 	private static function content_source_from_block( $block, $reference, $fields ) {
@@ -2299,22 +2335,152 @@ class TAKA_Platform_Data {
 	}
 
 	/** Resolve a scalar or language-keyed dynamic text value. */
-	public static function resolve_dynamic_text( $value, $lang = null, $source_language = null ) {
-		$lang = $lang ?: taka_tour_current_language();
-		$source_language = $source_language ?: self::platform_fallback_language();
+	public static function resolve_dynamic_text( $value, $lang = null, $source_language = null, $context = array() ) {
+		return self::resolve_dynamic_text_result( $value, $lang, $source_language, $context )['value'];
+	}
+
+	/** Resolve text and return diagnostic metadata for debug logging. */
+	private static function resolve_dynamic_text_result( $value, $lang = null, $source_language = null, $context = array() ) {
+		$lang = self::sanitize_translation_language( $lang ?: taka_tour_current_language(), self::platform_fallback_language() );
+		$source_language = self::sanitize_translation_language( $source_language ?: self::platform_fallback_language(), self::platform_fallback_language() );
+		$site_default = self::platform_fallback_language();
+		$result = array(
+			'value' => '',
+			'requested_language' => $lang,
+			'source_language' => $source_language,
+			'site_default_language' => $site_default,
+			'resolved_language' => '',
+			'fallback_used' => 'empty',
+			'found' => false,
+		);
+
 		if ( is_array( $value ) ) {
-			$languages = array_values( array_unique( array_filter( array_merge( array( $lang, $source_language, self::platform_fallback_language(), 'en' ), self::content_section_languages() ) ) ) );
+			$languages = array_values( array_unique( array_filter( array( $lang, $source_language, $site_default ) ) ) );
 			foreach ( $languages as $language ) {
 				if ( isset( $value[ $language ] ) && '' !== trim( (string) $value[ $language ] ) ) {
-					return (string) $value[ $language ];
+					$result['value'] = (string) $value[ $language ];
+					$result['resolved_language'] = $language;
+					$result['fallback_used'] = self::translation_fallback_label( $language, $lang, $source_language, $site_default );
+					$result['found'] = true;
+					self::log_translation_resolution( $context, $result );
+					return $result;
 				}
 			}
-			foreach ( $value as $candidate ) {
-				if ( ! is_array( $candidate ) && '' !== trim( (string) $candidate ) ) { return (string) $candidate; }
+			self::log_translation_resolution( $context, $result );
+			return $result;
+		}
+
+		$result['value'] = (string) $value;
+		if ( '' !== trim( $result['value'] ) ) {
+			$result['resolved_language'] = 'original';
+			$result['fallback_used'] = 'original';
+			$result['found'] = true;
+		}
+		self::log_translation_resolution( $context, $result );
+		return $result;
+	}
+
+	/** Normalize a frontend translation language code. */
+	private static function sanitize_translation_language( $lang, $fallback ) {
+		$lang = sanitize_key( (string) $lang );
+		return in_array( $lang, self::content_section_languages(), true ) ? $lang : $fallback;
+	}
+
+	/** Resolve legacy static seminar translation keys with the same fallback chain as database fields. */
+	private static function legacy_seminar_translation( $path, $fallback, $lang, $source_language, $field, $slug ) {
+		$lang = self::sanitize_translation_language( $lang, self::platform_fallback_language() );
+		$source_language = self::sanitize_translation_language( $source_language, self::platform_fallback_language() );
+		$site_default = self::platform_fallback_language();
+		$result = array(
+			'value' => (string) $fallback,
+			'requested_language' => $lang,
+			'source_language' => $source_language,
+			'site_default_language' => $site_default,
+			'resolved_language' => '' !== trim( (string) $fallback ) ? 'original' : '',
+			'fallback_used' => '' !== trim( (string) $fallback ) ? 'original' : 'empty',
+			'found' => '' !== trim( (string) $fallback ),
+		);
+
+		foreach ( array_values( array_unique( array_filter( array( $lang, $source_language, $site_default ) ) ) ) as $language ) {
+			$value = self::static_translation_path_value( $path, $language );
+			if ( '' === trim( (string) $value ) ) {
+				continue;
 			}
+			$result['value'] = (string) $value;
+			$result['resolved_language'] = $language;
+			$result['fallback_used'] = self::translation_fallback_label( $language, $lang, $source_language, $site_default );
+			$result['found'] = true;
+			break;
+		}
+
+		self::log_translation_resolution(
+			array(
+				'object_type' => 'legacy_seminar',
+				'object_id'   => $slug,
+				'field'       => $field,
+			),
+			$result
+		);
+		return $result['value'];
+	}
+
+	/** Read one dot-path from a static translation JSON file without applying global I18n fallback. */
+	private static function static_translation_path_value( $path, $lang ) {
+		if ( ! class_exists( 'TAKA_Platform_I18n' ) ) {
 			return '';
 		}
-		return (string) $value;
+		$data = TAKA_Platform_I18n::instance()->get_language_data( $lang );
+		foreach ( explode( '.', (string) $path ) as $part ) {
+			if ( ! is_array( $data ) || ! array_key_exists( $part, $data ) ) {
+				return '';
+			}
+			$data = $data[ $part ];
+		}
+		return is_string( $data ) ? $data : '';
+	}
+
+	/** Describe which fallback step resolved a translated field. */
+	private static function translation_fallback_label( $language, $requested, $source_language, $site_default ) {
+		if ( $language === $requested ) {
+			return 'requested';
+		}
+		if ( $language === $source_language ) {
+			return 'source_language';
+		}
+		if ( $language === $site_default ) {
+			return 'site_default';
+		}
+		return 'unknown';
+	}
+
+	/** Whether translation resolution should be logged. */
+	private static function translation_debug_enabled() {
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			return false;
+		}
+		return ! defined( 'TAKA_TRANSLATION_DEBUG' ) || TAKA_TRANSLATION_DEBUG;
+	}
+
+	/** Log translation resolution details in WordPress debug mode. */
+	private static function log_translation_resolution( $context, $result ) {
+		if ( ! self::translation_debug_enabled() || empty( $context ) ) {
+			return;
+		}
+
+		$message = sprintf(
+			'[TAKA translation] object=%s id=%s field=%s requested=%s source=%s site_default=%s resolved=%s fallback=%s found=%s',
+			(string) ( $context['object_type'] ?? '' ),
+			(string) ( $context['object_id'] ?? '' ),
+			(string) ( $context['field'] ?? '' ),
+			(string) ( $result['requested_language'] ?? '' ),
+			(string) ( $result['source_language'] ?? '' ),
+			(string) ( $result['site_default_language'] ?? '' ),
+			(string) ( $result['resolved_language'] ?? '' ),
+			(string) ( $result['fallback_used'] ?? '' ),
+			! empty( $result['found'] ) ? 'yes' : 'no'
+		);
+
+		error_log( $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 	}
 
 	/** Source language for one content section. */
@@ -2630,21 +2796,43 @@ class TAKA_Platform_Data {
 		return $section;
 	}
 
-	/** Resolve one structured content-section field with site default, English and first-value fallbacks. */
+	/** Resolve one structured content-section field with the shared translation fallback chain. */
 	private static function translated_content_section_field( $translations, $field, $lang, $source_language = 'de', $legacy_fallback = '' ) {
+		return self::translated_content_section_field_result( $translations, $field, $lang, $source_language, $legacy_fallback )['value'];
+	}
+
+	/** Resolve one structured content-section field and keep diagnostic metadata. */
+	private static function translated_content_section_field_result( $translations, $field, $lang, $source_language = 'de', $legacy_fallback = '' ) {
 		$translations = is_array( $translations ) ? $translations : array();
-		$languages = array_values( array_unique( array_filter( array_merge( array( $lang, $source_language, self::platform_fallback_language(), 'en' ), self::content_section_languages() ) ) ) );
-		foreach ( $languages as $language ) {
-			$value = $translations[ $language ][ $field ] ?? '';
-			if ( '' !== trim( (string) $value ) ) { return (string) $value; }
+		$source_language = self::sanitize_translation_language( $source_language, self::platform_fallback_language() );
+		$values = array();
+		foreach ( self::content_section_languages() as $language ) {
+			$values[ $language ] = (string) ( $translations[ $language ][ $field ] ?? '' );
 		}
-		return self::resolve_dynamic_text( $legacy_fallback, $lang, $source_language );
+		if ( '' !== trim( (string) $legacy_fallback ) && '' === trim( (string) ( $values[ $source_language ] ?? '' ) ) ) {
+			$values[ $source_language ] = (string) $legacy_fallback;
+		}
+		return self::resolve_dynamic_text_result(
+			$values,
+			$lang,
+			$source_language,
+			array(
+				'object_type' => 'content_section',
+				'object_id'   => '',
+				'field'       => $field,
+			)
+		);
 	}
 
 	/** Resolve one content-reference override field using content-section translation shape. */
 	private static function resolve_content_section_field( $source, $field, $lang ) {
+		return self::resolve_content_section_field_result( $source, $field, $lang )['value'];
+	}
+
+	/** Resolve one content-reference override field and keep diagnostic metadata. */
+	private static function resolve_content_section_field_result( $source, $field, $lang ) {
 		$source = is_array( $source ) ? $source : array();
-		return self::translated_content_section_field(
+		return self::translated_content_section_field_result(
 			$source['translations'] ?? array(),
 			$field,
 			$lang,
@@ -2898,6 +3086,7 @@ class TAKA_Platform_Data {
 		return array_map( static function ( $event ) use ( $lang, $organizers, $venues ) {
 			$slug = $event['slug'] ?? '';
 			$event = self::resolve_object_text_fields( $event, 'event', $lang );
+			$is_wordpress_event = self::is_wordpress_event_record( $event );
 			$organizer_relationships = self::enrich_event_organizer_relationships( $event['organizers'] ?? array(), $event['organizer'] ?? '', $organizers, $lang );
 			$ticket_organizers = self::ticket_organizer_relationships( $organizer_relationships, $lang );
 			$primary_relationship = $organizer_relationships[0] ?? null;
@@ -2906,14 +3095,18 @@ class TAKA_Platform_Data {
 			$venue = $venues[ (string) ( $event['venue'] ?? '' ) ] ?? null;
 			$venue = is_array( $venue ) ? self::resolve_object_text_fields( $venue, 'venue', $lang ) : $venue;
 			$event['languages'] = ! empty( $event['languages'] ) ? $event['languages'] : self::languages_for_country( $event['country'] ?? '' );
-			$event['subtitle'] = taka_tour_translate( 'seminars.' . $slug . '.subtitle', $event['subtitle'] ?? '', $lang );
-			if ( ! self::is_wordpress_event_record( $event ) ) {
-				$event['description'] = taka_tour_translate( 'seminars.' . $slug . '.description', $event['description'] ?? '', $lang );
+			if ( ! $is_wordpress_event ) {
+				$legacy_source_language = self::object_source_language( $event );
+				$event['subtitle'] = self::legacy_seminar_translation( 'seminars.' . $slug . '.subtitle', $event['subtitle'] ?? '', $lang, $legacy_source_language, 'subtitle', $slug );
+				$event['description'] = self::legacy_seminar_translation( 'seminars.' . $slug . '.description', $event['description'] ?? '', $lang, $legacy_source_language, 'description', $slug );
 			}
 			$description_source = self::resolve_content_source(
 				array(
 					'content_reference' => $event['content_references']['event_description'] ?? array(),
 					'body' => $event['description'] ?? '',
+					'_taka_text_resolution' => array(
+						'body' => $event['_taka_text_resolution']['description'] ?? array(),
+					),
 				),
 				$lang,
 				array(
@@ -2921,6 +3114,7 @@ class TAKA_Platform_Data {
 					'fields' => array( 'body' ),
 					'required_field' => 'body',
 					'inline_resolved' => true,
+					'prefer_inline_requested_translation' => true,
 				)
 			);
 			$event['description'] = (string) ( $description_source['body'] ?? ( $event['description'] ?? '' ) );
@@ -2929,13 +3123,15 @@ class TAKA_Platform_Data {
 			if ( 'content_block' === $event['description_content_source'] ) {
 				$event['description_content_block'] = $description_source['referenced_block'] ?? array();
 			}
-			$legacy_format = self::is_wordpress_event_record( $event ) ? ( $event['format'] ?? '' ) : taka_tour_translate( 'seminars.' . $slug . '.type', $event['format'] ?? '', $lang );
-			$legacy_audience = self::is_wordpress_event_record( $event ) ? ( $event['audience'] ?? '' ) : taka_tour_translate( 'seminars.' . $slug . '.audience', $event['audience'] ?? '', $lang );
-			$legacy_level = self::is_wordpress_event_record( $event ) ? ( $event['level'] ?? '' ) : taka_tour_translate( 'seminars.' . $slug . '.level', $event['level'] ?? '', $lang );
+			$legacy_format = $is_wordpress_event ? ( $event['format'] ?? '' ) : self::legacy_seminar_translation( 'seminars.' . $slug . '.type', $event['format'] ?? '', $lang, self::object_source_language( $event ), 'format', $slug );
+			$legacy_audience = $is_wordpress_event ? ( $event['audience'] ?? '' ) : self::legacy_seminar_translation( 'seminars.' . $slug . '.audience', $event['audience'] ?? '', $lang, self::object_source_language( $event ), 'audience', $slug );
+			$legacy_level = $is_wordpress_event ? ( $event['level'] ?? '' ) : self::legacy_seminar_translation( 'seminars.' . $slug . '.level', $event['level'] ?? '', $lang, self::object_source_language( $event ), 'level', $slug );
 			$event['format'] = self::resolve_option_list_label( 'format', $event['format'] ?? '', $lang, $legacy_format );
 			$event['audience'] = self::resolve_option_list_label( 'audience', $event['audience'] ?? '', $lang, $legacy_audience );
 			$event['level'] = self::resolve_option_list_label( 'level', $event['level'] ?? '', $lang, $legacy_level );
-			$event['parking'] = taka_tour_translate( 'seminars.' . $slug . '.parking', $event['parking'] ?? '', $lang );
+			if ( ! $is_wordpress_event ) {
+				$event['parking'] = self::legacy_seminar_translation( 'seminars.' . $slug . '.parking', $event['parking'] ?? '', $lang, self::object_source_language( $event ), 'parking', $slug );
+			}
 			$event['type'] = $event['format'];
 			$country_id = self::normalize_event_option_value( 'country', $event['country'] ?? ( $event['country_code'] ?? '' ) );
 			$event['country_id'] = $country_id;
