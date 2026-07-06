@@ -2654,8 +2654,9 @@ class TAKA_Platform_Admin {
 	private static function program_item_row( $index, $item, $types ) {
 		$name = 'taka_program_items[' . esc_attr( (string) $index ) . ']';
 		?>
-		<div class="taka-program-item" data-taka-program-item style="border:1px solid #dcdcde;padding:10px;margin:0 0 10px;background:#fff;">
-			<p>
+			<div class="taka-program-item" data-taka-program-item style="border:1px solid #dcdcde;padding:10px;margin:0 0 10px;background:#fff;">
+				<input type="hidden" name="<?php echo esc_attr( $name ); ?>[id]" value="<?php echo esc_attr( $item['id'] ?? '' ); ?>">
+				<p>
 				<label><?php echo esc_html__( 'Sort order', 'taka-platform' ); ?> <input type="number" name="<?php echo esc_attr( $name ); ?>[sort_order]" value="<?php echo esc_attr( (string) ( $item['sort_order'] ?? $index ) ); ?>" style="width:80px"></label>
 				<label><?php echo esc_html__( 'Date', 'taka-platform' ); ?> <input type="date" name="<?php echo esc_attr( $name ); ?>[date]" value="<?php echo esc_attr( $item['date'] ?? '' ); ?>"></label>
 				<label><?php echo esc_html__( 'Start time', 'taka-platform' ); ?> <input type="time" name="<?php echo esc_attr( $name ); ?>[time_start]" value="<?php echo esc_attr( $item['time_start'] ?? '' ); ?>"></label>
@@ -2755,7 +2756,7 @@ class TAKA_Platform_Admin {
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
 		if ( ! isset( $_POST[ self::NONCE ] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE ] ) ), self::NONCE ) || ! current_user_can( 'edit_post', $post_id ) ) { return; }
 		$posted = isset( $_POST['taka_program_items'] ) && is_array( $_POST['taka_program_items'] ) ? wp_unslash( $_POST['taka_program_items'] ) : array();
-		update_post_meta( $post_id, '_taka_program_items', TAKA_Platform_Data::normalize_program_items( $posted ) );
+		update_post_meta( $post_id, '_taka_program_items', TAKA_Platform_Data::merge_program_item_translation_state( $posted, get_post_meta( $post_id, '_taka_program_items', true ) ) );
 	}
 
 	private static function save_event_videos( $post_id ) {

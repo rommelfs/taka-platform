@@ -291,8 +291,15 @@ class TAKA_Ticketing_Module {
 		return TAKA_Ticketing_Ticket_Types::normalize_ticket_types( $items );
 	}
 
-	public static function ticket_types_for_event( $event_id ) {
+	public static function raw_ticket_types_for_event( $event_id ) {
 		return TAKA_Ticketing_Ticket_Types::get_for_event( $event_id );
+	}
+
+	public static function ticket_types_for_event( $event_id, $lang = null ) {
+		$event_id = absint( $event_id );
+		$lang = $lang ?: taka_tour_current_language();
+		$source_language = $event_id ? (string) get_post_meta( $event_id, '_taka_source_language', true ) : TAKA_Platform_Data::platform_fallback_language();
+		return TAKA_Ticketing_Ticket_Types::resolve_for_language( self::raw_ticket_types_for_event( $event_id ), $lang, $source_language, $event_id );
 	}
 
 	public static function event_uses_native_ticketing( $event_or_id ) {
@@ -675,11 +682,14 @@ class TAKA_Ticketing_Module {
 			return $details;
 		}
 
-		$program_items = TAKA_Platform_Data::normalize_program_items(
-			get_post_meta( $event_id, '_taka_program_items', true ),
-			array(
-				'date_start' => get_post_meta( $event_id, '_taka_date_start', true ),
-				'time_start' => get_post_meta( $event_id, '_taka_time_start', true ),
+			$program_items = TAKA_Platform_Data::resolve_program_items_for_language(
+				get_post_meta( $event_id, '_taka_program_items', true ),
+				$lang,
+				array(
+					'wp_post_id' => (string) $event_id,
+					'source_language' => get_post_meta( $event_id, '_taka_source_language', true ),
+					'date_start' => get_post_meta( $event_id, '_taka_date_start', true ),
+					'time_start' => get_post_meta( $event_id, '_taka_time_start', true ),
 				'time_end'   => get_post_meta( $event_id, '_taka_time_end', true ),
 			)
 		);
@@ -727,7 +737,7 @@ class TAKA_Ticketing_Module {
 			return;
 		}
 
-		$ticket_types = self::sanitize_ticket_types( wp_unslash( $_POST['taka_native_ticket_types'] ) );
+		$ticket_types = TAKA_Ticketing_Ticket_Types::merge_translation_state( wp_unslash( $_POST['taka_native_ticket_types'] ), get_post_meta( $post_id, TAKA_Ticketing_Ticket_Types::META_KEY, true ) );
 		if ( empty( $ticket_types ) ) {
 			delete_post_meta( $post_id, TAKA_Ticketing_Ticket_Types::META_KEY );
 			self::save_event_payment_settings( $post_id );
@@ -767,7 +777,7 @@ class TAKA_Ticketing_Module {
 			)
 		);
 		$is_native = self::MODE === $mode;
-		$ticket_types = self::ticket_types_for_event( $post_id );
+		$ticket_types = self::raw_ticket_types_for_event( $post_id );
 
 		TAKA_Platform_Admin_Collapsible_Section::open(
 			array(
@@ -1105,8 +1115,8 @@ class TAKA_Ticketing_Module {
 	}
 
 	private static function render_standalone_product_form( $product, $prefill_order = null ) {
-		$product = TAKA_Ticketing_Product::normalize( $product );
 		$lang = taka_tour_current_language();
+		$product = TAKA_Ticketing_Product::resolve_for_language( $product, $lang, ! empty( $product['related_event_id'] ) ? (string) get_post_meta( absint( $product['related_event_id'] ), '_taka_source_language', true ) : TAKA_Platform_Data::platform_fallback_language() );
 		$settings = self::ticketing_settings();
 		$prefill = self::checkout_prefill_from_order( $prefill_order );
 		$country_choices = array( '' => self::text( 'ticketing.select_country', 'Select country', $lang ) ) + TAKA_Platform_Data::country_choices( $lang );
@@ -1173,8 +1183,9 @@ class TAKA_Ticketing_Module {
 	}
 
 	private static function render_checkout_form( $event, $event_id, $prefill_order = null ) {
-		$ticket_types = self::available_ticket_types_for_event( $event_id );
-		$add_on_products = self::available_add_on_products_for_event( $event_id );
+		$lang = taka_tour_current_language();
+		$ticket_types = self::available_ticket_types_for_event( $event_id, $lang );
+		$add_on_products = self::available_add_on_products_for_event( $event_id, $lang );
 		$payment_methods = self::enabled_payment_methods_for_event( $event_id );
 		$errors = self::checkout_errors_from_request();
 		$prefill = self::checkout_prefill_from_order( $prefill_order );
@@ -1183,7 +1194,6 @@ class TAKA_Ticketing_Module {
 			return;
 		}
 		$form_id = 'taka-native-checkout-form-' . absint( $event_id );
-		$lang = taka_tour_current_language();
 		$settings = self::ticketing_settings();
 		$country_choices = array( '' => self::text( 'ticketing.select_country', 'Select country', $lang ) ) + TAKA_Platform_Data::country_choices( $lang );
 		$single_ticket = 1 === count( $ticket_types );
@@ -1602,7 +1612,7 @@ class TAKA_Ticketing_Module {
 		$product_quantities = isset( $_POST['product_quantities'] ) && is_array( $_POST['product_quantities'] ) ? wp_unslash( $_POST['product_quantities'] ) : array();
 		$ticket_quantity = max( 1, absint( $_POST['ticket_quantity'] ?? 1 ) );
 
-		$ticket_type = self::find_ticket_type( $event_id, $ticket_type_id );
+		$ticket_type = self::find_ticket_type( $event_id, $ticket_type_id, $lang );
 		if ( ! $ticket_type ) {
 			wp_send_json_error( array( 'message' => self::text( 'ticketing.error_ticket_missing', 'Ticket type not found.', $lang ) ), 404 );
 		}
@@ -1646,7 +1656,8 @@ class TAKA_Ticketing_Module {
 			if ( $quantity > $max ) {
 				return new WP_Error( 'taka_ticketing_product_capacity', self::text( 'ticketing.error_product_capacity', 'The selected add-on quantity is no longer available.', $lang ) );
 			}
-			$items[] = TAKA_Ticketing_Product::line_item_from_product( $product, $quantity, $event_id );
+				$product = TAKA_Ticketing_Product::resolve_for_language( $product, $lang, (string) get_post_meta( absint( $event_id ), '_taka_source_language', true ) );
+				$items[] = TAKA_Ticketing_Product::line_item_from_product( $product, $quantity, $event_id );
 		}
 		return $items;
 	}
@@ -1956,10 +1967,10 @@ class TAKA_Ticketing_Module {
 		);
 	}
 
-	public static function available_ticket_types_for_event( $event_id ) {
+	public static function available_ticket_types_for_event( $event_id, $lang = null ) {
 		return array_values(
 			array_filter(
-				self::ticket_types_for_event( $event_id ),
+				self::ticket_types_for_event( $event_id, $lang ),
 				static function ( $ticket_type ) use ( $event_id ) {
 					return ! empty( self::ticket_availability( $event_id, $ticket_type )['available'] );
 				}
@@ -1967,13 +1978,24 @@ class TAKA_Ticketing_Module {
 		);
 	}
 
-	public static function available_add_on_products_for_event( $event_id ) {
-		return array_values(
+	public static function available_add_on_products_for_event( $event_id, $lang = null ) {
+		$event_id = absint( $event_id );
+		$lang = $lang ?: taka_tour_current_language();
+		$products = array_values(
 			array_filter(
-				self::product_repository()->checkout_add_ons_for_event( absint( $event_id ) ),
+				self::product_repository()->checkout_add_ons_for_event( $event_id ),
 				static function ( $product ) {
 					return ! empty( TAKA_Ticketing_Module::product_repository()->availability( $product )['available'] );
 				}
+			)
+		);
+		$source_language = (string) get_post_meta( $event_id, '_taka_source_language', true );
+		return array_values(
+			array_map(
+				static function ( $product ) use ( $lang, $source_language ) {
+					return TAKA_Ticketing_Product::resolve_for_language( $product, $lang, $source_language );
+				},
+				$products
 			)
 		);
 	}
@@ -1986,8 +2008,8 @@ class TAKA_Ticketing_Module {
 		return max( 1, $max );
 	}
 
-	public static function find_ticket_type( $event_id, $ticket_type_id ) {
-		foreach ( self::ticket_types_for_event( $event_id ) as $ticket_type ) {
+	public static function find_ticket_type( $event_id, $ticket_type_id, $lang = null ) {
+		foreach ( self::ticket_types_for_event( $event_id, $lang ) as $ticket_type ) {
 			if ( (string) ( $ticket_type['id'] ?? '' ) === (string) $ticket_type_id ) {
 				return $ticket_type;
 			}

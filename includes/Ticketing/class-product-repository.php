@@ -80,6 +80,21 @@ class TAKA_Ticketing_Product_Repository {
 	}
 
 	public function save( $product ) {
+		$product = is_array( $product ) ? $product : array();
+		$existing = null;
+		if ( ! empty( $product['id'] ) ) {
+			$existing = $this->find_by_id( absint( $product['id'] ) );
+		}
+		if ( ! $existing && ! empty( $product['product_id'] ) ) {
+			$existing = $this->find_by_product_id( $product['product_id'] );
+		}
+		if ( is_array( $existing ) ) {
+			foreach ( array( 'source_language', 'title_translations', 'description_translations' ) as $field ) {
+				if ( ! array_key_exists( $field, $product ) && array_key_exists( $field, $existing ) ) {
+					$product[ $field ] = $existing[ $field ];
+				}
+			}
+		}
 		$data = TAKA_Ticketing_Product::normalize( $product );
 		if ( '' === $data['title'] ) {
 			return new WP_Error( 'taka_ticketing_product_title', __( 'Product title is required.', 'taka-platform' ) );

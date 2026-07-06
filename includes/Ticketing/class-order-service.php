@@ -18,13 +18,14 @@ class TAKA_Ticketing_Order_Service {
 		$standalone_product = null;
 		$product_items = array();
 
-		if ( '' !== $standalone_product_id ) {
-			$standalone_product = TAKA_Ticketing_Module::product_repository()->find_by_product_id( $standalone_product_id );
-			if ( ! $standalone_product || '1' !== (string) ( $standalone_product['can_purchase_standalone'] ?? '0' ) ) {
-				return new WP_Error( 'taka_ticketing_product_missing', TAKA_Ticketing_Module::text( 'ticketing.error_product_missing', 'Product not found.', $lang ) );
-			}
-			$event_id = absint( $standalone_product['related_event_id'] ?? 0 );
-			$availability = TAKA_Ticketing_Module::product_repository()->availability( $standalone_product );
+			if ( '' !== $standalone_product_id ) {
+				$standalone_product = TAKA_Ticketing_Module::product_repository()->find_by_product_id( $standalone_product_id );
+				if ( ! $standalone_product || '1' !== (string) ( $standalone_product['can_purchase_standalone'] ?? '0' ) ) {
+					return new WP_Error( 'taka_ticketing_product_missing', TAKA_Ticketing_Module::text( 'ticketing.error_product_missing', 'Product not found.', $lang ) );
+				}
+				$event_id = absint( $standalone_product['related_event_id'] ?? 0 );
+				$standalone_product = TAKA_Ticketing_Product::resolve_for_language( $standalone_product, $lang, $event_id ? (string) get_post_meta( $event_id, '_taka_source_language', true ) : TAKA_Platform_Data::platform_fallback_language() );
+				$availability = TAKA_Ticketing_Module::product_repository()->availability( $standalone_product );
 			if ( empty( $availability['available'] ) ) {
 				return new WP_Error( 'taka_ticketing_product_unavailable', TAKA_Ticketing_Module::text( 'ticketing.error_product_unavailable', 'This product is no longer available.', $lang ) );
 			}
@@ -45,7 +46,7 @@ class TAKA_Ticketing_Order_Service {
 				return new WP_Error( 'taka_ticketing_not_native', TAKA_Ticketing_Module::text( 'ticketing.error_not_native', 'This event does not use native ticketing.', $lang ) );
 			}
 
-			$ticket_type = TAKA_Ticketing_Module::find_ticket_type( $event_id, $ticket_type_id );
+			$ticket_type = TAKA_Ticketing_Module::find_ticket_type( $event_id, $ticket_type_id, $lang );
 			if ( ! $ticket_type ) {
 				return new WP_Error( 'taka_ticketing_ticket_missing', TAKA_Ticketing_Module::text( 'ticketing.error_ticket_missing', 'Ticket type not found.', $lang ) );
 			}
@@ -300,7 +301,8 @@ class TAKA_Ticketing_Order_Service {
 			if ( $quantity > $max ) {
 				return new WP_Error( 'taka_ticketing_product_capacity', TAKA_Ticketing_Module::text( 'ticketing.error_product_capacity', 'The selected add-on quantity is no longer available.', $lang ) );
 			}
-			$items[] = TAKA_Ticketing_Product::line_item_from_product( $product, $quantity, $event_id );
+				$product = TAKA_Ticketing_Product::resolve_for_language( $product, $lang, (string) get_post_meta( absint( $event_id ), '_taka_source_language', true ) );
+				$items[] = TAKA_Ticketing_Product::line_item_from_product( $product, $quantity, $event_id );
 		}
 		return $items;
 	}

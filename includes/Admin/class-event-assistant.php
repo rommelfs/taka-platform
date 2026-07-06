@@ -1222,7 +1222,7 @@ class TAKA_Platform_Admin_Event_Assistant {
 			'source_language'        => $source_language,
 			'translations'           => $translations,
 			'program_items'          => $event_id ? TAKA_Platform_Data::normalize_program_items( get_post_meta( $event_id, '_taka_program_items', true ), array() ) : array(),
-			'native_ticket_types'    => ( $event_id && class_exists( 'TAKA_Ticketing_Module' ) ) ? TAKA_Ticketing_Module::ticket_types_for_event( $event_id ) : array(),
+			'native_ticket_types'    => ( $event_id && class_exists( 'TAKA_Ticketing_Module' ) ) ? TAKA_Ticketing_Module::raw_ticket_types_for_event( $event_id ) : array(),
 			'organizer_relationships' => $event_id ? TAKA_Platform_Data::normalize_event_organizer_relationships( get_post_meta( $event_id, '_taka_event_organizers', true ), $values['organizer_id'] ) : TAKA_Platform_Data::normalize_event_organizer_relationships( array(), $values['organizer_id'] ),
 			'event_videos'           => $event_id ? TAKA_Platform_Data::normalize_event_videos( get_post_meta( $event_id, '_taka_promo_videos', true ) ) : array(),
 			'content_reference'      => $event_id ? TAKA_Platform_Data::normalize_content_reference( get_post_meta( $event_id, '_taka_content_reference_event_description', true ), 'event_description' ) : TAKA_Platform_Data::normalize_content_reference( array(), 'event_description' ),
@@ -1580,9 +1580,10 @@ class TAKA_Platform_Admin_Event_Assistant {
 
 	private static function program_item_row( $index, $item, $types ) {
 		$name = 'taka_program_items[' . esc_attr( (string) $index ) . ']';
-		?>
-		<div class="taka-program-item" data-taka-program-item>
-			<p>
+			?>
+			<div class="taka-program-item" data-taka-program-item>
+				<input type="hidden" name="<?php echo esc_attr( $name ); ?>[id]" value="<?php echo esc_attr( $item['id'] ?? '' ); ?>">
+				<p>
 				<label><?php echo esc_html__( 'Sort order', 'taka-platform' ); ?> <input type="number" name="<?php echo esc_attr( $name ); ?>[sort_order]" value="<?php echo esc_attr( (string) ( $item['sort_order'] ?? $index ) ); ?>"></label>
 				<label><?php echo esc_html__( 'Date', 'taka-platform' ); ?> <input type="date" name="<?php echo esc_attr( $name ); ?>[date]" value="<?php echo esc_attr( $item['date'] ?? '' ); ?>"></label>
 				<label><?php echo esc_html__( 'Start time', 'taka-platform' ); ?> <input type="time" name="<?php echo esc_attr( $name ); ?>[time_start]" value="<?php echo esc_attr( $item['time_start'] ?? '' ); ?>"></label>

@@ -1857,7 +1857,7 @@ class TAKA_Platform_Data {
 				'ticket_door_price_reduced' => self::sanitize_money_value( get_post_meta( $post->ID, '_taka_ticket_door_price_reduced', true ) ),
 				'ticket_door_price_child' => self::sanitize_money_value( get_post_meta( $post->ID, '_taka_ticket_door_price_child', true ) ),
 				'ticket_door_price_member' => self::sanitize_money_value( get_post_meta( $post->ID, '_taka_ticket_door_price_member', true ) ),
-				'native_ticket_types' => class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::ticket_types_for_event( $post->ID ) : array(),
+				'native_ticket_types' => class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::raw_ticket_types_for_event( $post->ID ) : array(),
 				'native_payment_methods' => class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::enabled_payment_methods_for_event( $post->ID ) : array(),
 				'native_bank_transfer_settings' => class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::event_bank_transfer_settings( $post->ID ) : array(),
 				'native_pay_at_door_instructions' => (string) get_post_meta( $post->ID, '_taka_native_pay_at_door_instructions', true ),
@@ -2468,7 +2468,7 @@ class TAKA_Platform_Data {
 		}
 
 		$message = sprintf(
-			'[TAKA translation] object=%s id=%s field=%s requested=%s source=%s site_default=%s resolved=%s fallback=%s found=%s',
+			'[TAKA translation] object=%s id=%s field=%s requested=%s source=%s site_default=%s resolved=%s fallback=%s found=%s rendered="%s"',
 			(string) ( $context['object_type'] ?? '' ),
 			(string) ( $context['object_id'] ?? '' ),
 			(string) ( $context['field'] ?? '' ),
@@ -2477,7 +2477,8 @@ class TAKA_Platform_Data {
 			(string) ( $result['site_default_language'] ?? '' ),
 			(string) ( $result['resolved_language'] ?? '' ),
 			(string) ( $result['fallback_used'] ?? '' ),
-			! empty( $result['found'] ) ? 'yes' : 'no'
+			! empty( $result['found'] ) ? 'yes' : 'no',
+			substr( preg_replace( '/\s+/', ' ', (string) ( $result['value'] ?? '' ) ), 0, 180 )
 		);
 
 		error_log( $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
@@ -2784,6 +2785,16 @@ class TAKA_Platform_Data {
 		return (string) $value;
 	}
 
+	/** Whether a dynamic text value contains any non-empty language value. */
+	private static function dynamic_text_has_value( $value ) {
+		foreach ( (array) $value as $candidate ) {
+			if ( ! is_array( $candidate ) && '' !== trim( (string) $candidate ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/** Resolve per-language section fields for the current frontend language. */
 	private static function resolve_dynamic_section_translations( $section, $lang ) {
 		$source_language = self::content_section_source_language( $section );
@@ -2904,27 +2915,102 @@ class TAKA_Platform_Data {
 	/** Normalize flexible event program items with legacy date/time fallback. */
 	public static function normalize_program_items( $items, $event = array() ) {
 		if ( ! is_array( $items ) ) { $items = array(); }
+		$source_language = self::object_source_language( $event );
 		$normalized = array();
 		foreach ( $items as $index => $item ) {
 			if ( ! is_array( $item ) ) { continue; }
 			$date = self::normalize_program_date( $item['date'] ?? '' );
 			$start = sanitize_text_field( $item['time_start'] ?? ( $item['start_time'] ?? '' ) );
 			$end = sanitize_text_field( $item['time_end'] ?? ( $item['end_time'] ?? '' ) );
-			$title = sanitize_text_field( $item['title'] ?? '' );
-			$notes = sanitize_textarea_field( $item['notes'] ?? ( $item['description'] ?? '' ) );
+			$title_translations = self::normalize_dynamic_text_value( $item['title_translations'] ?? ( is_array( $item['title'] ?? null ) ? $item['title'] : array() ) );
+			$notes_translations = self::normalize_dynamic_text_value( $item['notes_translations'] ?? ( is_array( $item['notes'] ?? null ) ? $item['notes'] : array() ) );
+			$title = is_array( $item['title'] ?? null ) ? self::resolve_dynamic_text( $title_translations, $source_language, $source_language ) : sanitize_text_field( $item['title'] ?? '' );
+			$notes = is_array( $item['notes'] ?? null ) ? self::resolve_dynamic_text( $notes_translations, $source_language, $source_language ) : sanitize_textarea_field( $item['notes'] ?? ( $item['description'] ?? '' ) );
 			$type = sanitize_key( $item['type'] ?? 'seminar' );
-			if ( '' === $date && '' === $start && '' === $end && '' === $title && '' === $notes ) { continue; }
-			$normalized[] = array( 'date' => $date, 'time_start' => $start, 'time_end' => $end, 'title' => $title, 'notes' => $notes, 'type' => $type ?: 'seminar', 'sort_order' => (int) ( $item['sort_order'] ?? $index ) );
+			if ( '' === $date && '' === $start && '' === $end && '' === $title && '' === $notes && ! self::dynamic_text_has_value( $title_translations ) && ! self::dynamic_text_has_value( $notes_translations ) ) { continue; }
+			$normalized[] = array(
+				'id' => sanitize_key( $item['id'] ?? ( 'program-' . ( absint( $index ) + 1 ) ) ),
+				'date' => $date,
+				'time_start' => $start,
+				'time_end' => $end,
+				'title' => $title,
+				'title_translations' => $title_translations,
+				'notes' => $notes,
+				'notes_translations' => $notes_translations,
+				'type' => $type ?: 'seminar',
+				'sort_order' => (int) ( $item['sort_order'] ?? $index ),
+			);
 		}
 		$normalized = self::apply_event_date_range_to_program_items( $normalized, $event );
 		if ( empty( $normalized ) && ( ! empty( $event['date_start'] ) || ! empty( $event['time_start'] ) || ! empty( $event['time_end'] ) ) ) {
-			$normalized[] = array( 'date' => self::normalize_program_date( $event['date_start'] ?? '' ), 'time_start' => (string) ( $event['time_start'] ?? '' ), 'time_end' => (string) ( $event['time_end'] ?? '' ), 'title' => '', 'notes' => '', 'type' => 'seminar', 'sort_order' => 0 );
+			$normalized[] = array( 'id' => 'program-1', 'date' => self::normalize_program_date( $event['date_start'] ?? '' ), 'time_start' => (string) ( $event['time_start'] ?? '' ), 'time_end' => (string) ( $event['time_end'] ?? '' ), 'title' => '', 'title_translations' => array(), 'notes' => '', 'notes_translations' => array(), 'type' => 'seminar', 'sort_order' => 0 );
 			if ( ! empty( $event['date_end'] ) && ( $event['date_end'] !== ( $event['date_start'] ?? '' ) ) ) {
-				$normalized[] = array( 'date' => self::normalize_program_date( $event['date_end'] ), 'time_start' => '', 'time_end' => '', 'title' => '', 'notes' => '', 'type' => 'seminar', 'sort_order' => 1 );
+				$normalized[] = array( 'id' => 'program-2', 'date' => self::normalize_program_date( $event['date_end'] ), 'time_start' => '', 'time_end' => '', 'title' => '', 'title_translations' => array(), 'notes' => '', 'notes_translations' => array(), 'type' => 'seminar', 'sort_order' => 1 );
 			}
 		}
 		usort( $normalized, array( __CLASS__, 'compare_program_items' ) );
 		return $normalized;
+	}
+
+	/** Resolve program item titles and notes for one public frontend language. */
+	public static function resolve_program_items_for_language( $items, $lang = null, $event = array() ) {
+		$lang = $lang ?: taka_tour_current_language();
+		$event = is_array( $event ) ? $event : array();
+		$source_language = self::object_source_language( $event );
+		$event_id = (string) ( $event['id'] ?? ( $event['config_id'] ?? ( $event['wp_post_id'] ?? ( $event['slug'] ?? '' ) ) ) );
+		$resolved = array();
+
+		foreach ( self::normalize_program_items( $items, $event ) as $index => $item ) {
+			$item_id = sanitize_key( $item['id'] ?? ( 'program-' . ( absint( $index ) + 1 ) ) );
+			$item['_taka_text_resolution'] = is_array( $item['_taka_text_resolution'] ?? null ) ? $item['_taka_text_resolution'] : array();
+			foreach ( array( 'title', 'notes' ) as $field ) {
+				$translations_key = $field . '_translations';
+				$values = is_array( $item[ $translations_key ] ?? null ) ? $item[ $translations_key ] : array();
+				if ( '' !== trim( (string) ( $item[ $field ] ?? '' ) ) ) {
+					$values[ $source_language ] = (string) $item[ $field ];
+				}
+				$result = self::resolve_dynamic_text_result(
+					$values,
+					$lang,
+					$source_language,
+					array(
+						'object_type' => 'event_program',
+						'object_id'   => trim( $event_id . ':' . $item_id, ':' ),
+						'field'       => $field,
+					)
+				);
+				$item[ $field ] = $result['value'];
+				$item['_taka_text_resolution'][ $field ] = $result;
+			}
+			$resolved[] = $item;
+		}
+
+		return $resolved;
+	}
+
+	/** Preserve stored program item translations when scalar admin rows are saved again. */
+	public static function merge_program_item_translation_state( $items, $existing_items ) {
+		$existing_by_id = array();
+		foreach ( self::normalize_program_items( $existing_items ) as $existing ) {
+			$id = sanitize_key( $existing['id'] ?? '' );
+			if ( '' !== $id ) {
+				$existing_by_id[ $id ] = $existing;
+			}
+		}
+
+		$merged = array();
+		foreach ( self::normalize_program_items( $items ) as $item ) {
+			$id = sanitize_key( $item['id'] ?? '' );
+			$existing = '' !== $id && isset( $existing_by_id[ $id ] ) ? $existing_by_id[ $id ] : array();
+			foreach ( array( 'title_translations', 'notes_translations' ) as $field ) {
+				if ( ! self::dynamic_text_has_value( $item[ $field ] ?? array() ) && self::dynamic_text_has_value( $existing[ $field ] ?? array() ) ) {
+					$item[ $field ] = $existing[ $field ];
+				}
+			}
+			$merged[] = $item;
+		}
+
+		return $merged;
 	}
 
 	/** Use event dates as the canonical fallback when legacy program item dates are missing or stale. */
@@ -3142,8 +3228,11 @@ class TAKA_Platform_Data {
 			$currency = trim( (string) ( $event['currency'] ?? '' ) );
 			$event['currency'] = self::normalize_event_option_value( 'currency', '' !== $currency ? $currency : self::currency_for_country( $event['country_code'] ?? $country_id ) );
 			$event['ticket_mode'] = self::ticket_mode_for_event( $event );
+			if ( class_exists( 'TAKA_Ticketing_Ticket_Types' ) ) {
+				$event['native_ticket_types'] = TAKA_Ticketing_Ticket_Types::resolve_for_language( $event['native_ticket_types'] ?? array(), $lang, self::object_source_language( $event ), absint( $event['wp_post_id'] ?? 0 ) );
+			}
 			$event['promo_videos'] = self::normalize_event_videos( $event['promo_videos'] ?? array() );
-			$event['program_items'] = self::normalize_program_items( $event['program_items'] ?? array(), $event );
+			$event['program_items'] = self::resolve_program_items_for_language( $event['program_items'] ?? array(), $lang, $event );
 			if ( ! empty( $event['program_items'] ) ) {
 				$event['date_start'] = $event['date_start'] ?: ( $event['program_items'][0]['date'] ?? '' );
 				$last_program_item = end( $event['program_items'] );

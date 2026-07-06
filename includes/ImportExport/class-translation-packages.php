@@ -432,14 +432,41 @@ class TAKA_Platform_Translation_Packages {
 			);
 		}
 
-		if ( $wants( 'event' ) ) {
-			$definitions[] = array(
-				'type' => 'event',
-				'context_prefix' => 'Event',
-				'fields' => TAKA_Platform_Data::translatable_text_fields( 'event' ),
-				'objects' => self::post_text_objects( TAKA_Platform_Data::get_events_for_translation_packages(), 'event' ),
-			);
-		}
+			if ( $wants( 'event' ) ) {
+				$definitions[] = array(
+					'type' => 'event',
+					'context_prefix' => 'Event',
+					'fields' => TAKA_Platform_Data::translatable_text_fields( 'event' ),
+					'objects' => self::post_text_objects( TAKA_Platform_Data::get_events_for_translation_packages(), 'event' ),
+				);
+			}
+
+			if ( $wants( 'event_program' ) ) {
+				$definitions[] = array(
+					'type' => 'event_program',
+					'context_prefix' => 'Event Program',
+					'fields' => array( 'title' => 'Title', 'notes' => 'Notes' ),
+					'objects' => self::event_program_objects(),
+				);
+			}
+
+			if ( $wants( 'native_ticket_type' ) ) {
+				$definitions[] = array(
+					'type' => 'native_ticket_type',
+					'context_prefix' => 'Native Ticket Type',
+					'fields' => array( 'name' => 'Name', 'description' => 'Description' ),
+					'objects' => self::native_ticket_type_objects(),
+				);
+			}
+
+			if ( $wants( 'ticket_product' ) ) {
+				$definitions[] = array(
+					'type' => 'ticket_product',
+					'context_prefix' => 'Ticketing Product',
+					'fields' => array( 'title' => 'Title', 'description' => 'Description' ),
+					'objects' => self::ticket_product_objects(),
+				);
+			}
 
 		if ( $wants( 'organizer' ) ) {
 			$definitions[] = array(
@@ -529,6 +556,91 @@ class TAKA_Platform_Translation_Packages {
 		return $out;
 	}
 
+	private static function event_program_objects() {
+		$out = array();
+		foreach ( TAKA_Platform_Data::get_events_for_translation_packages() as $event ) {
+			if ( ! is_array( $event ) ) { continue; }
+			$event_id = self::event_object_id( $event );
+			if ( '' === $event_id ) { continue; }
+			$source_language = TAKA_Platform_Data::object_source_language( $event );
+			$event_label = (string) ( $event['title'] ?? ( $event['city'] ?? $event_id ) );
+			foreach ( TAKA_Platform_Data::normalize_program_items( $event['program_items'] ?? array(), $event ) as $index => $item ) {
+				$item_id = sanitize_key( $item['id'] ?? ( 'program-' . ( absint( $index ) + 1 ) ) );
+				if ( '' === $item_id ) { continue; }
+				$out[ $event_id . '.' . $item_id ] = array(
+					'label' => $event_label . ' / ' . ( (string) ( $item['title'] ?? '' ) ?: $item_id ),
+					'source_language' => $source_language,
+					'values' => array(
+						'title' => self::values_from_source_and_translations( $item['title'] ?? '', $item['title_translations'] ?? array(), $source_language ),
+						'notes' => self::values_from_source_and_translations( $item['notes'] ?? '', $item['notes_translations'] ?? array(), $source_language ),
+					),
+				);
+			}
+		}
+		return $out;
+	}
+
+	private static function native_ticket_type_objects() {
+		if ( ! class_exists( 'TAKA_Ticketing_Module' ) ) { return array(); }
+		$out = array();
+		foreach ( TAKA_Platform_Data::get_events_for_translation_packages() as $event ) {
+			if ( ! is_array( $event ) ) { continue; }
+			$event_id = self::event_object_id( $event );
+			if ( '' === $event_id ) { continue; }
+			$post_id = absint( $event['wp_post_id'] ?? 0 );
+			$source_language = TAKA_Platform_Data::object_source_language( $event );
+			$event_label = (string) ( $event['title'] ?? ( $event['city'] ?? $event_id ) );
+			$ticket_types = $post_id ? TAKA_Ticketing_Module::raw_ticket_types_for_event( $post_id ) : TAKA_Ticketing_Module::sanitize_ticket_types( $event['native_ticket_types'] ?? array() );
+			foreach ( $ticket_types as $ticket_type ) {
+				$ticket_id = sanitize_key( $ticket_type['id'] ?? '' );
+				if ( '' === $ticket_id ) { continue; }
+				$ticket_source = self::sanitize_language( $ticket_type['source_language'] ?? '', $source_language );
+				$out[ $event_id . '.' . $ticket_id ] = array(
+					'label' => $event_label . ' / ' . ( (string) ( $ticket_type['name'] ?? '' ) ?: $ticket_id ),
+					'source_language' => $ticket_source,
+					'values' => array(
+						'name' => self::values_from_source_and_translations( $ticket_type['name'] ?? '', $ticket_type['name_translations'] ?? array(), $ticket_source ),
+						'description' => self::values_from_source_and_translations( $ticket_type['description'] ?? '', $ticket_type['description_translations'] ?? array(), $ticket_source ),
+					),
+				);
+			}
+		}
+		return $out;
+	}
+
+	private static function ticket_product_objects() {
+		if ( ! class_exists( 'TAKA_Ticketing_Module' ) ) { return array(); }
+		$out = array();
+		foreach ( TAKA_Ticketing_Module::product_repository()->query( array( 'per_page' => -1 ) ) as $product ) {
+			if ( ! is_array( $product ) ) { continue; }
+			$product_id = TAKA_Ticketing_Product::normalize_product_id( $product['product_id'] ?? '' );
+			if ( '' === $product_id ) { continue; }
+			$source_language = self::sanitize_language( $product['source_language'] ?? '', TAKA_Platform_Data::platform_fallback_language() );
+			$out[ $product_id ] = array(
+				'label' => (string) ( $product['title'] ?? $product_id ),
+				'source_language' => $source_language,
+				'values' => array(
+					'title' => self::values_from_source_and_translations( $product['title'] ?? '', $product['title_translations'] ?? array(), $source_language ),
+					'description' => self::values_from_source_and_translations( $product['description'] ?? '', $product['description_translations'] ?? array(), $source_language ),
+				),
+			);
+		}
+		return $out;
+	}
+
+	private static function event_object_id( $event ) {
+		$event_id = (string) ( $event['config_id'] ?? '' );
+		if ( '' === $event_id ) { $event_id = (string) ( $event['id'] ?? '' ); }
+		if ( '' === $event_id ) { $event_id = (string) ( $event['wp_post_id'] ?? '' ); }
+		return $event_id;
+	}
+
+	private static function values_from_source_and_translations( $source_text, $translations, $source_language ) {
+		$values = is_array( $translations ) ? $translations : array();
+		$values[ self::sanitize_language( $source_language, self::default_source_language() ) ] = (string) $source_text;
+		return $values;
+	}
+
 	private static function current_item_index( $package_items = array() ) {
 		$wanted_ids = array();
 		$wanted_types = array();
@@ -607,6 +719,15 @@ class TAKA_Platform_Translation_Packages {
 				self::apply_post_text_changes( $post_type, $changes[ $type ], $source_hash_updates[ $type ] ?? array() );
 			}
 		}
+		if ( ! empty( $changes['event_program'] ) ) {
+			self::apply_event_program_changes( $changes['event_program'] );
+		}
+		if ( ! empty( $changes['native_ticket_type'] ) ) {
+			self::apply_native_ticket_type_changes( $changes['native_ticket_type'] );
+		}
+		if ( ! empty( $changes['ticket_product'] ) ) {
+			self::apply_ticket_product_changes( $changes['ticket_product'] );
+		}
 		if ( ! empty( $changes['option_list'] ) ) {
 			TAKA_Platform_Data::update_option_list_translations( $changes['option_list'] );
 		}
@@ -672,6 +793,78 @@ class TAKA_Platform_Translation_Packages {
 				self::update_post_text_source_hashes( $post_id, $source_hash_updates[ $object_id ] );
 			}
 		}
+	}
+
+	private static function apply_event_program_changes( $objects ) {
+		foreach ( $objects as $object_id => $fields ) {
+			list( $event_object_id, $item_id ) = self::split_child_object_id( $object_id );
+			$post_id = self::find_post_id( TAKA_PLATFORM_CPT_EVENT, $event_object_id );
+			if ( ! $post_id || '' === $item_id ) { continue; }
+			$event = array(
+				'wp_post_id' => (string) $post_id,
+				'source_language' => get_post_meta( $post_id, '_taka_source_language', true ),
+				'date_start' => get_post_meta( $post_id, '_taka_date_start', true ),
+				'time_start' => get_post_meta( $post_id, '_taka_time_start', true ),
+				'time_end' => get_post_meta( $post_id, '_taka_time_end', true ),
+			);
+			$items = TAKA_Platform_Data::normalize_program_items( get_post_meta( $post_id, '_taka_program_items', true ), $event );
+			foreach ( $items as $index => $item ) {
+				if ( sanitize_key( $item['id'] ?? '' ) !== $item_id ) { continue; }
+				foreach ( $fields as $field => $translations ) {
+					if ( ! in_array( $field, array( 'title', 'notes' ), true ) ) { continue; }
+					foreach ( $translations as $lang => $text ) {
+						$items[ $index ][ $field . '_translations' ][ self::sanitize_language( $lang ) ] = 'notes' === $field ? sanitize_textarea_field( $text ) : sanitize_text_field( $text );
+					}
+				}
+			}
+			update_post_meta( $post_id, '_taka_program_items', $items );
+		}
+	}
+
+	private static function apply_native_ticket_type_changes( $objects ) {
+		if ( ! class_exists( 'TAKA_Ticketing_Module' ) ) { return; }
+		foreach ( $objects as $object_id => $fields ) {
+			list( $event_object_id, $ticket_type_id ) = self::split_child_object_id( $object_id );
+			$post_id = self::find_post_id( TAKA_PLATFORM_CPT_EVENT, $event_object_id );
+			if ( ! $post_id || '' === $ticket_type_id ) { continue; }
+			$ticket_types = TAKA_Ticketing_Module::raw_ticket_types_for_event( $post_id );
+			foreach ( $ticket_types as $index => $ticket_type ) {
+				if ( sanitize_key( $ticket_type['id'] ?? '' ) !== $ticket_type_id ) { continue; }
+				if ( '' === (string) ( $ticket_types[ $index ]['source_language'] ?? '' ) ) {
+					$ticket_types[ $index ]['source_language'] = self::sanitize_language( get_post_meta( $post_id, '_taka_source_language', true ), TAKA_Platform_Data::platform_fallback_language() );
+				}
+				foreach ( $fields as $field => $translations ) {
+					if ( ! in_array( $field, array( 'name', 'description' ), true ) ) { continue; }
+					$translation_key = $field . '_translations';
+					foreach ( $translations as $lang => $text ) {
+						$ticket_types[ $index ][ $translation_key ][ self::sanitize_language( $lang ) ] = 'description' === $field ? sanitize_textarea_field( $text ) : sanitize_text_field( $text );
+					}
+				}
+			}
+			update_post_meta( $post_id, TAKA_Ticketing_Ticket_Types::META_KEY, TAKA_Ticketing_Ticket_Types::normalize_ticket_types( $ticket_types ) );
+		}
+	}
+
+	private static function apply_ticket_product_changes( $objects ) {
+		if ( ! class_exists( 'TAKA_Ticketing_Module' ) ) { return; }
+		$repository = TAKA_Ticketing_Module::product_repository();
+		foreach ( $objects as $product_id => $fields ) {
+			$product = $repository->find_by_product_id( $product_id );
+			if ( ! is_array( $product ) ) { continue; }
+			foreach ( $fields as $field => $translations ) {
+				if ( ! in_array( $field, array( 'title', 'description' ), true ) ) { continue; }
+				$translation_key = $field . '_translations';
+				foreach ( $translations as $lang => $text ) {
+					$product[ $translation_key ][ self::sanitize_language( $lang ) ] = 'description' === $field ? sanitize_textarea_field( $text ) : sanitize_text_field( $text );
+				}
+			}
+			$repository->save( $product );
+		}
+	}
+
+	private static function split_child_object_id( $object_id ) {
+		$parts = explode( '.', (string) $object_id, 2 );
+		return array( (string) ( $parts[0] ?? '' ), (string) ( $parts[1] ?? '' ) );
 	}
 
 	private static function update_post_text_source_hashes( $post_id, $updates ) {

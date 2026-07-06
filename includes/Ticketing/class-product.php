@@ -50,8 +50,11 @@ class TAKA_Ticketing_Product {
 		return array(
 			'id'                         => absint( $data['id'] ?? 0 ),
 			'product_id'                 => self::normalize_product_id( $data['product_id'] ?? ( $data['slug'] ?? '' ) ),
-			'title'                      => sanitize_text_field( $data['title'] ?? '' ),
-			'description'                => sanitize_textarea_field( $data['description'] ?? '' ),
+			'source_language'            => self::sanitize_language( $data['source_language'] ?? '', '' ),
+			'title'                      => is_array( $data['title'] ?? null ) ? self::source_value( self::normalize_text_translations( $data['title'], false ), self::sanitize_language( $data['source_language'] ?? '' ) ) : sanitize_text_field( $data['title'] ?? '' ),
+			'title_translations'         => self::normalize_text_translations( $data['title_translations'] ?? ( is_array( $data['title'] ?? null ) ? $data['title'] : array() ), false ),
+			'description'                => is_array( $data['description'] ?? null ) ? self::source_value( self::normalize_text_translations( $data['description'], true ), self::sanitize_language( $data['source_language'] ?? '' ) ) : sanitize_textarea_field( $data['description'] ?? '' ),
+			'description_translations'   => self::normalize_text_translations( $data['description_translations'] ?? ( is_array( $data['description'] ?? null ) ? $data['description'] : array() ), true ),
 			'type'                       => $type,
 			'price'                      => TAKA_Platform_Data::sanitize_money_value( $data['price'] ?? '' ),
 			'currency'                   => '' !== $currency ? $currency : 'EUR',
@@ -69,6 +72,31 @@ class TAKA_Ticketing_Product {
 			'sort_order'                 => (int) ( $data['sort_order'] ?? 0 ),
 			'status'                     => $status,
 		);
+	}
+
+	/** Resolve title/description with the shared public translation fallback chain. */
+	public static function resolve_for_language( $product, $lang = null, $fallback_source_language = 'de' ) {
+		$product = self::normalize( $product );
+		$lang = self::sanitize_language( $lang ?: taka_tour_current_language(), TAKA_Platform_Data::platform_fallback_language() );
+		$source_language = self::sanitize_language( $product['source_language'] ?? '', self::sanitize_language( $fallback_source_language, TAKA_Platform_Data::platform_fallback_language() ) );
+		foreach ( array( 'title', 'description' ) as $field ) {
+			$translations_key = $field . '_translations';
+			$values = is_array( $product[ $translations_key ] ?? null ) ? $product[ $translations_key ] : array();
+			if ( '' !== trim( (string) ( $product[ $field ] ?? '' ) ) ) {
+				$values[ $source_language ] = (string) $product[ $field ];
+			}
+			$product[ $field ] = TAKA_Platform_Data::resolve_dynamic_text(
+				$values,
+				$lang,
+				$source_language,
+				array(
+					'object_type' => 'ticket_product',
+					'object_id'   => (string) ( $product['product_id'] ?? ( $product['id'] ?? '' ) ),
+					'field'       => $field,
+				)
+			);
+		}
+		return $product;
 	}
 
 	public static function normalize_product_id( $product_id ) {
@@ -95,6 +123,35 @@ class TAKA_Ticketing_Product {
 
 	private static function positive_int_or_empty( $value ) {
 		return '' === trim( (string) $value ) ? '' : (string) max( 0, absint( $value ) );
+	}
+
+	private static function normalize_text_translations( $value, $textarea = false ) {
+		$value = is_array( $value ) ? $value : array();
+		$out = array();
+		foreach ( TAKA_Platform_Data::content_section_languages() as $lang ) {
+			$text = $value[ $lang ] ?? '';
+			$out[ $lang ] = $textarea ? sanitize_textarea_field( $text ) : sanitize_text_field( $text );
+		}
+		return $out;
+	}
+
+	private static function source_value( $translations, $source_language ) {
+		$source_language = self::sanitize_language( $source_language, TAKA_Platform_Data::platform_fallback_language() );
+		$value = $translations[ $source_language ] ?? '';
+		if ( '' !== trim( (string) $value ) ) {
+			return (string) $value;
+		}
+		foreach ( (array) $translations as $candidate ) {
+			if ( '' !== trim( (string) $candidate ) ) {
+				return (string) $candidate;
+			}
+		}
+		return '';
+	}
+
+	private static function sanitize_language( $lang, $fallback = 'de' ) {
+		$lang = sanitize_key( (string) $lang );
+		return in_array( $lang, TAKA_Platform_Data::content_section_languages(), true ) ? $lang : $fallback;
 	}
 
 	private static function sanitize_date( $value ) {
