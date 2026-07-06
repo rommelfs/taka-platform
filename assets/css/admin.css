@@ -596,10 +596,12 @@
 	padding: 12px;
 }
 
+.taka-operations-qr-rendered img,
 .taka-operations-qr-rendered svg {
 	display: block;
 	height: 180px;
 	width: 180px;
+	image-rendering: pixelated;
 }
 
 .taka-operations-scanner {
@@ -630,6 +632,19 @@
 	max-height: 58vh;
 	object-fit: cover;
 	width: 100%;
+}
+
+.taka-operations-scanner__fallback {
+	background: #111;
+	border-radius: 4px;
+	margin: 10px 0;
+	max-width: 640px;
+	overflow: hidden;
+}
+
+.taka-operations-scanner__fallback video,
+.taka-operations-scanner__fallback canvas {
+	max-width: 100%;
 }
 
 .taka-operations-scan-result {

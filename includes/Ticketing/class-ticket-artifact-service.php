@@ -15,7 +15,29 @@ class TAKA_Ticketing_QR_Code {
 		return empty( $modules ) ? '' : self::svg_from_modules( $modules, $label );
 	}
 
+	public static function png_data_uri( $text, $module_size = 10, $quiet_modules = 4 ) {
+		$qr = self::vendor_qr( $text );
+		if ( ! $qr || ! function_exists( 'imagepng' ) ) {
+			return '';
+		}
+		$module_size = max( 4, absint( $module_size ) );
+		$margin = max( 0, absint( $quiet_modules ) ) * $module_size;
+		$image = $qr->createImage( $module_size, $margin, 0x000000, 0xFFFFFF, false );
+		if ( ! $image ) {
+			return '';
+		}
+		ob_start();
+		imagepng( $image );
+		$png = ob_get_clean();
+		return $png ? 'data:image/png;base64,' . base64_encode( $png ) : '';
+	}
+
 	public static function modules( $text ) {
+		$vendor_modules = self::vendor_modules( $text );
+		if ( ! empty( $vendor_modules ) ) {
+			return $vendor_modules;
+		}
+
 		$bytes = self::utf8_bytes( $text );
 		if ( count( $bytes ) > 106 ) {
 			return array();
@@ -35,6 +57,41 @@ class TAKA_Ticketing_QR_Code {
 		self::draw_format_bits( $matrix, 0 );
 
 		return $matrix['modules'];
+	}
+
+	private static function vendor_modules( $text ) {
+		$qr = self::vendor_qr( $text );
+		if ( ! $qr ) {
+			return array();
+		}
+		$modules = array();
+		$count = absint( $qr->getModuleCount() );
+		for ( $row = 0; $row < $count; $row++ ) {
+			$modules[ $row ] = array();
+			for ( $col = 0; $col < $count; $col++ ) {
+				$modules[ $row ][ $col ] = (bool) $qr->isDark( $row, $col );
+			}
+		}
+		return $modules;
+	}
+
+	private static function vendor_qr( $text ) {
+		$class = '\\TAKA\\Vendor\\QRCode\\QRCode';
+		$level = 'TAKA\\Vendor\\QRCode\\QR_ERROR_CORRECT_LEVEL_M';
+		if ( ! class_exists( $class, false ) ) {
+			$vendor = defined( 'TAKA_PLATFORM_PLUGIN_DIR' ) ? TAKA_PLATFORM_PLUGIN_DIR . 'includes/Vendor/qrcode.php' : dirname( __DIR__ ) . '/Vendor/qrcode.php';
+			if ( file_exists( $vendor ) ) {
+				require_once $vendor;
+			}
+		}
+		if ( ! class_exists( $class, false ) || ! method_exists( $class, 'getMinimumQRCode' ) || ! defined( $level ) ) {
+			return null;
+		}
+		try {
+			return $class::getMinimumQRCode( (string) $text, constant( $level ) );
+		} catch ( Throwable $exception ) {
+			return null;
+		}
 	}
 
 	private static function utf8_bytes( $text ) {
@@ -451,6 +508,7 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 			if ( empty( $ticket['qr_svg'] ) ) {
 				$tickets[ $index ]['qr_svg'] = TAKA_Ticketing_QR_Code::svg( $ticket['payload'], __( 'Ticket QR code', 'taka-platform' ) );
 			}
+			$tickets[ $index ]['qr_png_data_uri'] = TAKA_Ticketing_QR_Code::png_data_uri( $ticket['payload'], 10, 4 );
 			if ( ! empty( $tickets[ $index ]['qr_svg_path'] ) ) {
 				self::write_file( $tickets[ $index ]['qr_svg_path'], $tickets[ $index ]['qr_svg'] );
 			}
@@ -462,6 +520,7 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 				self::write_file( $tickets[ $index ]['path'], TAKA_Ticketing_PDF_Renderer::from_html( $ticket_html, self::document_title( $data, 'ticket' ), self::ticket_pdf_sections( $data, array( $tickets[ $index ] ) ) ) );
 			}
 			unset( $tickets[ $index ]['qr_svg'] );
+			unset( $tickets[ $index ]['qr_png_data_uri'] );
 		}
 		$ticket_bundle_path = self::ticket_bundle_path( $data, $dir );
 		self::write_file( $ticket_bundle_path, TAKA_Ticketing_PDF_Renderer::from_html( self::ticket_bundle_html( $data, $tickets ), self::document_title( $data, 'ticket' ), self::ticket_pdf_sections( $data, $tickets ) ) );
@@ -887,7 +946,7 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 		if ( '' !== trim( (string) ( $ticket['recipient_name'] ?? '' ) ) ) {
 			$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.recipient', 'Recipient', $lang ) ) . ':</strong> ' . esc_html( $ticket['recipient_name'] ) . '</p>';
 		}
-		$html .= '<div class="qr">' . ( $ticket['qr_svg'] ?? '' ) . '</div>';
+		$html .= self::qr_html( $ticket, __( 'Ticket QR code', 'taka-platform' ) );
 		$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.ticket_id', 'Ticket ID', $lang ) ) . ':</strong> ' . esc_html( $ticket['ticket_id'] ?? '' ) . '</p>';
 		$html .= '<p><code>' . esc_html( $ticket['payload'] ?? '' ) . '</code></p>';
 		if ( ! empty( $wallet_links ) && is_array( $wallet_links ) ) {
@@ -908,6 +967,7 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 		$html .= '<h1>' . esc_html( $title ) . '</h1>';
 		foreach ( $tickets as $ticket ) {
 			$ticket['qr_svg'] = TAKA_Ticketing_QR_Code::svg( $ticket['payload'], __( 'Ticket QR code', 'taka-platform' ) );
+			$ticket['qr_png_data_uri'] = TAKA_Ticketing_QR_Code::png_data_uri( $ticket['payload'], 10, 4 );
 			$html .= '<section class="ticket-page">' . self::ticket_html_body( $data, $ticket ) . '</section>';
 		}
 		return $html . self::html_footer();
@@ -924,10 +984,18 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 		if ( '' !== trim( (string) ( $ticket['recipient_name'] ?? '' ) ) ) {
 			$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.recipient', 'Recipient', $lang ) ) . ':</strong> ' . esc_html( $ticket['recipient_name'] ) . '</p>';
 		}
-		$html .= '<div class="qr">' . ( $ticket['qr_svg'] ?? '' ) . '</div>';
+		$html .= self::qr_html( $ticket, __( 'Ticket QR code', 'taka-platform' ) );
 		$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.ticket_id', 'Ticket ID', $lang ) ) . ':</strong> ' . esc_html( $ticket['ticket_id'] ?? '' ) . '</p>';
 		$html .= '<p><code>' . esc_html( $ticket['payload'] ?? '' ) . '</code></p>';
 		return $html;
+	}
+
+	private static function qr_html( $ticket, $label ) {
+		$png = (string) ( $ticket['qr_png_data_uri'] ?? '' );
+		if ( '' !== $png ) {
+			return '<div class="qr"><img src="' . esc_attr( $png ) . '" alt="' . esc_attr( $label ) . '"></div>';
+		}
+		return '<div class="qr">' . ( $ticket['qr_svg'] ?? '' ) . '</div>';
 	}
 
 	private static function organizer_invoice_html( $organizer, $lang ) {
@@ -1099,7 +1167,7 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 	}
 
 	private static function html_header( $title ) {
-		return '<!doctype html><html><head><meta charset="utf-8"><title>' . esc_html( $title ) . '</title><style>body{font-family:DejaVu Sans,Arial,sans-serif;line-height:1.45;color:#1d2327;margin:24px}.qr{background:#fff;display:inline-block;margin:14px 0;padding:14px}.qr svg{background:#fff;width:280px;height:280px}.ticket-page{page-break-after:always}table{border-collapse:collapse;width:100%;margin:16px 0}th,td{border:1px solid #ccd0d4;padding:8px;text-align:left}code{font-size:12px;word-break:break-all}</style></head><body>';
+		return '<!doctype html><html><head><meta charset="utf-8"><title>' . esc_html( $title ) . '</title><style>body{font-family:DejaVu Sans,Arial,sans-serif;line-height:1.45;color:#1d2327;margin:24px}.qr{background:#fff;display:inline-block;margin:14px 0;padding:14px}.qr img,.qr svg{background:#fff;display:block;height:300px;width:300px;image-rendering:pixelated}.ticket-page{page-break-after:always}table{border-collapse:collapse;width:100%;margin:16px 0}th,td{border:1px solid #ccd0d4;padding:8px;text-align:left}code{font-size:12px;word-break:break-all}</style></head><body>';
 	}
 
 	private static function html_footer() {

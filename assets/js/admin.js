@@ -753,6 +753,12 @@ document.addEventListener('click', function (event) {
     return label(root, key, fallback).replace('%d', count);
   }
 
+  function logError(context, error) {
+    if (window.console && window.console.error) {
+      window.console.error('[TAKA Event Operations] ' + context, error);
+    }
+  }
+
   function ajax(root, action, data) {
     var form = new window.FormData();
     form.append('action', action);
@@ -831,7 +837,8 @@ document.addEventListener('click', function (event) {
         return refreshPending(root);
       });
     }).catch(function (error) {
-      setOfflineStatus(root, error.message);
+      logError('Offline manifest failed', error);
+      setOfflineStatus(root, error.message || label(root, 'offline-init-failed', 'Offline mode is not available in this browser.'));
     });
   }
 
@@ -892,6 +899,7 @@ document.addEventListener('click', function (event) {
         });
       });
     }).catch(function (error) {
+      logError('Offline scan failed', error);
       setResult(root, 'invalid', error.message || label(root, 'offline-unavailable', 'Offline data is not available.'));
     });
   }
@@ -904,6 +912,7 @@ document.addEventListener('click', function (event) {
     }).then(function (data) {
       setResult(root, data.status, data.message, data);
     }).catch(function (error) {
+      logError('Online scan failed', error);
       setResult(root, 'invalid', error.message);
     });
   }
@@ -947,21 +956,102 @@ document.addEventListener('click', function (event) {
         });
       });
     }).catch(function (error) {
+      logError('Offline sync failed', error);
       setOfflineStatus(root, error.message || label(root, 'sync-failed', 'Synchronization failed.'));
     });
+  }
+
+  function stopScanner(root, showStatus) {
+    var video = root.querySelector('[data-taka-scan-video]');
+    var stop = root.querySelector('[data-taka-scan-stop]');
+    var reader = root.querySelector('[data-taka-html5-reader]');
+    var html5 = root._takaHtml5Scanner;
+
+    if (root._takaStopScanner) {
+      root._takaStopScanner();
+      root._takaStopScanner = null;
+    }
+
+    if (html5 && html5.stop) {
+      html5.stop().then(function () {
+        if (html5.clear) {
+          html5.clear();
+        }
+      }).catch(function (error) {
+        logError('Stopping html5-qrcode failed', error);
+      });
+      root._takaHtml5Scanner = null;
+    }
+
+    if (video) {
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(function (track) { track.stop(); });
+      }
+      video.srcObject = null;
+      video.hidden = true;
+    }
+    if (reader) {
+      reader.hidden = true;
+    }
+    if (stop) {
+      stop.hidden = true;
+    }
+    if (showStatus) {
+      setResult(root, 'info', label(root, 'scanner-stopped', 'Camera stopped.'));
+    }
   }
 
   function startScanner(root) {
     var video = root.querySelector('[data-taka-scan-video]');
     var stop = root.querySelector('[data-taka-scan-stop]');
+    var reader = root.querySelector('[data-taka-html5-reader]');
+    var Html5Qrcode = window.Html5Qrcode || (window.__Html5QrcodeLibrary__ && window.__Html5QrcodeLibrary__.Html5Qrcode);
+
+    setResult(root, 'info', label(root, 'scanner-starting', 'Starting camera scanner...'));
+    stopScanner(root, false);
+
     if (!video || !window.navigator.mediaDevices || !window.navigator.mediaDevices.getUserMedia) {
-      setResult(root, 'invalid', label(root, 'camera-unavailable', 'Camera access is not available in this browser.'));
-      return;
+      if (!Html5Qrcode) {
+        setResult(root, 'invalid', label(root, 'camera-unavailable', 'Camera access is not available in this browser.'));
+        return;
+      }
     }
+
     if (!('BarcodeDetector' in window)) {
-      setResult(root, 'invalid', label(root, 'barcode-unavailable', 'BarcodeDetector is not available. Paste the QR payload below or use a browser with QR scanning support.'));
+      if (!Html5Qrcode || !reader) {
+        setResult(root, 'invalid', label(root, 'barcode-unavailable', 'BarcodeDetector is not available. Paste the QR payload below or use a browser with QR scanning support.'));
+        return;
+      }
+      if (!reader.id) {
+        reader.id = 'taka-html5-qrcode-' + (root.getAttribute('data-event-id') || 'event');
+      }
+      reader.hidden = false;
+      if (stop) {
+        stop.hidden = false;
+      }
+      try {
+        var scanner = new Html5Qrcode(reader.id, false);
+        root._takaHtml5Scanner = scanner;
+        scanner.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 260, height: 260 } },
+          function (decodedText) {
+            handlePayload(root, decodedText);
+          },
+          function () {}
+        ).then(function () {
+          setResult(root, 'info', label(root, 'scanner-running', 'Camera scanner is running.'));
+        }).catch(function (error) {
+          logError('Starting html5-qrcode failed', error);
+          setResult(root, 'invalid', error && error.message ? error.message : label(root, 'camera-failed', 'Camera could not be opened.'));
+        });
+      } catch (error) {
+        logError('html5-qrcode initialization failed', error);
+        setResult(root, 'invalid', error.message || label(root, 'scanner-unavailable', 'QR scanner is not available in this browser.'));
+      }
       return;
     }
+
     var detector = new window.BarcodeDetector({ formats: ['qr_code'] });
     var active = true;
     var last = '';
@@ -980,6 +1070,7 @@ document.addEventListener('click', function (event) {
           stop.hidden = true;
         }
       };
+      setResult(root, 'info', label(root, 'scanner-running', 'Camera scanner is running.'));
       function tick() {
         if (!active) {
           return;
@@ -995,8 +1086,22 @@ document.addEventListener('click', function (event) {
       }
       tick();
     }).catch(function (error) {
+      logError('Camera scanner failed', error);
       setResult(root, 'invalid', error.message || label(root, 'camera-failed', 'Camera could not be opened.'));
     });
+  }
+
+  function scannerRootForTrigger(trigger) {
+    var root = trigger.closest('[data-taka-operations-scanner]');
+    var target;
+    if (root) {
+      return root;
+    }
+    target = trigger.getAttribute('data-taka-scan-target');
+    if (target) {
+      return document.querySelector(target);
+    }
+    return document.querySelector('[data-taka-operations-scanner]');
   }
 
   document.addEventListener('click', function (event) {
@@ -1004,24 +1109,28 @@ document.addEventListener('click', function (event) {
     var stop = event.target.closest('[data-taka-scan-stop]');
     var load = event.target.closest('[data-taka-offline-load]');
     var sync = event.target.closest('[data-taka-offline-sync]');
-    var root = event.target.closest('[data-taka-operations-scanner]');
+    var trigger = start || stop || load || sync;
+    var root = trigger ? scannerRootForTrigger(trigger) : null;
 
-    if (!root) {
+    if (!trigger) {
       return;
     }
+    event.preventDefault();
+    if (!root) {
+      logError('Scanner root missing', trigger);
+      return;
+    }
+
     if (start) {
-      event.preventDefault();
+      root.scrollIntoView({ block: 'start', behavior: 'smooth' });
       startScanner(root);
     } else if (stop) {
-      event.preventDefault();
-      if (root._takaStopScanner) {
-        root._takaStopScanner();
-      }
+      stopScanner(root, true);
     } else if (load) {
-      event.preventDefault();
+      setOfflineStatus(root, label(root, 'offline-loading', 'Loading offline data...'));
       loadOfflineData(root);
     } else if (sync) {
-      event.preventDefault();
+      setOfflineStatus(root, label(root, 'sync-starting', 'Synchronizing offline check-ins...'));
       syncOffline(root);
     }
   });

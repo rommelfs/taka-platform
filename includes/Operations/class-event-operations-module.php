@@ -355,7 +355,7 @@ class TAKA_Event_Operations_Module {
 		<nav class="taka-operations-quick-actions" aria-label="<?php echo esc_attr__( 'Event operation quick actions', 'taka-platform' ); ?>">
 			<?php if ( self::profile_can( $profile, 'walk_in' ) ) : ?><a class="button button-primary" href="#taka-operations-walk-in"><?php echo esc_html__( 'Walk-in registration', 'taka-platform' ); ?></a><?php endif; ?>
 			<?php if ( self::profile_can( $profile, 'search' ) ) : ?><a class="button" href="#taka-operations-search"><?php echo esc_html__( 'Find participant', 'taka-platform' ); ?></a><?php endif; ?>
-			<?php if ( self::profile_can( $profile, 'qr' ) ) : ?><a class="button" href="#taka-operations-qr"><?php echo esc_html__( 'Scan QR code', 'taka-platform' ); ?></a><?php endif; ?>
+			<?php if ( self::profile_can( $profile, 'qr' ) ) : ?><a class="button" href="#taka-operations-qr" data-taka-scan-start data-taka-scan-target="#taka-operations-qr"><?php echo esc_html__( 'Scan QR code', 'taka-platform' ); ?></a><?php endif; ?>
 			<?php if ( self::profile_can( $profile, 'payment' ) ) : ?><a class="button" href="#taka-operations-participant"><?php echo esc_html__( 'Receive payment', 'taka-platform' ); ?></a><?php endif; ?>
 			<?php if ( self::profile_can( $profile, 'check_in' ) ) : ?><a class="button" href="#taka-operations-participant"><?php echo esc_html__( 'Check-in', 'taka-platform' ); ?></a><?php endif; ?>
 			<?php if ( 'volunteer' !== $mode ) : ?>
@@ -371,6 +371,7 @@ class TAKA_Event_Operations_Module {
 			'request-failed'       => __( 'Request failed.', 'taka-platform' ),
 			'payment'              => __( 'Payment', 'taka-platform' ),
 			'offline-ready'        => __( 'Offline ready: %d tickets loaded.', 'taka-platform' ),
+			'offline-loading'      => __( 'Loading offline data...', 'taka-platform' ),
 			'offline-not-loaded'   => __( 'Offline data is not loaded for this event.', 'taka-platform' ),
 			'offline-expired'      => __( 'Offline data has expired. Load offline data again.', 'taka-platform' ),
 			'ticket-not-found'     => __( 'Ticket not found in offline data.', 'taka-platform' ),
@@ -380,10 +381,16 @@ class TAKA_Event_Operations_Module {
 			'offline-stored'       => __( 'Offline check-in stored.', 'taka-platform' ),
 			'offline-unavailable'  => __( 'Offline data is not available.', 'taka-platform' ),
 			'no-unsynced'          => __( 'No unsynchronized check-ins.', 'taka-platform' ),
+			'sync-starting'        => __( 'Synchronizing offline check-ins...', 'taka-platform' ),
 			'sync-finished'        => __( 'Synchronization finished: %d check-ins processed.', 'taka-platform' ),
 			'sync-failed'          => __( 'Synchronization failed.', 'taka-platform' ),
 			'camera-unavailable'   => __( 'Camera access is not available in this browser.', 'taka-platform' ),
 			'barcode-unavailable'  => __( 'BarcodeDetector is not available. Paste the QR payload below or use a browser with QR scanning support.', 'taka-platform' ),
+			'scanner-starting'     => __( 'Starting camera scanner...', 'taka-platform' ),
+			'scanner-running'      => __( 'Camera scanner is running.', 'taka-platform' ),
+			'scanner-stopped'      => __( 'Camera stopped.', 'taka-platform' ),
+			'scanner-unavailable'  => __( 'QR scanner is not available in this browser.', 'taka-platform' ),
+			'offline-init-failed'  => __( 'Offline mode is not available in this browser.', 'taka-platform' ),
 			'camera-failed'        => __( 'Camera could not be opened.', 'taka-platform' ),
 		);
 		?>
@@ -406,6 +413,7 @@ class TAKA_Event_Operations_Module {
 						<button class="button" type="button" data-taka-offline-sync><?php echo esc_html__( 'Synchronize', 'taka-platform' ); ?></button>
 					</div>
 					<video class="taka-operations-scanner__video" data-taka-scan-video playsinline muted hidden></video>
+					<div class="taka-operations-scanner__fallback" data-taka-html5-reader hidden></div>
 					<div class="taka-operations-scanner__fallback" data-taka-scan-fallback hidden></div>
 					<p class="description" data-taka-offline-status><?php echo esc_html__( 'Offline not ready.', 'taka-platform' ); ?></p>
 					<p class="description"><?php echo esc_html__( 'Unsynchronized check-ins:', 'taka-platform' ); ?> <strong data-taka-offline-pending>0</strong></p>
@@ -542,6 +550,10 @@ class TAKA_Event_Operations_Module {
 		}
 
 		if ( class_exists( 'TAKA_Ticketing_QR_Code' ) ) {
+			$png = TAKA_Ticketing_QR_Code::png_data_uri( $payload, 8, 4 );
+			if ( '' !== trim( (string) $png ) ) {
+				return '<div class="taka-operations-qr-rendered" data-taka-qr-payload="' . esc_attr( $payload ) . '"><img src="' . esc_attr( $png ) . '" alt="' . esc_attr__( 'Ticket check-in QR code', 'taka-platform' ) . '"></div>';
+			}
 			$svg = TAKA_Ticketing_QR_Code::svg( $payload, __( 'Ticket check-in QR code', 'taka-platform' ) );
 			if ( '' !== trim( (string) $svg ) ) {
 				return '<div class="taka-operations-qr-rendered" data-taka-qr-payload="' . esc_attr( $payload ) . '">' . $svg . '</div>';
