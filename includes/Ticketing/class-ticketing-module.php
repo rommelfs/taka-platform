@@ -18,6 +18,9 @@ class TAKA_Ticketing_Module {
 	const DIETARY_PREFERENCES_META = '_taka_native_dietary_preferences_enabled';
 	const CHECKOUT_ACTION      = 'taka_ticketing_checkout';
 	const DOWNLOAD_ACTION      = 'taka_ticketing_download_document';
+	const CHECKIN_TOKEN_QUERY_VAR = 'taka_ticket_checkin_token';
+	const CHECKIN_REWRITE_VERSION_OPTION = 'taka_ticketing_checkin_rewrite_version';
+	const CHECKIN_REWRITE_VERSION = '2026-07-token-checkin';
 	const PAYPAL_RETURN_ACTION = 'taka_ticketing_paypal_return';
 	const PAYPAL_CANCEL_ACTION = 'taka_ticketing_paypal_cancel';
 	const PAYPAL_WEBHOOK_ACTION = 'taka_ticketing_paypal_webhook';
@@ -41,8 +44,10 @@ class TAKA_Ticketing_Module {
 		self::register_payment_provider( new TAKA_Ticketing_Pay_At_Door_Provider() );
 		self::register_payment_provider( new TAKA_Ticketing_PayPal_Provider() );
 		add_action( 'init', array( __CLASS__, 'register_post_types' ), 0 );
+		add_action( 'init', array( __CLASS__, 'register_checkin_rewrite' ) );
 		add_action( 'admin_menu', array( __CLASS__, 'register_admin_menu' ), 20 );
 		add_action( 'admin_init', array( __CLASS__, 'ensure_capabilities' ) );
+		add_action( 'admin_init', array( __CLASS__, 'maybe_flush_checkin_rewrites' ) );
 		add_action( 'admin_post_' . self::CHECKOUT_ACTION, array( __CLASS__, 'handle_checkout' ) );
 		add_action( 'admin_post_nopriv_' . self::CHECKOUT_ACTION, array( __CLASS__, 'handle_checkout' ) );
 		add_action( 'admin_post_' . self::DOWNLOAD_ACTION, array( __CLASS__, 'handle_document_download' ) );
@@ -63,6 +68,69 @@ class TAKA_Ticketing_Module {
 		add_action( 'admin_post_' . self::PRODUCT_DELETE_ACTION, array( __CLASS__, 'handle_delete_product' ) );
 		add_shortcode( 'taka_ticketing_product', array( __CLASS__, 'product_shortcode' ) );
 		add_filter( 'taka_platform_event_assistant_sections', array( __CLASS__, 'register_event_assistant_section' ) );
+		add_filter( 'query_vars', array( __CLASS__, 'register_checkin_query_var' ) );
+		add_action( 'template_redirect', array( __CLASS__, 'redirect_checkin_token' ) );
+	}
+
+	public static function register_checkin_rewrite() {
+		add_rewrite_rule( '^checkin/t/([^/]+)/?$', 'index.php?' . self::CHECKIN_TOKEN_QUERY_VAR . '=$matches[1]', 'top' );
+	}
+
+	public static function maybe_flush_checkin_rewrites() {
+		if ( ! current_user_can( 'manage_options' ) || self::CHECKIN_REWRITE_VERSION === get_option( self::CHECKIN_REWRITE_VERSION_OPTION ) ) {
+			return;
+		}
+		self::register_checkin_rewrite();
+		flush_rewrite_rules( false );
+		update_option( self::CHECKIN_REWRITE_VERSION_OPTION, self::CHECKIN_REWRITE_VERSION, false );
+	}
+
+	public static function register_checkin_query_var( $vars ) {
+		$vars[] = self::CHECKIN_TOKEN_QUERY_VAR;
+		return $vars;
+	}
+
+	public static function checkin_url_for_ticket_token( $ticket_token ) {
+		$ticket_token = sanitize_text_field( $ticket_token );
+		return '' !== $ticket_token ? home_url( '/checkin/t/' . rawurlencode( $ticket_token ) ) : '';
+	}
+
+	public static function redirect_checkin_token() {
+		$token = sanitize_text_field( get_query_var( self::CHECKIN_TOKEN_QUERY_VAR, '' ) );
+		if ( '' === $token ) {
+			return;
+		}
+		if ( ! is_user_logged_in() ) {
+			auth_redirect();
+			exit;
+		}
+		if ( ! current_user_can( 'checkin_taka_participants' ) && ! current_user_can( 'view_taka_operations' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'taka-platform' ) );
+		}
+
+		$event_id = 0;
+		if ( class_exists( 'TAKA_Ticketing_Ticket_Artifact_Service' ) ) {
+			$context = TAKA_Ticketing_Ticket_Artifact_Service::find_ticket_context_by_token( $token );
+			if ( is_array( $context ) ) {
+				$ticket = is_array( $context['ticket'] ?? null ) ? $context['ticket'] : array();
+				$order = $context['order'] ?? null;
+				$event_id = absint( $ticket['related_event_id'] ?? 0 );
+				if ( ! $event_id && $order instanceof TAKA_Ticketing_Order ) {
+					$event_id = absint( $order->get( 'event_id', 0 ) );
+				}
+			}
+		}
+
+		$args = array(
+			'qr'      => self::checkin_url_for_ticket_token( $token ),
+			'mode'    => 'volunteer',
+			'profile' => 'entrance',
+		);
+		if ( $event_id ) {
+			$args['event_id'] = $event_id;
+		}
+		wp_safe_redirect( class_exists( 'TAKA_Event_Operations_Module' ) ? TAKA_Event_Operations_Module::admin_url( $args ) : admin_url( 'admin.php' ) );
+		exit;
 	}
 
 	public static function register_post_types() {

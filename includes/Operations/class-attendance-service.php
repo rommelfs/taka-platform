@@ -169,6 +169,113 @@ class TAKA_Event_Operations_Attendance_Service {
 		return $registration;
 	}
 
+	public static function scan_ticket_payload( $event_id, $payload, $actor_id = 0, $device_id = '' ) {
+		$event_id = absint( $event_id );
+		$payload = trim( sanitize_text_field( $payload ) );
+		$device_id = sanitize_text_field( $device_id );
+		if ( ! $event_id || '' === $payload || ! class_exists( 'TAKA_Ticketing_Ticket_Artifact_Service' ) ) {
+			return self::scan_response( 'invalid', __( 'Ticket not found.', 'taka-platform' ) );
+		}
+
+		$context = TAKA_Ticketing_Ticket_Artifact_Service::find_ticket_context_by_payload( $payload );
+		if ( ! is_array( $context ) ) {
+			return self::scan_response( 'not_found', __( 'Ticket not found.', 'taka-platform' ) );
+		}
+
+		$ticket = is_array( $context['ticket'] ?? null ) ? $context['ticket'] : array();
+		$ticket_token = sanitize_text_field( $ticket['ticket_token'] ?? ( $ticket['validation_token'] ?? '' ) );
+		$lock_key = self::acquire_scan_lock( $ticket_token );
+		if ( false === $lock_key ) {
+			return self::scan_response( 'already_checked_in', __( 'This ticket is already being processed. Please scan again.', 'taka-platform' ), $context );
+		}
+
+		try {
+			return self::perform_ticket_scan( $event_id, $context, $actor_id, $device_id );
+		} finally {
+			self::release_scan_lock( $lock_key );
+		}
+	}
+
+	private static function perform_ticket_scan( $event_id, $context, $actor_id = 0, $device_id = '' ) {
+		$order = $context['order'] ?? null;
+		$order_data = is_array( $context['order_data'] ?? null ) ? $context['order_data'] : ( $order instanceof TAKA_Ticketing_Order ? $order->to_array() : array() );
+		$ticket = is_array( $context['ticket'] ?? null ) ? $context['ticket'] : array();
+		$ticket_token = sanitize_text_field( $ticket['ticket_token'] ?? ( $ticket['validation_token'] ?? '' ) );
+		$ticket_event_id = absint( $ticket['related_event_id'] ?? ( $order_data['event_id'] ?? 0 ) );
+		$now = current_time( 'mysql' );
+
+		if ( $ticket_event_id && $ticket_event_id !== $event_id ) {
+			self::touch_ticket_scan( $order, $ticket_token, $now, $device_id );
+			return self::scan_response( 'wrong_event', __( 'This ticket belongs to another event.', 'taka-platform' ), $context );
+		}
+		if ( 'cancelled' === sanitize_key( $order_data['order_status'] ?? '' ) || 'cancelled' === sanitize_key( $ticket['status'] ?? '' ) ) {
+			self::touch_ticket_scan( $order, $ticket_token, $now, $device_id );
+			return self::scan_response( 'cancelled', __( 'This ticket has been cancelled.', 'taka-platform' ), $context );
+		}
+		if ( 'paid' !== sanitize_key( $order_data['payment_status'] ?? 'pending' ) ) {
+			self::touch_ticket_scan( $order, $ticket_token, $now, $device_id );
+			return self::scan_response( 'payment_pending', __( 'Payment is still pending.', 'taka-platform' ), $context );
+		}
+		if ( 'checked_in' === sanitize_key( $ticket['checkin_status'] ?? '' ) ) {
+			self::touch_ticket_scan( $order, $ticket_token, $now, $device_id );
+			return self::scan_response( 'already_checked_in', __( 'This ticket was already checked in.', 'taka-platform' ), $context );
+		}
+
+		$registration_id = absint( $ticket['registration_id'] ?? 0 );
+		if ( $registration_id ) {
+			$registration = self::registration_by_id( $registration_id );
+			if ( ! $registration ) {
+				self::touch_ticket_scan( $order, $ticket_token, $now, $device_id );
+				return self::scan_response( 'not_found', __( 'Linked registration was not found.', 'taka-platform' ), $context );
+			}
+			if ( 'cancelled' === sanitize_key( $registration['registration_status'] ?? '' ) ) {
+				self::touch_ticket_scan( $order, $ticket_token, $now, $device_id );
+				return self::scan_response( 'cancelled', __( 'This registration has been cancelled.', 'taka-platform' ), $context );
+			}
+			if ( 'checked_in' === sanitize_key( $registration['checkin_status'] ?? '' ) || 'checked_in' === sanitize_key( $registration['attendance_state'] ?? '' ) ) {
+				if ( $order instanceof TAKA_Ticketing_Order ) {
+					TAKA_Ticketing_Ticket_Artifact_Service::update_ticket_fields(
+						$order,
+						$ticket_token,
+						array(
+							'checkin_status'    => 'checked_in',
+							'checked_in_at'     => $registration['checked_in_at'] ?? $now,
+							'checked_in_by'     => $registration['checked_in_by'] ?? 0,
+							'checkin_device_id' => $device_id,
+							'last_scan_at'      => $now,
+						)
+					);
+				}
+				return self::scan_response( 'already_checked_in', __( 'This ticket was already checked in.', 'taka-platform' ), $context );
+			}
+			$registration['checkin_device_id'] = $device_id;
+			$registration['last_scan_at'] = $now;
+			self::save_registration( $registration );
+			$checked_in = self::check_in( $registration_id, $actor_id );
+			if ( is_wp_error( $checked_in ) ) {
+				self::touch_ticket_scan( $order, $ticket_token, $now, $device_id );
+				return self::scan_response( 'invalid', $checked_in->get_error_message(), $context );
+			}
+		}
+
+		if ( $order instanceof TAKA_Ticketing_Order ) {
+			$order = TAKA_Ticketing_Ticket_Artifact_Service::update_ticket_fields(
+				$order,
+				$ticket_token,
+				array(
+					'checkin_status'    => 'checked_in',
+					'checked_in_at'     => $now,
+					'checked_in_by'     => absint( $actor_id ),
+					'checkin_device_id' => $device_id,
+					'last_scan_at'      => $now,
+				)
+			);
+			$context = TAKA_Ticketing_Ticket_Artifact_Service::find_ticket_context_by_token( $ticket_token, $event_id ) ?: $context;
+		}
+
+		return self::scan_response( 'checked_in', __( 'Ticket checked in.', 'taka-platform' ), $context, $now );
+	}
+
 	public static function qr_payload( $registration ) {
 		$registration = TAKA_People_Registration::normalize( $registration );
 		return 'TAKA-REG:' . absint( $registration['id'] ?? 0 ) . ':' . self::validation_token( $registration );
@@ -214,6 +321,7 @@ class TAKA_Event_Operations_Attendance_Service {
 		$registration['attendance_state'] = 'checked_in';
 		$registration['checked_in_at'] = current_time( 'mysql' );
 		$registration['checked_in_by'] = absint( $actor_id );
+		$registration['last_scan_at'] = current_time( 'mysql' );
 		$registration['validation_token'] = self::validation_token( $registration );
 		self::append_registration_timeline( $registration, __( 'Checked in', 'taka-platform' ), $actor_id );
 		$saved = self::save_registration( $registration );
@@ -414,6 +522,66 @@ class TAKA_Event_Operations_Attendance_Service {
 		return $labels[ $status ] ?? sanitize_text_field( $status );
 	}
 
+	private static function acquire_scan_lock( $ticket_token ) {
+		$ticket_token = sanitize_text_field( $ticket_token );
+		if ( '' === $ticket_token ) {
+			return '';
+		}
+		$lock_key = 'taka_checkin_lock_' . md5( $ticket_token );
+		if ( add_option( $lock_key, (string) time(), '', 'no' ) ) {
+			return $lock_key;
+		}
+		$existing = absint( get_option( $lock_key, 0 ) );
+		if ( $existing && $existing < time() - MINUTE_IN_SECONDS ) {
+			delete_option( $lock_key );
+			if ( add_option( $lock_key, (string) time(), '', 'no' ) ) {
+				return $lock_key;
+			}
+		}
+		return false;
+	}
+
+	private static function release_scan_lock( $lock_key ) {
+		if ( '' !== (string) $lock_key ) {
+			delete_option( sanitize_key( $lock_key ) );
+		}
+	}
+
+	private static function touch_ticket_scan( $order, $ticket_token, $time, $device_id = '' ) {
+		if ( $order instanceof TAKA_Ticketing_Order && class_exists( 'TAKA_Ticketing_Ticket_Artifact_Service' ) ) {
+			TAKA_Ticketing_Ticket_Artifact_Service::update_ticket_fields(
+				$order,
+				$ticket_token,
+				array(
+					'last_scan_at'      => $time,
+					'checkin_device_id' => $device_id,
+				)
+			);
+		}
+	}
+
+	private static function scan_response( $status, $message, $context = array(), $checked_in_at = '' ) {
+		$context = is_array( $context ) ? $context : array();
+		$order = $context['order'] ?? null;
+		$order_data = is_array( $context['order_data'] ?? null ) ? $context['order_data'] : ( $order instanceof TAKA_Ticketing_Order ? $order->to_array() : array() );
+		$ticket = is_array( $context['ticket'] ?? null ) ? $context['ticket'] : array();
+		$registration = ! empty( $ticket['registration_id'] ) ? self::registration_by_id( absint( $ticket['registration_id'] ) ) : null;
+		$person = $registration ? self::person_for_registration( $registration ) : null;
+		$checked_in_at = '' !== $checked_in_at ? $checked_in_at : sanitize_text_field( $ticket['checked_in_at'] ?? ( $registration['checked_in_at'] ?? '' ) );
+
+		return array(
+			'status'          => sanitize_key( $status ),
+			'message'         => sanitize_text_field( $message ),
+			'participantName' => $person ? TAKA_People_Person::full_name( $person ) : sanitize_text_field( $ticket['recipient_name'] ?? '' ),
+			'eventName'       => sanitize_text_field( $order_data['event_title'] ?? ( ! empty( $ticket['related_event_id'] ) ? get_the_title( absint( $ticket['related_event_id'] ) ) : '' ) ),
+			'ticketType'      => sanitize_text_field( $ticket['title'] ?? ( $order_data['ticket_type_name'] ?? '' ) ),
+			'ticketId'        => sanitize_text_field( $ticket['ticket_id'] ?? '' ),
+			'paymentStatus'   => sanitize_key( $order_data['payment_status'] ?? ( $registration['payment_status'] ?? '' ) ),
+			'checkinStatus'   => sanitize_key( 'checked_in' === $status ? 'checked_in' : ( $ticket['checkin_status'] ?? ( $registration['checkin_status'] ?? 'not_checked_in' ) ) ),
+			'checkedInAt'     => $checked_in_at,
+		);
+	}
+
 	public static function dietary_label( $dietary ) {
 		$labels = array(
 			'none'       => __( 'None', 'taka-platform' ),
@@ -575,7 +743,9 @@ class TAKA_Event_Operations_Attendance_Service {
 		}
 		foreach ( (array) ( $order_data['ticket_artifacts']['tickets'] ?? array() ) as $ticket ) {
 			$parts[] = $ticket['ticket_id'] ?? '';
+			$parts[] = $ticket['ticket_token'] ?? '';
 			$parts[] = $ticket['payload'] ?? '';
+			$parts[] = $ticket['legacy_payload'] ?? '';
 		}
 		return implode( ' ', array_filter( array_map( 'sanitize_text_field', $parts ) ) );
 	}

@@ -302,11 +302,11 @@ QR payloads contain only the registration ID and validation token:
 
 `TAKA-REG:{registration_id}:{validation_token}`
 
-Native ticketing orders also generate per-line-item ticket artifacts for every ticket and product quantity. The public artifacts are PDFs: `Rechnung.pdf` for the booking confirmation / invoice and `Ticket.pdf` for the buyer's ticket bundle. HTML is kept only as an internal render template and must not be attached to customer emails. Product tickets use tokenized payloads:
+Native ticketing orders also generate per-line-item ticket artifacts for every ticket and product quantity. The public artifacts are PDFs: `Rechnung.pdf` for the booking confirmation / invoice and `Ticket.pdf` for the buyer's ticket bundle. HTML is kept only as an internal render template and must not be attached to customer emails. Product tickets use stable, cryptographically random ticket tokens and render short check-in links:
 
-`TAKA-TICKET:{order_id}:{ticket_id}:{validation_token}`
+`https://example.org/checkin/t/{ticket_token}`
 
-The ticket payload contains no personal data. Event Operations validates the token server-side and resolves it back to the linked registration/order. This keeps product QR codes compatible with later entry management without exposing buyer or participant details in the QR code itself.
+The ticket payload contains no personal data. Event Operations validates the token server-side and resolves it back to the linked registration/order. The same token is stored on the ticket record and reused when PDFs are regenerated, so a printed ticket stays valid. Legacy `TAKA-TICKET:{order_id}:{ticket_id}:{validation_token}` payloads remain accepted for backwards compatibility.
 
 PDF rendering uses Dompdf through Composer when `vendor/autoload.php` is present. A small native PDF fallback keeps source checkouts functional, but production builds should install the declared Composer dependency so UTF-8 fonts and multilingual invoice/ticket layouts are rendered by Dompdf.
 
@@ -318,7 +318,11 @@ Invoices use the order's billing organizer snapshot. Organizer finance profiles 
 
 Food preference and allergy collection is event-configurable and disabled by default. When it is disabled, checkout, admin order display, emails and tickets omit those fields.
 
-The default admin UI accepts scanned or pasted QR payloads. Visual QR rendering for registration cards is exposed through the `taka_event_operations_qr_markup` filter, while ticket email attachments are generated server-side by `TAKA_Ticketing_Ticket_Artifact_Service`. Apple Wallet and Google Wallet should be added by hooking into `taka_ticketing_wallet_links`, because signed wallet passes require organizer-specific credentials and must not be faked by the core plugin.
+The default admin UI accepts scanned or pasted QR payloads. Registration cards render a real SVG QR code by default and still expose the `taka_event_operations_qr_markup` filter for sites that need a dedicated renderer. Ticket email attachments are generated server-side by `TAKA_Ticketing_Ticket_Artifact_Service`. Apple Wallet and Google Wallet should be added by hooking into `taka_ticketing_wallet_links`, because signed wallet passes require organizer-specific credentials and must not be faked by the core plugin.
+
+Browser check-in is available in Event Operations. It uses the browser `BarcodeDetector` API when supported, submits the token to the server for authoritative validation, and returns explicit states for valid check-ins, duplicate scans, wrong event, cancelled ticket, pending payment and missing ticket. The camera scanner falls back to the manual QR payload field in browsers without QR detection support.
+
+Offline check-in is intentionally event-scoped. Authorized organizers can load a local IndexedDB manifest for one event, scan tickets without connectivity, detect local duplicate scans, and synchronize pending check-ins when the device is online again. The server still makes the final decision during synchronization and reports conflicts such as already checked-in, cancelled, wrong event or unpaid tickets. Offline manifests should be treated as temporary operational data and refreshed for each event day.
 
 Walk-in registration creates or reuses a Person, creates a private ticket order, reserves capacity immediately, syncs a Registration, and marks it as a walk-in. This keeps walk-ins compatible with existing People profiles, order timelines, products, payments and future check-in features.
 

@@ -587,6 +587,83 @@
 	text-align: center;
 }
 
+.taka-operations-qr-rendered {
+	background: #fff;
+	border: 1px solid var(--taka-ops-border);
+	box-sizing: border-box;
+	display: inline-flex;
+	margin-bottom: 8px;
+	padding: 12px;
+}
+
+.taka-operations-qr-rendered svg {
+	display: block;
+	height: 180px;
+	width: 180px;
+}
+
+.taka-operations-scanner {
+	background: #fff;
+	border: 1px solid var(--taka-ops-border);
+	border-radius: 4px;
+	margin: 12px 0;
+	padding: 12px;
+}
+
+.taka-operations-scanner h3 {
+	margin: 0 0 10px;
+}
+
+.taka-operations-scanner__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 10px;
+}
+
+.taka-operations-scanner__video {
+	aspect-ratio: 4 / 3;
+	background: #111;
+	border-radius: 4px;
+	display: block;
+	margin: 10px 0;
+	max-height: 58vh;
+	object-fit: cover;
+	width: 100%;
+}
+
+.taka-operations-scan-result {
+	background: #f6f7f7;
+	border: 1px solid var(--taka-ops-border);
+	border-radius: 4px;
+	font-size: 15px;
+	font-weight: 700;
+	margin-top: 10px;
+	padding: 12px;
+}
+
+.taka-operations-scan-result.is-checked_in {
+	background: #edfaef;
+	border-color: #68de7c;
+	color: #075b17;
+}
+
+.taka-operations-scan-result.is-already_checked_in,
+.taka-operations-scan-result.is-payment_pending {
+	background: #fcf9e8;
+	border-color: #dba617;
+	color: #6c4300;
+}
+
+.taka-operations-scan-result.is-invalid,
+.taka-operations-scan-result.is-cancelled,
+.taka-operations-scan-result.is-wrong_event,
+.taka-operations-scan-result.is-not_found {
+	background: #fcf0f1;
+	border-color: #d63638;
+	color: #8a2424;
+}
+
 .taka-operations-qr-card code {
 	display: block;
 	overflow-wrap: anywhere;
@@ -861,6 +938,10 @@ body.taka-operations-volunteer-mode #wpbody-content {
 	.taka-operations-admin--volunteer .taka-operations-quick-actions {
 		margin-left: -10px;
 		margin-right: -10px;
+	}
+
+	.taka-operations-scanner__actions .button {
+		width: 100%;
 	}
 }
 

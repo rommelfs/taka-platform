@@ -26,6 +26,8 @@ class TAKA_People_Registration {
 			'validation_token'    => sanitize_text_field( $data['validation_token'] ?? '' ),
 			'checked_in_at'       => sanitize_text_field( $data['checked_in_at'] ?? '' ),
 			'checked_in_by'       => absint( $data['checked_in_by'] ?? 0 ),
+			'checkin_device_id'   => sanitize_text_field( $data['checkin_device_id'] ?? '' ),
+			'last_scan_at'        => sanitize_text_field( $data['last_scan_at'] ?? '' ),
 			'internal_notes'      => sanitize_textarea_field( $data['internal_notes'] ?? '' ),
 			'walk_in'             => ! empty( $data['walk_in'] ) ? '1' : '0',
 			'attendance_sessions' => self::normalize_attendance_sessions( $data['attendance_sessions'] ?? array() ),

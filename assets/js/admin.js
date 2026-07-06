@@ -655,6 +655,384 @@ document.addEventListener('click', function (event) {
   });
 })();
 
+(function () {
+  var dbPromise = null;
+
+  function getDeviceId() {
+    var key = 'taka_operations_device_id';
+    var existing = window.localStorage ? window.localStorage.getItem(key) : '';
+    if (existing) {
+      return existing;
+    }
+    var value = 'dev-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
+    if (window.localStorage) {
+      window.localStorage.setItem(key, value);
+    }
+    return value;
+  }
+
+  function openDb() {
+    if (dbPromise) {
+      return dbPromise;
+    }
+    dbPromise = new Promise(function (resolve, reject) {
+      if (!window.indexedDB) {
+        reject(new Error('IndexedDB is not available.'));
+        return;
+      }
+      var request = window.indexedDB.open('taka-operations-checkin', 1);
+      request.onupgradeneeded = function () {
+        var db = request.result;
+        if (!db.objectStoreNames.contains('manifests')) {
+          db.createObjectStore('manifests', { keyPath: 'event_id' });
+        }
+        if (!db.objectStoreNames.contains('checkins')) {
+          var store = db.createObjectStore('checkins', { keyPath: 'local_id' });
+          store.createIndex('event_id', 'event_id', { unique: false });
+          store.createIndex('ticket_token', 'ticket_token', { unique: false });
+        }
+      };
+      request.onerror = function () {
+        reject(request.error || new Error('IndexedDB could not be opened.'));
+      };
+      request.onsuccess = function () {
+        resolve(request.result);
+      };
+    });
+    return dbPromise;
+  }
+
+  function dbGet(storeName, key) {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(storeName, 'readonly');
+        var request = tx.objectStore(storeName).get(key);
+        request.onerror = function () { reject(request.error); };
+        request.onsuccess = function () { resolve(request.result || null); };
+      });
+    });
+  }
+
+  function dbPut(storeName, value) {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(storeName, 'readwrite');
+        tx.objectStore(storeName).put(value);
+        tx.onerror = function () { reject(tx.error); };
+        tx.oncomplete = function () { resolve(value); };
+      });
+    });
+  }
+
+  function dbAllByEvent(storeName, eventId) {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(storeName, 'readonly');
+        var index = tx.objectStore(storeName).index('event_id');
+        var request = index.getAll(parseInt(eventId, 10));
+        request.onerror = function () { reject(request.error); };
+        request.onsuccess = function () { resolve(request.result || []); };
+      });
+    });
+  }
+
+  function extractToken(payload) {
+    payload = (payload || '').toString().trim();
+    var match = payload.match(/\/checkin\/t\/([A-Za-z0-9_-]+)/);
+    if (match) {
+      return match[1];
+    }
+    return /^[A-Za-z0-9_-]{24,80}$/.test(payload) ? payload : '';
+  }
+
+  function label(root, key, fallback) {
+    return root.getAttribute('data-label-' + key) || fallback;
+  }
+
+  function labelCount(root, key, count, fallback) {
+    return label(root, key, fallback).replace('%d', count);
+  }
+
+  function ajax(root, action, data) {
+    var form = new window.FormData();
+    form.append('action', action);
+    form.append('nonce', root.getAttribute('data-nonce') || '');
+    Object.keys(data || {}).forEach(function (key) {
+      form.append(key, data[key]);
+    });
+    return window.fetch(root.getAttribute('data-ajax-url'), {
+      method: 'POST',
+      credentials: 'same-origin',
+      body: form
+    }).then(function (response) {
+      return response.json();
+    }).then(function (json) {
+      if (!json || !json.success) {
+        throw new Error(json && json.data && json.data.message ? json.data.message : label(root, 'request-failed', 'Request failed.'));
+      }
+      return json.data;
+    });
+  }
+
+  function setResult(root, status, message, data) {
+    var target = root.querySelector('[data-taka-scan-result]');
+    if (!target) {
+      return;
+    }
+    var parts = [message || status];
+    if (data && data.participantName) {
+      parts.push(data.participantName);
+    }
+    if (data && data.ticketType) {
+      parts.push(data.ticketType);
+    }
+    if (data && data.paymentStatus) {
+      parts.push(label(root, 'payment', 'Payment') + ': ' + data.paymentStatus);
+    }
+    if (data && data.checkedInAt) {
+      parts.push(data.checkedInAt);
+    }
+    target.className = 'taka-operations-scan-result is-' + (status || 'info');
+    target.textContent = parts.filter(Boolean).join(' / ');
+  }
+
+  function setOfflineStatus(root, text) {
+    var target = root.querySelector('[data-taka-offline-status]');
+    if (target) {
+      target.textContent = text;
+    }
+  }
+
+  function refreshPending(root) {
+    var eventId = parseInt(root.getAttribute('data-event-id'), 10);
+    return dbAllByEvent('checkins', eventId).then(function (items) {
+      var count = items.filter(function (item) { return 'pending' === item.sync_status; }).length;
+      var target = root.querySelector('[data-taka-offline-pending]');
+      if (target) {
+        target.textContent = count.toString();
+      }
+      return count;
+    }).catch(function () {
+      return 0;
+    });
+  }
+
+  function loadOfflineData(root) {
+    var eventId = parseInt(root.getAttribute('data-event-id'), 10);
+    return ajax(root, root.getAttribute('data-manifest-action'), { event_id: eventId }).then(function (data) {
+      return dbPut('manifests', {
+        event_id: eventId,
+        event_name: data.eventName || '',
+        generated_at: data.generatedAt || '',
+        expires_at: data.expiresAt || '',
+        tickets: data.tickets || []
+      }).then(function () {
+        setOfflineStatus(root, labelCount(root, 'offline-ready', (data.tickets || []).length, 'Offline ready: %d tickets loaded.'));
+        return refreshPending(root);
+      });
+    }).catch(function (error) {
+      setOfflineStatus(root, error.message);
+    });
+  }
+
+  function findOfflineTicket(manifest, payload) {
+    var token = extractToken(payload);
+    return (manifest && manifest.tickets ? manifest.tickets : []).find(function (ticket) {
+      return ticket.payload === payload || ticket.legacy_payload === payload || ticket.ticket_token === token;
+    }) || null;
+  }
+
+  function offlineScan(root, payload) {
+    var eventId = parseInt(root.getAttribute('data-event-id'), 10);
+    var token = extractToken(payload);
+    return dbGet('manifests', eventId).then(function (manifest) {
+      if (!manifest || !manifest.tickets || !manifest.tickets.length) {
+        setResult(root, 'not_found', label(root, 'offline-not-loaded', 'Offline data is not loaded for this event.'));
+        return;
+      }
+      if (manifest.expires_at && Date.parse(manifest.expires_at.replace(' ', 'T') + 'Z') < Date.now()) {
+        setResult(root, 'invalid', label(root, 'offline-expired', 'Offline data has expired. Load offline data again.'));
+        return;
+      }
+      var ticket = findOfflineTicket(manifest, payload);
+      if (!ticket) {
+        setResult(root, 'not_found', label(root, 'ticket-not-found', 'Ticket not found in offline data.'));
+        return;
+      }
+      if ('cancelled' === ticket.order_status || 'cancelled' === ticket.checkin_status) {
+        setResult(root, 'cancelled', label(root, 'ticket-cancelled', 'Ticket cancelled.'), ticket);
+        return;
+      }
+      if ('paid' !== ticket.payment_status) {
+        setResult(root, 'payment_pending', label(root, 'payment-pending', 'Payment pending.'), ticket);
+        return;
+      }
+      return dbAllByEvent('checkins', eventId).then(function (items) {
+        var duplicate = items.some(function (item) {
+          return item.ticket_token === (ticket.ticket_token || token) && 'pending' === item.sync_status;
+        }) || 'checked_in' === ticket.checkin_status;
+        if (duplicate) {
+          setResult(root, 'already_checked_in', label(root, 'already-local', 'Already checked in locally.'), ticket);
+          return refreshPending(root);
+        }
+        return dbPut('checkins', {
+          local_id: 'local-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8),
+          event_id: eventId,
+          payload: payload,
+          ticket_token: ticket.ticket_token || token,
+          device_id: getDeviceId(),
+          scanned_at: new Date().toISOString(),
+          sync_status: 'pending'
+        }).then(function () {
+          ticket.checkin_status = 'checked_in';
+          setResult(root, 'checked_in', label(root, 'offline-stored', 'Offline check-in stored.'), ticket);
+          return dbPut('manifests', manifest).then(function () {
+            return refreshPending(root);
+          });
+        });
+      });
+    }).catch(function (error) {
+      setResult(root, 'invalid', error.message || label(root, 'offline-unavailable', 'Offline data is not available.'));
+    });
+  }
+
+  function onlineScan(root, payload) {
+    return ajax(root, root.getAttribute('data-scan-action'), {
+      event_id: root.getAttribute('data-event-id'),
+      payload: payload,
+      device_id: getDeviceId()
+    }).then(function (data) {
+      setResult(root, data.status, data.message, data);
+    }).catch(function (error) {
+      setResult(root, 'invalid', error.message);
+    });
+  }
+
+  function handlePayload(root, payload) {
+    if (!payload) {
+      return;
+    }
+    if (!window.navigator.onLine) {
+      offlineScan(root, payload);
+      return;
+    }
+    onlineScan(root, payload);
+  }
+
+  function syncOffline(root) {
+    var eventId = parseInt(root.getAttribute('data-event-id'), 10);
+    dbAllByEvent('checkins', eventId).then(function (items) {
+      var pending = items.filter(function (item) { return 'pending' === item.sync_status; });
+      if (!pending.length) {
+        setOfflineStatus(root, label(root, 'no-unsynced', 'No unsynchronized check-ins.'));
+        return;
+      }
+      return ajax(root, root.getAttribute('data-sync-action'), {
+        event_id: eventId,
+        checkins: JSON.stringify(pending)
+      }).then(function (data) {
+        var updates = (data.results || []).map(function (item) {
+          var local = pending.find(function (candidate) { return candidate.local_id === item.localId; });
+          if (!local) {
+            return Promise.resolve();
+          }
+          var status = item.result && item.result.status;
+          local.sync_status = ('checked_in' === status || 'already_checked_in' === status) ? 'synced' : 'conflict';
+          local.sync_result = item.result || {};
+          return dbPut('checkins', local);
+        });
+        return Promise.all(updates).then(function () {
+          setOfflineStatus(root, labelCount(root, 'sync-finished', updates.length, 'Synchronization finished: %d check-ins processed.'));
+          return refreshPending(root);
+        });
+      });
+    }).catch(function (error) {
+      setOfflineStatus(root, error.message || label(root, 'sync-failed', 'Synchronization failed.'));
+    });
+  }
+
+  function startScanner(root) {
+    var video = root.querySelector('[data-taka-scan-video]');
+    var stop = root.querySelector('[data-taka-scan-stop]');
+    if (!video || !window.navigator.mediaDevices || !window.navigator.mediaDevices.getUserMedia) {
+      setResult(root, 'invalid', label(root, 'camera-unavailable', 'Camera access is not available in this browser.'));
+      return;
+    }
+    if (!('BarcodeDetector' in window)) {
+      setResult(root, 'invalid', label(root, 'barcode-unavailable', 'BarcodeDetector is not available. Paste the QR payload below or use a browser with QR scanning support.'));
+      return;
+    }
+    var detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+    var active = true;
+    var last = '';
+    window.navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(function (stream) {
+      video.srcObject = stream;
+      video.hidden = false;
+      if (stop) {
+        stop.hidden = false;
+      }
+      video.play();
+      root._takaStopScanner = function () {
+        active = false;
+        stream.getTracks().forEach(function (track) { track.stop(); });
+        video.hidden = true;
+        if (stop) {
+          stop.hidden = true;
+        }
+      };
+      function tick() {
+        if (!active) {
+          return;
+        }
+        detector.detect(video).then(function (codes) {
+          if (codes && codes[0] && codes[0].rawValue && codes[0].rawValue !== last) {
+            last = codes[0].rawValue;
+            handlePayload(root, last);
+          }
+        }).catch(function () {}).finally(function () {
+          window.requestAnimationFrame(tick);
+        });
+      }
+      tick();
+    }).catch(function (error) {
+      setResult(root, 'invalid', error.message || label(root, 'camera-failed', 'Camera could not be opened.'));
+    });
+  }
+
+  document.addEventListener('click', function (event) {
+    var start = event.target.closest('[data-taka-scan-start]');
+    var stop = event.target.closest('[data-taka-scan-stop]');
+    var load = event.target.closest('[data-taka-offline-load]');
+    var sync = event.target.closest('[data-taka-offline-sync]');
+    var root = event.target.closest('[data-taka-operations-scanner]');
+
+    if (!root) {
+      return;
+    }
+    if (start) {
+      event.preventDefault();
+      startScanner(root);
+    } else if (stop) {
+      event.preventDefault();
+      if (root._takaStopScanner) {
+        root._takaStopScanner();
+      }
+    } else if (load) {
+      event.preventDefault();
+      loadOfflineData(root);
+    } else if (sync) {
+      event.preventDefault();
+      syncOffline(root);
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-taka-operations-scanner]').forEach(function (root) {
+      refreshPending(root);
+    });
+  });
+})();
+
 document.addEventListener('click', function (event) {
   var addEventVideo = event.target.closest('[data-taka-event-video-add]');
   var removeEventVideo = event.target.closest('[data-taka-event-video-remove]');

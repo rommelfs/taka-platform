@@ -8,11 +8,18 @@ defined( 'ABSPATH' ) || exit;
 class TAKA_Event_Operations_Module {
 	const ADMIN_PAGE_SLUG = 'taka-platform-event-operations';
 	const ACTION = 'taka_event_operations_action';
+	const SCAN_ACTION = 'taka_event_operations_scan_ticket';
+	const OFFLINE_MANIFEST_ACTION = 'taka_event_operations_offline_manifest';
+	const SYNC_ACTION = 'taka_event_operations_sync_checkins';
+	const AJAX_NONCE = 'taka_event_operations_scan';
 
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'register_admin_menu' ), 19 );
 		add_action( 'admin_init', array( __CLASS__, 'ensure_capabilities' ) );
 		add_action( 'admin_post_' . self::ACTION, array( __CLASS__, 'handle_action' ) );
+		add_action( 'wp_ajax_' . self::SCAN_ACTION, array( __CLASS__, 'ajax_scan_ticket' ) );
+		add_action( 'wp_ajax_' . self::OFFLINE_MANIFEST_ACTION, array( __CLASS__, 'ajax_offline_manifest' ) );
+		add_action( 'wp_ajax_' . self::SYNC_ACTION, array( __CLASS__, 'ajax_sync_checkins' ) );
 	}
 
 	public static function register_admin_menu() {
@@ -106,6 +113,75 @@ class TAKA_Event_Operations_Module {
 
 		wp_safe_redirect( self::admin_url( $args ) );
 		exit;
+	}
+
+	public static function ajax_scan_ticket() {
+		self::check_ajax_access( true );
+		$event_id = absint( $_POST['event_id'] ?? 0 );
+		if ( ! self::user_can_operate_event( $event_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'You are not allowed to operate this event.', 'taka-platform' ) ), 403 );
+		}
+		$payload = sanitize_text_field( wp_unslash( $_POST['payload'] ?? '' ) );
+		$device_id = sanitize_text_field( wp_unslash( $_POST['device_id'] ?? '' ) );
+		$result = TAKA_Event_Operations_Attendance_Service::scan_ticket_payload( $event_id, $payload, get_current_user_id(), $device_id );
+		wp_send_json_success( $result );
+	}
+
+	public static function ajax_offline_manifest() {
+		self::check_ajax_access();
+		$event_id = absint( $_POST['event_id'] ?? 0 );
+		if ( ! self::user_can_operate_event( $event_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'You are not allowed to operate this event.', 'taka-platform' ) ), 403 );
+		}
+		$tickets = class_exists( 'TAKA_Ticketing_Ticket_Artifact_Service' ) ? TAKA_Ticketing_Ticket_Artifact_Service::offline_manifest_for_event( $event_id ) : array();
+		wp_send_json_success(
+			array(
+				'eventId'     => $event_id,
+				'eventName'   => get_the_title( $event_id ),
+				'generatedAt' => current_time( 'mysql' ),
+				'expiresAt'   => gmdate( 'Y-m-d H:i:s', time() + DAY_IN_SECONDS ),
+				'tickets'     => $tickets,
+			)
+		);
+	}
+
+	public static function ajax_sync_checkins() {
+		self::check_ajax_access( true );
+		$event_id = absint( $_POST['event_id'] ?? 0 );
+		if ( ! self::user_can_operate_event( $event_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'You are not allowed to operate this event.', 'taka-platform' ) ), 403 );
+		}
+		$raw = wp_unslash( $_POST['checkins'] ?? '[]' );
+		$items = json_decode( is_string( $raw ) ? $raw : '[]', true );
+		$items = is_array( $items ) ? $items : array();
+		$results = array();
+		foreach ( $items as $item ) {
+			$item = is_array( $item ) ? $item : array();
+			$payload = sanitize_text_field( $item['payload'] ?? '' );
+			$device_id = sanitize_text_field( $item['device_id'] ?? '' );
+			$scan = TAKA_Event_Operations_Attendance_Service::scan_ticket_payload( $event_id, $payload, get_current_user_id(), $device_id );
+			$results[] = array(
+				'localId' => sanitize_text_field( $item['local_id'] ?? '' ),
+				'payload' => $payload,
+				'result'  => $scan,
+			);
+		}
+		wp_send_json_success(
+			array(
+				'results' => $results,
+				'count'   => count( $results ),
+			)
+		);
+	}
+
+	private static function check_ajax_access( $require_checkin = false ) {
+		check_ajax_referer( self::AJAX_NONCE, 'nonce' );
+		if ( $require_checkin && ! current_user_can( 'checkin_taka_participants' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'taka-platform' ) ), 403 );
+		}
+		if ( ! current_user_can( 'checkin_taka_participants' ) && ! current_user_can( 'view_taka_operations' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'taka-platform' ) ), 403 );
+		}
 	}
 
 	public static function render_admin_page() {
@@ -291,6 +367,25 @@ class TAKA_Event_Operations_Module {
 	}
 
 	private static function render_search_tools( $event_id, $search, $qr, $mode = 'standard', $profile = 'registration' ) {
+		$scanner_labels = array(
+			'request-failed'       => __( 'Request failed.', 'taka-platform' ),
+			'payment'              => __( 'Payment', 'taka-platform' ),
+			'offline-ready'        => __( 'Offline ready: %d tickets loaded.', 'taka-platform' ),
+			'offline-not-loaded'   => __( 'Offline data is not loaded for this event.', 'taka-platform' ),
+			'offline-expired'      => __( 'Offline data has expired. Load offline data again.', 'taka-platform' ),
+			'ticket-not-found'     => __( 'Ticket not found in offline data.', 'taka-platform' ),
+			'ticket-cancelled'     => __( 'Ticket cancelled.', 'taka-platform' ),
+			'payment-pending'      => __( 'Payment pending.', 'taka-platform' ),
+			'already-local'        => __( 'Already checked in locally.', 'taka-platform' ),
+			'offline-stored'       => __( 'Offline check-in stored.', 'taka-platform' ),
+			'offline-unavailable'  => __( 'Offline data is not available.', 'taka-platform' ),
+			'no-unsynced'          => __( 'No unsynchronized check-ins.', 'taka-platform' ),
+			'sync-finished'        => __( 'Synchronization finished: %d check-ins processed.', 'taka-platform' ),
+			'sync-failed'          => __( 'Synchronization failed.', 'taka-platform' ),
+			'camera-unavailable'   => __( 'Camera access is not available in this browser.', 'taka-platform' ),
+			'barcode-unavailable'  => __( 'BarcodeDetector is not available. Paste the QR payload below or use a browser with QR scanning support.', 'taka-platform' ),
+			'camera-failed'        => __( 'Camera could not be opened.', 'taka-platform' ),
+		);
 		?>
 		<section class="taka-operations-panel taka-operations-search-panel" id="taka-operations-search">
 			<h2><?php echo esc_html__( 'Find participant', 'taka-platform' ); ?></h2>
@@ -302,11 +397,25 @@ class TAKA_Event_Operations_Module {
 				<?php submit_button( __( 'Search', 'taka-platform' ), '', '', false ); ?>
 			</form>
 			<?php if ( self::profile_can( $profile, 'qr' ) ) : ?>
-				<form class="taka-operations-search" id="taka-operations-qr" method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
+				<div class="taka-operations-scanner" id="taka-operations-qr" data-taka-operations-scanner data-event-id="<?php echo esc_attr( (string) absint( $event_id ) ); ?>" data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( self::AJAX_NONCE ) ); ?>" data-scan-action="<?php echo esc_attr( self::SCAN_ACTION ); ?>" data-manifest-action="<?php echo esc_attr( self::OFFLINE_MANIFEST_ACTION ); ?>" data-sync-action="<?php echo esc_attr( self::SYNC_ACTION ); ?>" <?php foreach ( $scanner_labels as $key => $label ) : ?>data-label-<?php echo esc_attr( $key ); ?>="<?php echo esc_attr( $label ); ?>" <?php endforeach; ?>>
+					<h3><?php echo esc_html__( 'QR scanner', 'taka-platform' ); ?></h3>
+					<div class="taka-operations-scanner__actions">
+						<button class="button button-primary" type="button" data-taka-scan-start><?php echo esc_html__( 'Scan QR code', 'taka-platform' ); ?></button>
+						<button class="button" type="button" data-taka-scan-stop hidden><?php echo esc_html__( 'Stop camera', 'taka-platform' ); ?></button>
+						<button class="button" type="button" data-taka-offline-load><?php echo esc_html__( 'Load offline data for this event', 'taka-platform' ); ?></button>
+						<button class="button" type="button" data-taka-offline-sync><?php echo esc_html__( 'Synchronize', 'taka-platform' ); ?></button>
+					</div>
+					<video class="taka-operations-scanner__video" data-taka-scan-video playsinline muted hidden></video>
+					<div class="taka-operations-scanner__fallback" data-taka-scan-fallback hidden></div>
+					<p class="description" data-taka-offline-status><?php echo esc_html__( 'Offline not ready.', 'taka-platform' ); ?></p>
+					<p class="description"><?php echo esc_html__( 'Unsynchronized check-ins:', 'taka-platform' ); ?> <strong data-taka-offline-pending>0</strong></p>
+					<div class="taka-operations-scan-result" data-taka-scan-result aria-live="polite"></div>
+				</div>
+				<form class="taka-operations-search" method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
 					<input type="hidden" name="page" value="<?php echo esc_attr( self::ADMIN_PAGE_SLUG ); ?>">
 					<input type="hidden" name="event_id" value="<?php echo esc_attr( (string) absint( $event_id ) ); ?>">
 					<?php if ( 'volunteer' === $mode ) : ?><input type="hidden" name="mode" value="volunteer"><input type="hidden" name="profile" value="<?php echo esc_attr( $profile ); ?>"><?php endif; ?>
-					<label><span><?php echo esc_html__( 'QR payload', 'taka-platform' ); ?></span><input type="search" name="qr" value="<?php echo esc_attr( $qr ); ?>" placeholder="<?php echo esc_attr__( 'Scan or paste registration QR payload', 'taka-platform' ); ?>"></label>
+					<label><span><?php echo esc_html__( 'QR payload', 'taka-platform' ); ?></span><input type="search" name="qr" value="<?php echo esc_attr( $qr ); ?>" placeholder="<?php echo esc_attr__( 'Scan or paste ticket QR payload', 'taka-platform' ); ?>"></label>
 					<?php submit_button( __( 'Find QR', 'taka-platform' ), '', '', false ); ?>
 				</form>
 			<?php endif; ?>
@@ -431,7 +540,15 @@ class TAKA_Event_Operations_Module {
 		if ( '' !== trim( (string) $markup ) ) {
 			return $markup;
 		}
-		return '<div class="taka-operations-qr-placeholder" data-taka-qr-payload="' . esc_attr( $payload ) . '">' . esc_html__( 'QR renderer hook available', 'taka-platform' ) . '</div>';
+
+		if ( class_exists( 'TAKA_Ticketing_QR_Code' ) ) {
+			$svg = TAKA_Ticketing_QR_Code::svg( $payload, __( 'Ticket check-in QR code', 'taka-platform' ) );
+			if ( '' !== trim( (string) $svg ) ) {
+				return '<div class="taka-operations-qr-rendered" data-taka-qr-payload="' . esc_attr( $payload ) . '">' . $svg . '</div>';
+			}
+		}
+
+		return '<div class="taka-operations-qr-placeholder" data-taka-qr-payload="' . esc_attr( $payload ) . '">' . esc_html__( 'QR code could not be rendered for this payload.', 'taka-platform' ) . '</div>';
 	}
 
 	private static function render_activity_timeline( $registration, $order ) {

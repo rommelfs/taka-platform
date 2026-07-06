@@ -331,8 +331,8 @@ class TAKA_Ticketing_PDF_Renderer {
 			}
 			if ( ! empty( $section['qr_payload'] ) ) {
 				self::native_ensure_space( $pages, $content, $y, 175 );
-				self::native_add_qr( $content, $left, $y - 150, $section['qr_payload'], 3.2 );
-				$y -= 170;
+				self::native_add_qr( $content, $left, $y - 200, $section['qr_payload'], 4.4 );
+				$y -= 220;
 			}
 			$y -= 8;
 		}
@@ -426,7 +426,7 @@ class TAKA_Ticketing_PDF_Renderer {
 }
 
 class TAKA_Ticketing_Ticket_Artifact_Service {
-	const VERSION = 2;
+	const VERSION = 3;
 
 	public static function ensure_order_artifacts( TAKA_Ticketing_Order $order, $persist = true ) {
 		$data = $order->to_array();
@@ -521,14 +521,15 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 	}
 
 	public static function registration_from_ticket_payload( $payload ) {
-		$ticket = self::find_ticket_by_payload( $payload );
+		$context = self::find_ticket_context_by_payload( $payload );
+		$ticket = is_array( $context ) ? ( $context['ticket'] ?? null ) : null;
 		if ( ! $ticket || ! class_exists( 'TAKA_People_Module' ) ) {
 			return null;
 		}
 
 		$registration_id = absint( $ticket['registration_id'] ?? 0 );
 		if ( ! $registration_id ) {
-			$order = TAKA_Ticketing_Module::order_repository()->find_by_id( absint( $ticket['order_id'] ?? 0 ) );
+			$order = $context['order'] ?? null;
 			$ids = $order ? array_values( array_filter( array_map( 'absint', (array) $order->get( 'registration_ids', array() ) ) ) ) : array();
 			$registration_id = absint( $ids[0] ?? 0 );
 		}
@@ -537,7 +538,16 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 	}
 
 	public static function find_ticket_by_payload( $payload ) {
+		$context = self::find_ticket_context_by_payload( $payload );
+		return is_array( $context ) ? ( $context['ticket'] ?? null ) : null;
+	}
+
+	public static function find_ticket_context_by_payload( $payload ) {
 		$payload = trim( sanitize_text_field( $payload ) );
+		$token = self::ticket_token_from_payload( $payload );
+		if ( '' !== $token ) {
+			return self::find_ticket_context_by_token( $token );
+		}
 		if ( ! preg_match( '/^TAKA-TICKET:(\d+):([A-Za-z0-9_-]+):([A-Za-z0-9]+)/', $payload, $matches ) || ! class_exists( 'TAKA_Ticketing_Module' ) ) {
 			return null;
 		}
@@ -553,7 +563,7 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 
 		$ticket_id = sanitize_text_field( $matches[2] );
 		$token = sanitize_text_field( $matches[3] );
-		foreach ( (array) ( $data['ticket_artifacts']['tickets'] ?? $data['tickets'] ?? array() ) as $ticket ) {
+		foreach ( (array) ( $data['ticket_artifacts']['tickets'] ?? $data['tickets'] ?? array() ) as $index => $ticket ) {
 			if ( (string) ( $ticket['ticket_id'] ?? '' ) !== $ticket_id ) {
 				continue;
 			}
@@ -561,9 +571,118 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 				return null;
 			}
 			$ticket['order_id'] = absint( $data['id'] ?? 0 );
-			return $ticket;
+			return array(
+				'order'        => $order,
+				'order_data'   => $data,
+				'ticket'       => $ticket,
+				'ticket_index' => absint( $index ),
+			);
 		}
 		return null;
+	}
+
+	public static function find_ticket_context_by_token( $ticket_token, $event_id = 0 ) {
+		$ticket_token = sanitize_text_field( $ticket_token );
+		if ( '' === $ticket_token || ! class_exists( 'TAKA_Ticketing_Module' ) ) {
+			return null;
+		}
+
+		$orders = TAKA_Ticketing_Module::order_repository()->query(
+			array(
+				'event_id'  => absint( $event_id ),
+				'per_page'  => -1,
+			)
+		);
+		foreach ( $orders as $order ) {
+			if ( ! $order instanceof TAKA_Ticketing_Order ) {
+				continue;
+			}
+			$order = self::ensure_order_artifacts( $order, true );
+			$data = $order->to_array();
+			foreach ( (array) ( $data['ticket_artifacts']['tickets'] ?? $data['tickets'] ?? array() ) as $index => $ticket ) {
+				$candidate = sanitize_text_field( $ticket['ticket_token'] ?? ( $ticket['validation_token'] ?? '' ) );
+				if ( '' === $candidate || ! hash_equals( $candidate, $ticket_token ) ) {
+					continue;
+				}
+				$ticket['order_id'] = absint( $data['id'] ?? 0 );
+				return array(
+					'order'        => $order,
+					'order_data'   => $data,
+					'ticket'       => $ticket,
+					'ticket_index' => absint( $index ),
+				);
+			}
+		}
+		return null;
+	}
+
+	public static function ticket_token_from_payload( $payload ) {
+		$payload = trim( sanitize_text_field( $payload ) );
+		if ( preg_match( '#/checkin/t/([A-Za-z0-9_-]+)#', $payload, $matches ) ) {
+			return sanitize_text_field( $matches[1] );
+		}
+		if ( preg_match( '/^[A-Za-z0-9_-]{24,80}$/', $payload ) ) {
+			return $payload;
+		}
+		return '';
+	}
+
+	public static function update_ticket_fields( TAKA_Ticketing_Order $order, $ticket_token, $updates ) {
+		$ticket_token = sanitize_text_field( $ticket_token );
+		if ( '' === $ticket_token || ! class_exists( 'TAKA_Ticketing_Module' ) ) {
+			return $order;
+		}
+		$data = $order->to_array();
+		$tickets = is_array( $data['ticket_artifacts']['tickets'] ?? null ) ? $data['ticket_artifacts']['tickets'] : array();
+		foreach ( $tickets as $index => $ticket ) {
+			$candidate = sanitize_text_field( $ticket['ticket_token'] ?? ( $ticket['validation_token'] ?? '' ) );
+			if ( '' === $candidate || ! hash_equals( $candidate, $ticket_token ) ) {
+				continue;
+			}
+			foreach ( (array) $updates as $field => $value ) {
+				$field = sanitize_key( $field );
+				if ( in_array( $field, array( 'checked_in_by' ), true ) ) {
+					$tickets[ $index ][ $field ] = absint( $value );
+				} else {
+					$tickets[ $index ][ $field ] = sanitize_text_field( $value );
+				}
+			}
+			$data['ticket_artifacts']['tickets'] = $tickets;
+			$data['tickets'] = $tickets;
+			$saved = TAKA_Ticketing_Module::order_repository()->save( new TAKA_Ticketing_Order( $data ) );
+			return is_wp_error( $saved ) ? new TAKA_Ticketing_Order( $data ) : $saved;
+		}
+		return $order;
+	}
+
+	public static function offline_manifest_for_event( $event_id ) {
+		$event_id = absint( $event_id );
+		if ( ! $event_id || ! class_exists( 'TAKA_Ticketing_Module' ) ) {
+			return array();
+		}
+		$items = array();
+		foreach ( TAKA_Ticketing_Module::order_repository()->find_by_event( $event_id, array( 'per_page' => -1 ) ) as $order ) {
+			$order = self::ensure_order_artifacts( $order, true );
+			$data = $order->to_array();
+			foreach ( (array) ( $data['ticket_artifacts']['tickets'] ?? array() ) as $ticket ) {
+				$items[] = array(
+					'ticket_token'        => sanitize_text_field( $ticket['ticket_token'] ?? '' ),
+					'ticket_id'           => sanitize_text_field( $ticket['ticket_id'] ?? '' ),
+					'payload'             => sanitize_text_field( $ticket['payload'] ?? '' ),
+					'legacy_payload'      => sanitize_text_field( $ticket['legacy_payload'] ?? '' ),
+					'title'               => sanitize_text_field( $ticket['title'] ?? '' ),
+					'recipient_name'      => sanitize_text_field( $ticket['recipient_name'] ?? '' ),
+					'registration_id'     => absint( $ticket['registration_id'] ?? 0 ),
+					'event_id'            => absint( $ticket['related_event_id'] ?? $event_id ),
+					'payment_status'      => sanitize_key( $data['payment_status'] ?? 'pending' ),
+					'order_status'        => sanitize_key( $data['order_status'] ?? '' ),
+					'checkin_status'      => sanitize_key( $ticket['checkin_status'] ?? 'not_checked_in' ),
+					'checked_in_at'       => sanitize_text_field( $ticket['checked_in_at'] ?? '' ),
+					'checked_in_by'       => absint( $ticket['checked_in_by'] ?? 0 ),
+				);
+			}
+		}
+		return $items;
 	}
 
 	private static function artifacts_from_order( TAKA_Ticketing_Order $order ) {
@@ -595,16 +714,19 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 				$key = absint( $line_index ) . ':' . $sequence;
 				$ticket = $existing[ $key ] ?? array();
 				$ticket_id = sanitize_text_field( $ticket['ticket_id'] ?? self::generate_ticket_id( $data, $line_index, $sequence ) );
-				$token = sanitize_text_field( $ticket['validation_token'] ?? wp_generate_password( 20, false, false ) );
-				$payload = 'TAKA-TICKET:' . absint( $data['id'] ?? 0 ) . ':' . $ticket_id . ':' . $token;
+				$ticket_token = sanitize_text_field( $ticket['ticket_token'] ?? ( $ticket['validation_token'] ?? wp_generate_password( 36, false, false ) ) );
+				$legacy_payload = 'TAKA-TICKET:' . absint( $data['id'] ?? 0 ) . ':' . $ticket_id . ':' . $ticket_token;
+				$payload = class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::checkin_url_for_ticket_token( $ticket_token ) : $legacy_payload;
 				$recipient = self::recipient_for_line_item( $data, $item, $sequence );
 				$file_base = sanitize_file_name( strtolower( $ticket_id ) );
 				$ticket_dir = trailingslashit( $dir ) . 'tickets/' . $file_base;
 
 				$tickets[] = array(
 					'ticket_id'        => $ticket_id,
-					'validation_token' => $token,
+					'ticket_token'     => $ticket_token,
+					'validation_token' => $ticket_token,
 					'payload'          => $payload,
+					'legacy_payload'   => $legacy_payload,
 					'line_item_index'  => absint( $line_index ),
 					'sequence'         => $sequence,
 					'item_type'        => sanitize_key( $item['item_type'] ?? '' ),
@@ -616,6 +738,11 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 					'recipient_email'  => $recipient['email'],
 					'recipient_name'   => $recipient['name'],
 					'status'           => sanitize_key( $ticket['status'] ?? 'valid' ),
+					'checkin_status'   => sanitize_key( $ticket['checkin_status'] ?? 'not_checked_in' ),
+					'checked_in_at'    => sanitize_text_field( $ticket['checked_in_at'] ?? '' ),
+					'checked_in_by'    => absint( $ticket['checked_in_by'] ?? 0 ),
+					'checkin_device_id' => sanitize_text_field( $ticket['checkin_device_id'] ?? '' ),
+					'last_scan_at'     => sanitize_text_field( $ticket['last_scan_at'] ?? '' ),
 					'path'             => trailingslashit( $ticket_dir ) . 'Ticket.pdf',
 					'html_path'        => trailingslashit( $ticket_dir ) . 'ticket.html',
 					'qr_svg_path'      => trailingslashit( $ticket_dir ) . 'ticket.svg',
@@ -761,6 +888,7 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 			$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.recipient', 'Recipient', $lang ) ) . ':</strong> ' . esc_html( $ticket['recipient_name'] ) . '</p>';
 		}
 		$html .= '<div class="qr">' . ( $ticket['qr_svg'] ?? '' ) . '</div>';
+		$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.ticket_id', 'Ticket ID', $lang ) ) . ':</strong> ' . esc_html( $ticket['ticket_id'] ?? '' ) . '</p>';
 		$html .= '<p><code>' . esc_html( $ticket['payload'] ?? '' ) . '</code></p>';
 		if ( ! empty( $wallet_links ) && is_array( $wallet_links ) ) {
 			$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.wallet', 'Wallet', $lang ) ) . ':</strong> ';
@@ -797,6 +925,7 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 			$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.recipient', 'Recipient', $lang ) ) . ':</strong> ' . esc_html( $ticket['recipient_name'] ) . '</p>';
 		}
 		$html .= '<div class="qr">' . ( $ticket['qr_svg'] ?? '' ) . '</div>';
+		$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.ticket_id', 'Ticket ID', $lang ) ) . ':</strong> ' . esc_html( $ticket['ticket_id'] ?? '' ) . '</p>';
 		$html .= '<p><code>' . esc_html( $ticket['payload'] ?? '' ) . '</code></p>';
 		return $html;
 	}
@@ -970,7 +1099,7 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 	}
 
 	private static function html_header( $title ) {
-		return '<!doctype html><html><head><meta charset="utf-8"><title>' . esc_html( $title ) . '</title><style>body{font-family:DejaVu Sans,Arial,sans-serif;line-height:1.45;color:#1d2327;margin:24px}.qr svg{width:220px;height:220px}.ticket-page{page-break-after:always}table{border-collapse:collapse;width:100%;margin:16px 0}th,td{border:1px solid #ccd0d4;padding:8px;text-align:left}code{font-size:12px;word-break:break-all}</style></head><body>';
+		return '<!doctype html><html><head><meta charset="utf-8"><title>' . esc_html( $title ) . '</title><style>body{font-family:DejaVu Sans,Arial,sans-serif;line-height:1.45;color:#1d2327;margin:24px}.qr{background:#fff;display:inline-block;margin:14px 0;padding:14px}.qr svg{background:#fff;width:280px;height:280px}.ticket-page{page-break-after:always}table{border-collapse:collapse;width:100%;margin:16px 0}th,td{border:1px solid #ccd0d4;padding:8px;text-align:left}code{font-size:12px;word-break:break-all}</style></head><body>';
 	}
 
 	private static function html_footer() {

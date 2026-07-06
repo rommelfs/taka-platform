@@ -102,6 +102,7 @@ register_activation_hook(
 		TAKA_Platform_Admin::register_post_types();
 		TAKA_People_Module::register_post_types();
 		TAKA_Ticketing_Module::register_post_types();
+		TAKA_Ticketing_Module::register_checkin_rewrite();
 		TAKA_Communication_Module::register_post_types();
 		TAKA_Finance_Module::register_post_types();
 		TAKA_Resource_Management_Module::register_post_types();

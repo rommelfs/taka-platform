@@ -137,7 +137,7 @@ class TAKA_People_Registration_Repository {
 		$incoming = TAKA_People_Registration::normalize( $incoming );
 		$existing = TAKA_People_Registration::normalize( $existing );
 
-		foreach ( array( 'validation_token', 'checked_in_at', 'checked_in_by', 'internal_notes', 'attendance_sessions', 'operations_timeline' ) as $field ) {
+		foreach ( array( 'validation_token', 'checked_in_at', 'checked_in_by', 'checkin_device_id', 'last_scan_at', 'internal_notes', 'attendance_sessions', 'operations_timeline' ) as $field ) {
 			$incoming_empty = empty( $incoming[ $field ] );
 			if ( $incoming_empty && ! empty( $existing[ $field ] ) ) {
 				$incoming[ $field ] = $existing[ $field ];
