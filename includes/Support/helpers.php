@@ -96,6 +96,18 @@ function taka_platform_allowed_html() {
 }
 
 /**
+ * Whether frontend templates are currently rendered for a static archive.
+ *
+ * Exporters define TAKA_ARCHIVE_MODE for the current request so templates can
+ * reuse normal rendering while disabling live booking, admin and API features.
+ *
+ * @return bool
+ */
+function taka_platform_is_archive_mode() {
+	return ( defined( 'TAKA_ARCHIVE_MODE' ) && TAKA_ARCHIVE_MODE ) || (bool) apply_filters( 'taka_platform_archive_mode', false );
+}
+
+/**
  * Return allowed HTML for trusted WordPress oEmbed video output.
  *
  * @return array

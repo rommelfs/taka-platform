@@ -37,6 +37,9 @@ class TAKA_Platform_Admin {
 		add_action( 'save_post_taka_content_block', array( __CLASS__, 'save_content_block' ) );
 		add_action( 'admin_post_taka_tour_save_media', array( __CLASS__, 'handle_save_media' ) );
 		add_action( 'admin_post_taka_tour_import_config', array( __CLASS__, 'handle_import_config' ) );
+		if ( class_exists( 'TAKA_Static_Archive_Exporter' ) ) {
+			add_action( 'admin_post_' . TAKA_Static_Archive_Exporter::ACTION, array( 'TAKA_Static_Archive_Exporter', 'handle_export' ) );
+		}
 		add_action( 'admin_post_taka_platform_save_hero', array( __CLASS__, 'handle_save_hero' ) );
 		add_action( 'admin_post_taka_platform_save_sections', array( __CLASS__, 'handle_save_sections' ) );
 		add_action( 'admin_post_taka_platform_save_dashboard_settings', array( __CLASS__, 'handle_save_dashboard_settings' ) );
@@ -1213,6 +1216,9 @@ class TAKA_Platform_Admin {
 			<h3><?php echo esc_html__( 'JSON', 'taka-platform' ); ?></h3>
 			<textarea class="large-text code" rows="8" readonly><?php echo esc_textarea( wp_json_encode( $export, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) ); ?></textarea>
 			<?php self::admin_section_close(); ?>
+			<?php if ( class_exists( 'TAKA_Static_Archive_Exporter' ) ) : ?>
+				<?php TAKA_Static_Archive_Exporter::render_admin_section(); ?>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
@@ -3022,7 +3028,7 @@ class TAKA_Platform_Admin {
 		$value = trim( (string) $value );
 		return '' !== $value && '0' !== $value;
 	}
-	private static function admin_section_open( $title, $description = '', $open = true, $class = '', $key = '', $icon = '' ) {
+	public static function admin_section_open( $title, $description = '', $open = true, $class = '', $key = '', $icon = '' ) {
 		TAKA_Platform_Admin_Collapsible_Section::open(
 			array(
 				'id'            => $key,
@@ -3034,7 +3040,7 @@ class TAKA_Platform_Admin {
 			)
 		);
 	}
-	private static function admin_section_close() { TAKA_Platform_Admin_Collapsible_Section::close(); }
+	public static function admin_section_close() { TAKA_Platform_Admin_Collapsible_Section::close(); }
 	private static function field( $label, $html ) { echo '<p><label><strong>' . esc_html( $label ) . '</strong><br>' . $html . '</label></p>'; }
 	private static function source_text_label( $label ) { return sprintf( __( '%s — Original text', 'taka-platform' ), $label ); }
 	private static function translation_text_label( $label ) { return sprintf( __( '%s — Website translation', 'taka-platform' ), $label ); }

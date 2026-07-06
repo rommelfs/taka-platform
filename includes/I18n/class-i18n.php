@@ -55,6 +55,24 @@ class TAKA_Platform_I18n {
 		return $this->current_language;
 	}
 
+	/**
+	 * Set the active language for controlled rendering contexts.
+	 *
+	 * Exporters use this to render a complete static archive in one selected
+	 * language without relying on request cookies or browser preferences.
+	 *
+	 * @param string $lang Language code.
+	 * @return string Active language after sanitization.
+	 */
+	public function set_current_language( $lang ) {
+		$lang = sanitize_key( (string) $lang );
+		if ( ! in_array( $lang, $this->get_all_languages(), true ) ) {
+			$lang = 'de';
+		}
+		$this->current_language = $lang;
+		return $this->current_language;
+	}
+
 	public function translate( $path, $fallback = '', $lang = null ) {
 		$lang  = $lang ?: $this->get_current_language();
 		$value = $this->get_value( $lang, $path );

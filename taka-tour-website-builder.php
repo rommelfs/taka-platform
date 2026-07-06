@@ -2,14 +2,14 @@
 /**
  * Plugin Name: TAKA Platform
  * Description: Ticketing, Attendance, Knowledge & Administration for reusable event and seminar tours.
- * Version: 2.2.18
+ * Version: 2.2.19
  * Author: TAKA Platform
  * Text Domain: taka-platform
  */
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'TAKA_PLATFORM_VERSION', '2.2.18' );
+define( 'TAKA_PLATFORM_VERSION', '2.2.19' );
 define( 'TAKA_PLATFORM_PLUGIN_FILE', __FILE__ );
 define( 'TAKA_PLATFORM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TAKA_PLATFORM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -79,6 +79,7 @@ require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Documents/class-documents-modu
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Rendering/class-tour-map-label-layout.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Data/class-repository.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/ImportExport/class-translation-packages.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/ImportExport/class-static-archive-exporter.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Integrations/EventsManager/interface-event-export-provider.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Integrations/EventsManager/class-ics-provider.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Integrations/EventsManager/class-csv-provider.php';
