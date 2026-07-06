@@ -3406,9 +3406,26 @@ class TAKA_Platform_Admin {
 		$source_language = TAKA_Platform_Translation_Packages::sanitize_language( wp_unslash( $_POST['_taka_source_language'] ?? 'de' ) );
 		update_post_meta( $post_id, '_taka_source_language', $source_language );
 		$posted = isset( $_POST['taka_platform_text_translations'] ) && is_array( $_POST['taka_platform_text_translations'] ) ? wp_unslash( $_POST['taka_platform_text_translations'] ) : array();
+		$posted = self::canonicalize_posted_text_translation_aliases( $posted, $object_type );
 		$previous = isset( $_POST['taka_platform_text_source_previous'] ) && is_array( $_POST['taka_platform_text_source_previous'] ) ? wp_unslash( $_POST['taka_platform_text_source_previous'] ) : array();
+		$previous = self::canonicalize_posted_text_translation_aliases( $previous, $object_type );
 		self::save_object_source_text_from_translations( $post_id, $object_type, $fields, $posted, $previous, $source_language, $old_source_language );
 		update_post_meta( $post_id, '_taka_text_translations', TAKA_Platform_Data::normalize_object_text_translations( $posted, $fields ) );
+	}
+
+	private static function canonicalize_posted_text_translation_aliases( $posted, $object_type ) {
+		$posted = is_array( $posted ) ? $posted : array();
+		$aliases = TAKA_Platform_Data::translatable_text_field_aliases( $object_type );
+		foreach ( $aliases as $canonical => $field_aliases ) {
+			foreach ( (array) $field_aliases as $alias ) {
+				if ( empty( $posted[ $alias ] ) || ! is_array( $posted[ $alias ] ) ) { continue; }
+				foreach ( $posted[ $alias ] as $lang => $value ) {
+					if ( '' !== trim( (string) ( $posted[ $canonical ][ $lang ] ?? '' ) ) ) { continue; }
+					$posted[ $canonical ][ $lang ] = $value;
+				}
+			}
+		}
+		return $posted;
 	}
 
 	private static function save_object_source_text_from_translations( $post_id, $object_type, $fields, $posted, $previous, $source_language, $old_source_language ) {

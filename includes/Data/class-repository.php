@@ -769,6 +769,16 @@ class TAKA_Platform_Data {
 		return $fields[ $object_type ] ?? array();
 	}
 
+	/** Backwards-compatible aliases for public text fields renamed in the admin UI. */
+	public static function translatable_text_field_aliases( $object_type ) {
+		$aliases = array(
+			'event' => array(
+				'description' => array( 'seminar_description', 'short_description' ),
+			),
+		);
+		return $aliases[ $object_type ] ?? array();
+	}
+
 	/** Normalize the source language stored on one translatable object. */
 	public static function object_source_language( $object ) {
 		$lang = sanitize_key( (string) ( is_array( $object ) ? ( $object['source_language'] ?? '' ) : '' ) );
@@ -778,14 +788,31 @@ class TAKA_Platform_Data {
 	/** Normalize field/language translation arrays for object-level text fields. */
 	public static function normalize_object_text_translations( $translations, $fields = array() ) {
 		$translations = is_array( $translations ) ? $translations : array();
-		$fields = ! empty( $fields ) ? array_keys( $fields ) : array_keys( self::translatable_text_fields( 'event' ) );
+		$field_map = ! empty( $fields ) ? $fields : self::translatable_text_fields( 'event' );
+		$fields = array_keys( $field_map );
+		$aliases = self::translation_aliases_for_fields( $field_map );
 		$clean = array();
 		foreach ( $fields as $field ) {
 			foreach ( self::content_section_languages() as $lang ) {
-				$clean[ $field ][ $lang ] = self::sanitize_translatable_text( $translations[ $field ][ $lang ] ?? '' );
+				$value = $translations[ $field ][ $lang ] ?? '';
+				foreach ( (array) ( $aliases[ $field ] ?? array() ) as $alias ) {
+					if ( '' !== trim( (string) $value ) ) { break; }
+					$value = $translations[ $alias ][ $lang ] ?? '';
+				}
+				$clean[ $field ][ $lang ] = self::sanitize_translatable_text( $value );
 			}
 		}
 		return $clean;
+	}
+
+	/** Infer aliases for the field set being normalized without changing public field names. */
+	private static function translation_aliases_for_fields( $fields ) {
+		$field_keys = array_keys( (array) $fields );
+		$is_event_fieldset = in_array( 'long_description', $field_keys, true ) || in_array( 'ticket_card_text', $field_keys, true ) || 'Seminar description' === (string) ( $fields['description'] ?? '' );
+		if ( $is_event_fieldset && in_array( 'description', $field_keys, true ) ) {
+			return self::translatable_text_field_aliases( 'event' );
+		}
+		return array();
 	}
 
 	private static function sanitize_translatable_text( $value ) {

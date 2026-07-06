@@ -261,7 +261,8 @@ class TAKA_Platform_Translation_Packages {
 				$summary['errors'][] = 'Invalid item in package.';
 				continue;
 			}
-			$id = (string) $item['id'];
+			$id = self::canonical_item_id( (string) $item['id'] );
+			$item['id'] = $id;
 			if ( empty( $index[ $id ] ) ) {
 				$summary['warnings'][] = 'Unknown item skipped: ' . $id;
 				foreach ( array_keys( (array) ( $item['translations'] ?? array() ) ) as $lang ) {
@@ -646,7 +647,7 @@ class TAKA_Platform_Translation_Packages {
 		$wanted_types = array();
 		foreach ( (array) $package_items as $item ) {
 			if ( ! is_array( $item ) || empty( $item['id'] ) ) { continue; }
-			$id = (string) $item['id'];
+			$id = self::canonical_item_id( (string) $item['id'] );
 			$parts = explode( ':', $id, 3 );
 			if ( 3 !== count( $parts ) ) { continue; }
 			$wanted_ids[ $id ] = true;
@@ -673,6 +674,15 @@ class TAKA_Platform_Translation_Packages {
 			}
 		}
 		return $index;
+	}
+
+	private static function canonical_item_id( $id ) {
+		$parts = explode( ':', (string) $id, 3 );
+		if ( 3 !== count( $parts ) ) { return (string) $id; }
+		if ( 'event' === sanitize_key( $parts[0] ) && 'seminar_description' === sanitize_key( $parts[2] ) ) {
+			$parts[2] = 'description';
+		}
+		return implode( ':', $parts );
 	}
 
 	private static function current_value_for_item( $object_type, $object_id, $field ) {
