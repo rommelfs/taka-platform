@@ -1,0 +1,12 @@
+{
+  "name": "taka-platform/taka-platform",
+  "description": "TAKA Platform WordPress plugin.",
+  "type": "wordpress-plugin",
+  "require": {
+    "php": ">=7.4",
+    "dompdf/dompdf": "^3.1"
+  },
+  "config": {
+    "allow-plugins": false
+  }
+}

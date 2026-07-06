@@ -2116,6 +2116,9 @@ class TAKA_Platform_Admin {
 		return array(
 			'_taka_legal_name' => $item['legal_name'] ?? '',
 			'_taka_website' => $item['website'] ?? '',
+			'_taka_phone' => $item['phone'] ?? '',
+			'_taka_billing_address' => $item['billing_address'] ?? ( $item['address'] ?? '' ),
+			'_taka_tax_id' => $item['tax_id'] ?? ( $item['vat_id'] ?? '' ),
 			'_taka_country' => $country,
 			'_taka_country_code' => $country_code,
 			'_taka_flag' => TAKA_Platform_Data::flag_for_country_code( $country_code ) ?: ( $item['flag'] ?? '' ),
@@ -2223,6 +2226,8 @@ class TAKA_Platform_Admin {
 			'_taka_native_payment_methods_configured' => array_key_exists( 'native_payment_methods', $item ) ? '1' : '',
 			'_taka_native_bank_transfer_settings' => class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::normalize_bank_transfer_settings( $item['native_bank_transfer_settings'] ?? array() ) : array(),
 			'_taka_native_pay_at_door_instructions' => sanitize_textarea_field( $item['native_pay_at_door_instructions'] ?? '' ),
+			'_taka_native_dietary_preferences_enabled' => ! empty( $item['native_dietary_preferences_enabled'] ) ? '1' : '0',
+			'_taka_ticket_location_detail' => sanitize_text_field( $item['ticket_location_detail'] ?? '' ),
 			'_taka_image_id' => (int) ( $item['image_id'] ?? 0 ),
 			'_taka_image_url' => $item['image_url'] ?? ( $item['image'] ?? '' ),
 			'_taka_group_image_id' => (int) ( $item['group_image_id'] ?? 0 ),
@@ -2270,11 +2275,14 @@ class TAKA_Platform_Admin {
 
 		self::admin_section_open( __( 'Contact details', 'taka-platform' ), __( 'Administrative and public contact channels for this organizer.', 'taka-platform' ), true, 'taka-admin-section--essential', 'organizer-contact-details' );
 		self::textarea( $post->ID, 'emails', __( 'Email addresses (one per line)', 'taka-platform' ) );
+		self::text( $post->ID, 'phone', __( 'Phone', 'taka-platform' ) );
 		self::textarea( $post->ID, 'contact_persons', __( 'Contact persons (one per line)', 'taka-platform' ) );
 		self::admin_section_close();
 
 		if ( class_exists( 'TAKA_Ticketing_Module' ) ) {
 			self::admin_section_open( __( 'Financial accounts', 'taka-platform' ), __( 'Private bank and PayPal accounts used for native ticketing orders billed in this organizer’s name.', 'taka-platform' ), false, 'taka-admin-section--advanced', 'organizer-financial-accounts' );
+			self::textarea( $post->ID, 'billing_address', __( 'Billing address', 'taka-platform' ) );
+			self::text( $post->ID, 'tax_id', __( 'VAT ID / tax number', 'taka-platform' ) );
 			TAKA_Ticketing_Module::render_organizer_financial_settings( $post->ID );
 			self::admin_section_close();
 		}
@@ -2348,6 +2356,7 @@ class TAKA_Platform_Admin {
 		self::admin_section_open( __( 'Venue', 'taka-platform' ), __( 'Connect this event to one or more venues.', 'taka-platform' ), true, 'taka-admin-section--essential', 'event-venue' );
 		self::relation( $post->ID, 'venue_id', __( 'Primary venue', 'taka-platform' ), TAKA_PLATFORM_CPT_VENUE );
 		self::text( $post->ID, 'venue_ids', __( 'Additional venue IDs, comma-separated', 'taka-platform' ) );
+		self::text( $post->ID, 'ticket_location_detail', __( 'Room / dojo / hall for tickets', 'taka-platform' ) );
 		self::admin_section_close();
 
 		self::admin_section_open( __( 'Organizer', 'taka-platform' ), __( 'Assign event hosts and co-hosts with visible roles.', 'taka-platform' ), true, 'taka-admin-section--essential', 'event-organizer' );
@@ -2453,7 +2462,7 @@ class TAKA_Platform_Admin {
 
 	public static function save_organizer( $post_id ) {
 		self::save_access_fields( $post_id );
-		self::save( $post_id, array( 'legal_name', 'website', 'country', 'country_code', 'flag', 'logo_id', 'logo_url', 'emails', 'contact_persons', 'instagram', 'facebook', 'youtube', 'active' ) );
+		self::save( $post_id, array( 'legal_name', 'website', 'country', 'country_code', 'flag', 'logo_id', 'logo_url', 'emails', 'phone', 'contact_persons', 'billing_address', 'tax_id', 'instagram', 'facebook', 'youtube', 'active' ) );
 		self::save_object_country_meta( $post_id );
 		self::save_object_text_translations( $post_id, 'organizer' );
 		self::save_co_organizers( $post_id );
@@ -2516,7 +2525,7 @@ class TAKA_Platform_Admin {
 				$posted_relationships = TAKA_Platform_Data::normalize_event_organizer_relationships( get_post_meta( $post_id, '_taka_event_organizers', true ), $existing );
 			}
 		}
-		self::save( $post_id, array( 'country', 'country_code', 'flag', 'route_map_x', 'route_map_y', 'route_map_label', 'route_map_label_x', 'route_map_label_y', 'route_map_label_anchor', 'route_map_label_width', 'route_map_leader_line', 'tour_order', 'city', 'doors_open', 'timezone', 'currency', 'format', 'audience', 'level', 'ticket_mode', 'ticket_provider', 'ticket_status', 'ticket_door_price', 'ticket_door_price_reduced', 'ticket_door_price_child', 'ticket_door_price_member', 'photo_credit', 'languages', 'organizer_id', 'venue_id', 'venue_ids', 'ticket_shop_url', 'image_id', 'image_url', 'group_image_id', 'group_image_url', 'gallery_image_ids', 'booking_info_override', 'booking_info_enabled', 'booking_info_title', 'booking_info_intro', 'booking_info_group_booking', 'booking_info_multi_event_discount', 'booking_info_contact_email', 'booking_info_booking_process', 'booking_info_payment_methods', 'booking_info_cancellation_policy', 'booking_info_additional_notes', 'sort_order' ) );
+		self::save( $post_id, array( 'country', 'country_code', 'flag', 'route_map_x', 'route_map_y', 'route_map_label', 'route_map_label_x', 'route_map_label_y', 'route_map_label_anchor', 'route_map_label_width', 'route_map_leader_line', 'tour_order', 'city', 'doors_open', 'timezone', 'currency', 'format', 'audience', 'level', 'ticket_mode', 'ticket_provider', 'ticket_status', 'ticket_door_price', 'ticket_door_price_reduced', 'ticket_door_price_child', 'ticket_door_price_member', 'photo_credit', 'languages', 'organizer_id', 'venue_id', 'venue_ids', 'ticket_location_detail', 'ticket_shop_url', 'image_id', 'image_url', 'group_image_id', 'group_image_url', 'gallery_image_ids', 'booking_info_override', 'booking_info_enabled', 'booking_info_title', 'booking_info_intro', 'booking_info_group_booking', 'booking_info_multi_event_discount', 'booking_info_contact_email', 'booking_info_booking_process', 'booking_info_payment_methods', 'booking_info_cancellation_policy', 'booking_info_additional_notes', 'sort_order' ) );
 		self::save_content_reference_meta( $post_id, 'content_reference_event_description', 'event_description' );
 		self::save_object_text_translations( $post_id, 'event' );
 		self::save_event_organizer_relationships( $post_id, $posted_relationships );

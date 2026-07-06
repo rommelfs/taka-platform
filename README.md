@@ -178,7 +178,7 @@ Run the repository lint script before submitting changes:
 ./scripts/lint.sh
 ```
 
-The script checks PHP syntax for all `*.php` files with `php -l` and scans the repository for merge conflict markers. No Composer, npm or PHPUnit test configuration is currently included, so broader functional testing is manual in a WordPress install.
+The script checks PHP syntax for all `*.php` files with `php -l` and scans the repository for merge conflict markers. Composer is used only for optional runtime libraries such as Dompdf for ticket/invoice PDF rendering; the plugin remains defensive when `vendor/autoload.php` is absent. No npm or PHPUnit test configuration is currently included, so broader functional testing is manual in a WordPress install.
 
 ## Migration notes
 

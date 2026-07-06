@@ -302,13 +302,21 @@ QR payloads contain only the registration ID and validation token:
 
 `TAKA-REG:{registration_id}:{validation_token}`
 
-Native ticketing orders also generate per-line-item ticket artifacts for every ticket and product quantity. These artifacts are attached to confirmation emails together with a booking confirmation / invoice document. Product tickets use tokenized payloads:
+Native ticketing orders also generate per-line-item ticket artifacts for every ticket and product quantity. The public artifacts are PDFs: `Rechnung.pdf` for the booking confirmation / invoice and `Ticket.pdf` for the buyer's ticket bundle. HTML is kept only as an internal render template and must not be attached to customer emails. Product tickets use tokenized payloads:
 
 `TAKA-TICKET:{order_id}:{ticket_id}:{validation_token}`
 
 The ticket payload contains no personal data. Event Operations validates the token server-side and resolves it back to the linked registration/order. This keeps product QR codes compatible with later entry management without exposing buyer or participant details in the QR code itself.
 
+PDF rendering uses Dompdf through Composer when `vendor/autoload.php` is present. A small native PDF fallback keeps source checkouts functional, but production builds should install the declared Composer dependency so UTF-8 fonts and multilingual invoice/ticket layouts are rendered by Dompdf.
+
 Event checkout supports buying multiple tickets in a single order. Ticket quantity is stored on the ticket line item, participates in pricing and capacity calculations, and controls how many individual ticket artifacts are issued. For multiple event tickets, checkout asks for participant data per ticket. Participant email addresses, when provided, are used as ticket recipients. Add-ons and standalone products do not ask for separate recipient addresses by default; their tickets are sent to the buyer unless future product-specific participant data is introduced.
+
+Successful checkout pages expose tokenized download links for the same invoice and ticket PDFs that are sent by email. The token is the order's non-public checkout token; PDF files remain in the protected upload area and should never be linked by raw filesystem or upload URLs.
+
+Invoices use the order's billing organizer snapshot. Organizer finance profiles should include legal/billing name, billing address, email, optional phone/website and optional VAT ID or tax number. Event checkout stores the snapshot at order time so later organizer profile edits do not rewrite historical invoices.
+
+Food preference and allergy collection is event-configurable and disabled by default. When it is disabled, checkout, admin order display, emails and tickets omit those fields.
 
 The default admin UI accepts scanned or pasted QR payloads. Visual QR rendering for registration cards is exposed through the `taka_event_operations_qr_markup` filter, while ticket email attachments are generated server-side by `TAKA_Ticketing_Ticket_Artifact_Service`. Apple Wallet and Google Wallet should be added by hooking into `taka_ticketing_wallet_links`, because signed wallet passes require organizer-specific credentials and must not be faked by the core plugin.
 

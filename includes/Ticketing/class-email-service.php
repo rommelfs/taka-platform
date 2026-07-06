@@ -100,13 +100,14 @@ class TAKA_Ticketing_Email_Service {
 		$provider = TAKA_Ticketing_Module::payment_provider( $data['payment_method'] ?? '' );
 		$instructions = $provider ? $provider->get_public_instructions( $order ) : array();
 		$line_items = is_array( $data['line_items'] ?? null ) ? $data['line_items'] : array();
+		$include_dietary = ! empty( $data['dietary_preferences_enabled'] );
 
 		$lines = array(
 			$admin ? self::label( 'ticketing.email_intro_admin', 'A new ticket order has been received.', $lang ) : self::label( 'ticketing.email_intro_buyer', 'Your registration has been received.', $lang ),
 			'',
 			self::label( 'ticketing.order_number', 'Order number', $lang ) . ': ' . ( $data['order_number'] ?? '' ),
-			self::label( 'ticketing.buyer', 'Buyer', $lang ) . ': ' . self::person_line( $buyer, $lang, true ),
-			self::label( 'ticketing.participant', 'Participant', $lang ) . ': ' . self::person_line( $participant, $lang, false ),
+			self::label( 'ticketing.buyer', 'Buyer', $lang ) . ': ' . self::person_line( $buyer, $lang, true, $include_dietary ),
+			self::label( 'ticketing.participant', 'Participant', $lang ) . ': ' . self::person_line( $participant, $lang, false, $include_dietary ),
 			self::label( 'ticketing.payment_method', 'Payment method', $lang ) . ': ' . TAKA_Ticketing_Module::payment_method_label( $data['payment_method'] ?? '', $lang ),
 			self::label( 'ticketing.amount', 'Amount', $lang ) . ': ' . TAKA_Ticketing_Module::format_money( $data['amount'] ?? '', $data['currency'] ?? 'EUR' ),
 			self::label( 'ticketing.payment_status', 'Payment status', $lang ) . ': ' . self::payment_status_label( $data['payment_status'] ?? 'pending', $lang ),
@@ -136,7 +137,7 @@ class TAKA_Ticketing_Email_Service {
 			$lines[] = '';
 			$lines[] = self::label( 'ticketing.participants', 'Participants', $lang ) . ':';
 			foreach ( $participants as $item ) {
-				$lines[] = '- ' . self::person_line( is_array( $item ) ? $item : array(), $lang, true );
+				$lines[] = '- ' . self::person_line( is_array( $item ) ? $item : array(), $lang, true, $include_dietary );
 			}
 		}
 		if ( ! $admin && ! empty( self::order_confirmation_attachments( $order ) ) ) {
@@ -169,7 +170,7 @@ class TAKA_Ticketing_Email_Service {
 		if ( 'bank_transfer' === (string) ( $data['payment_method'] ?? '' ) ) {
 			$lines[] = '';
 			$lines[] = self::label( 'ticketing.bank_transfer_instructions', 'Bank transfer instructions', $lang );
-			foreach ( array( 'account_holder', 'iban', 'bic', 'bank_name', 'payment_reference' ) as $field ) {
+			foreach ( array( 'account_holder', 'bank_name', 'iban', 'bic', 'amount', 'payment_reference', 'due_date' ) as $field ) {
 				if ( '' !== trim( (string) ( $instructions[ $field ] ?? '' ) ) ) {
 					$lines[] = self::label( 'ticketing.' . $field, ucwords( str_replace( '_', ' ', $field ) ), $lang ) . ': ' . $instructions[ $field ];
 				}
@@ -291,7 +292,7 @@ class TAKA_Ticketing_Email_Service {
 		return in_array( $lang, TAKA_Platform_Data::content_section_languages(), true ) ? $lang : TAKA_Platform_Data::platform_fallback_language();
 	}
 
-	private static function person_line( $person, $lang, $include_email ) {
+	private static function person_line( $person, $lang, $include_email, $include_dietary = true ) {
 		$name = trim( ( $person['first_name'] ?? '' ) . ' ' . ( $person['last_name'] ?? '' ) );
 		$parts = array( $name );
 		if ( $include_email && '' !== trim( (string) ( $person['email'] ?? '' ) ) ) {
@@ -300,7 +301,7 @@ class TAKA_Ticketing_Email_Service {
 		if ( '' !== trim( (string) ( $person['country'] ?? '' ) ) ) {
 			$parts[] = TAKA_Platform_Data::country_label( $person['country'], $lang );
 		}
-		if ( '' !== trim( (string) ( $person['dietary_preference'] ?? '' ) ) && 'none' !== (string) $person['dietary_preference'] ) {
+		if ( $include_dietary && '' !== trim( (string) ( $person['dietary_preference'] ?? '' ) ) && 'none' !== (string) $person['dietary_preference'] ) {
 			$parts[] = self::dietary_label( $person['dietary_preference'], $lang );
 		}
 		return trim( implode( ' / ', array_filter( $parts ) ) );

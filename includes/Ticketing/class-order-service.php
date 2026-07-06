@@ -63,9 +63,10 @@ class TAKA_Ticketing_Order_Service {
 		}
 
 		$buyer = self::buyer_from_post( $posted );
+		$collect_dietary = $event_id ? TAKA_Ticketing_Module::event_collects_dietary_preferences( $event_id ) : false;
 		$participant_posted = self::participant_post_data( $posted, $standalone_product_id, $ticket_quantity );
-		$participants = self::participants_from_post( $participant_posted, $buyer, '' === $standalone_product_id ? $ticket_quantity : 1 );
-		$participant = $participants[0] ?? self::participant_from_post( $participant_posted, $buyer );
+		$participants = self::participants_from_post( $participant_posted, $buyer, '' === $standalone_product_id ? $ticket_quantity : 1, $collect_dietary );
+		$participant = $participants[0] ?? self::participant_from_post( $participant_posted, $buyer, $collect_dietary );
 		$error = self::validate_people( $buyer, $participant, ! empty( $participant_posted['participant_is_buyer'] ), $lang, $participants );
 		if ( is_wp_error( $error ) ) {
 			return $error;
@@ -124,6 +125,7 @@ class TAKA_Ticketing_Order_Service {
 				'public_token'        => wp_generate_password( 32, false, false ),
 				'event_id'            => $event_id,
 				'event_title'         => $event_id ? get_the_title( $event_id ) : '',
+				'event_details'       => $event_id ? TAKA_Ticketing_Module::event_ticket_details( $event_id, $lang ) : array(),
 				'organizer_id'        => absint( $billing_context['organizer_id'] ?? 0 ),
 				'organizer_name'      => sanitize_text_field( $billing_context['organizer_name'] ?? '' ),
 				'billing_organizer'   => $billing_context,
@@ -133,6 +135,7 @@ class TAKA_Ticketing_Order_Service {
 				'buyer'               => $buyer,
 				'participant'         => $participant,
 				'participants'        => $participants,
+				'dietary_preferences_enabled' => $collect_dietary ? '1' : '0',
 				'original_amount'     => $pricing['original_amount'],
 				'discount_amount'     => $pricing['discount_amount'],
 				'amount'              => $pricing['final_amount'],
@@ -335,22 +338,22 @@ class TAKA_Ticketing_Order_Service {
 		return $posted;
 	}
 
-	private static function participants_from_post( $posted, $buyer, $ticket_quantity ) {
+	private static function participants_from_post( $posted, $buyer, $ticket_quantity, $collect_dietary = true ) {
 		$ticket_quantity = max( 1, absint( $ticket_quantity ) );
 		if ( $ticket_quantity <= 1 ) {
-			return array( self::participant_from_post( $posted, $buyer ) );
+			return array( self::participant_from_post( $posted, $buyer, $collect_dietary ) );
 		}
 
 		$items = isset( $posted['ticket_participants'] ) && is_array( $posted['ticket_participants'] ) ? $posted['ticket_participants'] : array();
 		$participants = array();
 		for ( $index = 0; $index < $ticket_quantity; $index++ ) {
 			$row = is_array( $items[ $index ] ?? null ) ? $items[ $index ] : array();
-			$participants[] = self::participant_from_row( $row );
+			$participants[] = self::participant_from_row( $row, $collect_dietary );
 		}
 		return $participants;
 	}
 
-	private static function participant_from_row( $row ) {
+	private static function participant_from_row( $row, $collect_dietary = true ) {
 		$row = is_array( $row ) ? $row : array();
 		return array_merge(
 			array(
@@ -369,7 +372,8 @@ class TAKA_Ticketing_Order_Service {
 					'participant_dietary_notes'      => $row['dietary_notes'] ?? '',
 					'participant_allergies'          => $row['allergies'] ?? '',
 					'participant_notes'              => $row['notes'] ?? '',
-				)
+				),
+				$collect_dietary
 			)
 		);
 	}
@@ -395,8 +399,8 @@ class TAKA_Ticketing_Order_Service {
 		);
 	}
 
-	private static function participant_from_post( $posted, $buyer ) {
-		$extra = self::participant_extra_from_post( $posted );
+	private static function participant_from_post( $posted, $buyer, $collect_dietary = true ) {
+		$extra = self::participant_extra_from_post( $posted, $collect_dietary );
 		if ( ! empty( $posted['participant_is_buyer'] ) ) {
 			return array_merge(
 				array(
@@ -420,7 +424,12 @@ class TAKA_Ticketing_Order_Service {
 		);
 	}
 
-	private static function participant_extra_from_post( $posted ) {
+	private static function participant_extra_from_post( $posted, $collect_dietary = true ) {
+		if ( ! $collect_dietary ) {
+			$posted['participant_dietary_preference'] = 'none';
+			$posted['participant_dietary_notes'] = '';
+			$posted['participant_allergies'] = '';
+		}
 		$dietary_preference = sanitize_key( $posted['participant_dietary_preference'] ?? 'none' );
 		if ( ! in_array( $dietary_preference, array( 'none', 'vegetarian', 'vegan', 'other' ), true ) ) {
 			$dietary_preference = 'none';

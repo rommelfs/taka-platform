@@ -22,14 +22,27 @@ class TAKA_Ticketing_Bank_Transfer_Provider implements TAKA_Ticketing_Payment_Pr
 		$order_data = is_object( $order ) && method_exists( $order, 'to_array' ) ? $order->to_array() : (array) $order;
 		$settings = $this->settings_for_event( absint( $order_data['event_id'] ?? 0 ) );
 		$reference = $this->payment_reference( $order, $settings['payment_reference_template'] ?? '' );
+		$lang = sanitize_key( $order_data['language'] ?? '' );
+		$due_days = absint( $settings['payment_due_days'] ?? 0 );
+		$due_date = '';
+		if ( $due_days > 0 ) {
+			$created = strtotime( (string) ( $order_data['created_at'] ?? current_time( 'mysql' ) ) );
+			$due_date = date_i18n( get_option( 'date_format' ), ( $created ?: time() ) + ( DAY_IN_SECONDS * $due_days ) );
+		}
+		$instructions = trim( (string) ( $settings['instructions_text'] ?? '' ) );
+		if ( '' === $instructions && class_exists( 'TAKA_Ticketing_Module' ) ) {
+			$instructions = TAKA_Ticketing_Module::text( 'ticketing.bank_transfer_default_explanation', 'Please transfer the total amount using the payment reference within the stated payment period. Your booking will be confirmed after payment has been received.', $lang );
+		}
 
 		return array(
 			'account_holder'    => $settings['account_holder'] ?? '',
 			'iban'              => $settings['iban'] ?? '',
 			'bic'               => $settings['bic'] ?? '',
 			'bank_name'         => $settings['bank_name'] ?? '',
+			'amount'            => class_exists( 'TAKA_Ticketing_Module' ) ? TAKA_Ticketing_Module::format_money( $order_data['amount'] ?? '0', $order_data['currency'] ?? 'EUR' ) : (string) ( $order_data['amount'] ?? '' ),
 			'payment_reference' => $reference,
-			'instructions'      => $settings['instructions_text'] ?? '',
+			'due_date'          => $due_date,
+			'instructions'      => $instructions,
 		);
 	}
 
@@ -73,6 +86,7 @@ class TAKA_Ticketing_Bank_Transfer_Provider implements TAKA_Ticketing_Payment_Pr
 			'bic'                        => array( 'type' => 'text', 'label' => __( 'BIC', 'taka-platform' ) ),
 			'bank_name'                  => array( 'type' => 'text', 'label' => __( 'Bank name', 'taka-platform' ) ),
 			'payment_reference_template' => array( 'type' => 'text', 'label' => __( 'Payment reference template', 'taka-platform' ) ),
+			'payment_due_days'           => array( 'type' => 'number', 'label' => __( 'Payment due after days', 'taka-platform' ) ),
 			'instructions_text'          => array( 'type' => 'textarea', 'label' => __( 'Instructions text', 'taka-platform' ) ),
 		);
 	}

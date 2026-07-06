@@ -351,6 +351,7 @@
 		var prefill = existing.length ? existing : parseJsonAttribute(multi, 'data-taka-participants-prefill', []);
 		var countries = parseJsonAttribute(multi, 'data-taka-country-options', {});
 		var dietary = parseJsonAttribute(multi, 'data-taka-dietary-options', {});
+		var collectDietary = '1' === (multi.getAttribute('data-taka-dietary-enabled') || '0');
 		var buyerDefaults = buyerParticipantDefaults(root);
 
 		target.innerHTML = '';
@@ -379,7 +380,9 @@
 			appendParticipantField(grid, participantSectionLabel(multi, 'country', 'Country'), makeSelect('ticket_participants[' + index + '][country]', rowData.country || '', countries, true, 'country'));
 			appendParticipantField(grid, participantSectionLabel(multi, 'dojo', 'Dojo / Club'), makeInput('ticket_participants[' + index + '][dojo]', rowData.dojo || '', false, 'text', 'dojo'));
 			appendParticipantField(grid, participantSectionLabel(multi, 'rank', 'Rank / Belt'), makeInput('ticket_participants[' + index + '][rank]', rowData.rank || '', false, 'text', 'rank'));
-			appendParticipantField(grid, participantSectionLabel(multi, 'dietary', 'Dietary preference'), makeSelect('ticket_participants[' + index + '][dietary_preference]', rowData.dietary_preference || 'none', dietary, false, 'dietary_preference'));
+			if (collectDietary) {
+				appendParticipantField(grid, participantSectionLabel(multi, 'dietary', 'Dietary preference'), makeSelect('ticket_participants[' + index + '][dietary_preference]', rowData.dietary_preference || 'none', dietary, false, 'dietary_preference'));
+			}
 			article.appendChild(grid);
 			target.appendChild(article);
 		}

@@ -11,9 +11,14 @@ defined( 'ABSPATH' ) || exit;
 
 class TAKA_Ticketing_QR_Code {
 	public static function svg( $text, $label = 'QR-Code' ) {
+		$modules = self::modules( $text );
+		return empty( $modules ) ? '' : self::svg_from_modules( $modules, $label );
+	}
+
+	public static function modules( $text ) {
 		$bytes = self::utf8_bytes( $text );
 		if ( count( $bytes ) > 106 ) {
-			return '';
+			return array();
 		}
 
 		$size = 37;
@@ -29,7 +34,7 @@ class TAKA_Ticketing_QR_Code {
 		self::place_data( $matrix, $bits );
 		self::draw_format_bits( $matrix, 0 );
 
-		return self::svg_from_modules( $matrix['modules'], $label );
+		return $matrix['modules'];
 	}
 
 	private static function utf8_bytes( $text ) {
@@ -262,8 +267,166 @@ class TAKA_Ticketing_QR_Code {
 	}
 }
 
+class TAKA_Ticketing_PDF_Renderer {
+	public static function from_html( $html, $fallback_title, $sections = array() ) {
+		self::load_optional_libraries();
+		if ( class_exists( '\Dompdf\Dompdf' ) ) {
+			$options_class = '\Dompdf\Options';
+			$options = class_exists( $options_class ) ? new $options_class() : null;
+			if ( $options && method_exists( $options, 'set' ) ) {
+				$options->set( 'isRemoteEnabled', false );
+				$options->set( 'defaultFont', 'DejaVu Sans' );
+			}
+			$dompdf_class = '\Dompdf\Dompdf';
+			$dompdf = $options ? new $dompdf_class( $options ) : new $dompdf_class();
+			$dompdf->loadHtml( self::pdf_html( $html ), 'UTF-8' );
+			$dompdf->setPaper( 'A4', 'portrait' );
+			$dompdf->render();
+			return $dompdf->output();
+		}
+		if ( class_exists( '\Mpdf\Mpdf' ) ) {
+			$mpdf_class = '\Mpdf\Mpdf';
+			$mpdf = new $mpdf_class( array( 'mode' => 'utf-8', 'format' => 'A4' ) );
+			$mpdf->WriteHTML( self::pdf_html( $html ) );
+			return $mpdf->Output( '', 'S' );
+		}
+		return self::native_pdf( $fallback_title, $sections );
+	}
+
+	private static function load_optional_libraries() {
+		if ( defined( 'TAKA_PLATFORM_PLUGIN_DIR' ) ) {
+			$autoload = trailingslashit( TAKA_PLATFORM_PLUGIN_DIR ) . 'vendor/autoload.php';
+			if ( file_exists( $autoload ) ) {
+				require_once $autoload;
+			}
+		}
+	}
+
+	private static function pdf_html( $html ) {
+		return preg_replace( '/<head>/i', '<head><meta charset="utf-8">', (string) $html, 1 );
+	}
+
+	private static function native_pdf( $title, $sections ) {
+		$pages = array();
+		$content = '';
+		$y = 800;
+		$left = 48;
+		$line_height = 15;
+		self::native_add_text( $content, $left, $y, $title, 18, true );
+		$y -= 32;
+
+		foreach ( (array) $sections as $section ) {
+			$heading = (string) ( $section['heading'] ?? '' );
+			if ( '' !== $heading ) {
+				self::native_ensure_space( $pages, $content, $y, 40 );
+				self::native_add_text( $content, $left, $y, $heading, 13, true );
+				$y -= 20;
+			}
+			foreach ( (array) ( $section['lines'] ?? array() ) as $line ) {
+				foreach ( self::wrap_text( $line, 92 ) as $wrapped ) {
+					self::native_ensure_space( $pages, $content, $y, $line_height );
+					self::native_add_text( $content, $left, $y, $wrapped, 10, false );
+					$y -= $line_height;
+				}
+			}
+			if ( ! empty( $section['qr_payload'] ) ) {
+				self::native_ensure_space( $pages, $content, $y, 175 );
+				self::native_add_qr( $content, $left, $y - 150, $section['qr_payload'], 3.2 );
+				$y -= 170;
+			}
+			$y -= 8;
+		}
+		$pages[] = $content;
+		return self::build_pdf( $pages );
+	}
+
+	private static function native_ensure_space( &$pages, &$content, &$y, $needed ) {
+		if ( $y - $needed > 48 ) {
+			return;
+		}
+		$pages[] = $content;
+		$content = '';
+		$y = 800;
+	}
+
+	private static function native_add_text( &$content, $x, $y, $text, $size, $bold ) {
+		$font = $bold ? 'F2' : 'F1';
+		$content .= "BT /{$font} " . (float) $size . " Tf 1 0 0 1 " . (float) $x . ' ' . (float) $y . ' Tm ' . self::pdf_string( $text ) . " Tj ET\n";
+	}
+
+	private static function native_add_qr( &$content, $x, $y, $payload, $module_size ) {
+		$modules = TAKA_Ticketing_QR_Code::modules( $payload );
+		if ( empty( $modules ) ) {
+			self::native_add_text( $content, $x, $y + 72, $payload, 8, false );
+			return;
+		}
+		$quiet = 4;
+		$dimension = ( count( $modules ) + ( $quiet * 2 ) ) * $module_size;
+		$content .= "1 1 1 rg {$x} {$y} {$dimension} {$dimension} re f\n0 0 0 rg\n";
+		foreach ( $modules as $row => $cols ) {
+			foreach ( $cols as $col => $dark ) {
+				if ( ! $dark ) {
+					continue;
+				}
+				$rx = $x + ( ( $col + $quiet ) * $module_size );
+				$ry = $y + $dimension - ( ( $row + $quiet + 1 ) * $module_size );
+				$content .= sprintf( "%.3F %.3F %.3F %.3F re f\n", $rx, $ry, $module_size, $module_size );
+			}
+		}
+	}
+
+	private static function wrap_text( $text, $length ) {
+		$text = preg_replace( '/\s+/', ' ', trim( wp_strip_all_tags( (string) $text ) ) );
+		if ( '' === $text ) {
+			return array( '' );
+		}
+		return explode( "\n", wordwrap( $text, $length, "\n", true ) );
+	}
+
+	private static function pdf_string( $text ) {
+		$text = html_entity_decode( wp_strip_all_tags( (string) $text ), ENT_QUOTES, 'UTF-8' );
+		if ( function_exists( 'iconv' ) ) {
+			$encoded = @iconv( 'UTF-8', 'Windows-1252//TRANSLIT//IGNORE', $text );
+			if ( false !== $encoded ) {
+				$text = $encoded;
+			}
+		}
+		return '(' . strtr( $text, array( '\\' => '\\\\', '(' => '\\(', ')' => '\\)', "\r" => ' ', "\n" => ' ' ) ) . ')';
+	}
+
+	private static function build_pdf( $page_streams ) {
+		$objects = array();
+		$objects[] = '<< /Type /Catalog /Pages 2 0 R >>';
+		$objects[] = '';
+		$objects[] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+		$objects[] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+		$page_ids = array();
+		foreach ( $page_streams as $stream ) {
+			$content_id = count( $objects ) + 1;
+			$objects[] = '<< /Length ' . strlen( $stream ) . " >>\nstream\n" . $stream . "endstream";
+			$page_id = count( $objects ) + 1;
+			$objects[] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' . $content_id . ' 0 R >>';
+			$page_ids[] = $page_id;
+		}
+		$objects[1] = '<< /Type /Pages /Kids [' . implode( ' ', array_map( static function ( $id ) { return $id . ' 0 R'; }, $page_ids ) ) . '] /Count ' . count( $page_ids ) . ' >>';
+		$pdf = "%PDF-1.4\n";
+		$offsets = array( 0 );
+		foreach ( $objects as $index => $object ) {
+			$offsets[] = strlen( $pdf );
+			$pdf .= ( $index + 1 ) . " 0 obj\n" . $object . "\nendobj\n";
+		}
+		$xref = strlen( $pdf );
+		$pdf .= "xref\n0 " . ( count( $objects ) + 1 ) . "\n0000000000 65535 f \n";
+		for ( $i = 1; $i <= count( $objects ); $i++ ) {
+			$pdf .= sprintf( "%010d 00000 n \n", $offsets[ $i ] );
+		}
+		$pdf .= "trailer\n<< /Size " . ( count( $objects ) + 1 ) . " /Root 1 0 R >>\nstartxref\n{$xref}\n%%EOF";
+		return $pdf;
+	}
+}
+
 class TAKA_Ticketing_Ticket_Artifact_Service {
-	const VERSION = 1;
+	const VERSION = 2;
 
 	public static function ensure_order_artifacts( TAKA_Ticketing_Order $order, $persist = true ) {
 		$data = $order->to_array();
@@ -278,8 +441,11 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 		self::protect_artifact_root();
 
 		$tickets = self::build_tickets( $data, $dir );
+		$invoice_html_path = self::invoice_html_path( $data, $dir );
 		$invoice_path = self::invoice_path( $data, $dir );
-		self::write_file( $invoice_path, self::invoice_html( $data, $tickets ) );
+		$invoice_html = self::invoice_html( $data, $tickets );
+		self::write_file( $invoice_html_path, $invoice_html );
+		self::write_file( $invoice_path, TAKA_Ticketing_PDF_Renderer::from_html( $invoice_html, self::document_title( $data, 'invoice' ), self::invoice_pdf_sections( $data, $tickets ) ) );
 
 		foreach ( $tickets as $index => $ticket ) {
 			if ( empty( $ticket['qr_svg'] ) ) {
@@ -288,17 +454,25 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 			if ( ! empty( $tickets[ $index ]['qr_svg_path'] ) ) {
 				self::write_file( $tickets[ $index ]['qr_svg_path'], $tickets[ $index ]['qr_svg'] );
 			}
+			$ticket_html = self::ticket_html( $data, $tickets[ $index ] );
+			if ( ! empty( $tickets[ $index ]['html_path'] ) ) {
+				self::write_file( $tickets[ $index ]['html_path'], $ticket_html );
+			}
 			if ( ! empty( $tickets[ $index ]['path'] ) ) {
-				self::write_file( $tickets[ $index ]['path'], self::ticket_html( $data, $tickets[ $index ] ) );
+				self::write_file( $tickets[ $index ]['path'], TAKA_Ticketing_PDF_Renderer::from_html( $ticket_html, self::document_title( $data, 'ticket' ), self::ticket_pdf_sections( $data, array( $tickets[ $index ] ) ) ) );
 			}
 			unset( $tickets[ $index ]['qr_svg'] );
 		}
+		$ticket_bundle_path = self::ticket_bundle_path( $data, $dir );
+		self::write_file( $ticket_bundle_path, TAKA_Ticketing_PDF_Renderer::from_html( self::ticket_bundle_html( $data, $tickets ), self::document_title( $data, 'ticket' ), self::ticket_pdf_sections( $data, $tickets ) ) );
 
 		$data['ticket_artifacts'] = array(
-			'version'      => self::VERSION,
-			'generated_at' => current_time( 'mysql' ),
-			'invoice_path' => $invoice_path,
-			'tickets'      => $tickets,
+			'version'            => self::VERSION,
+			'generated_at'       => current_time( 'mysql' ),
+			'invoice_path'       => $invoice_path,
+			'invoice_html_path'  => $invoice_html_path,
+			'ticket_bundle_path' => $ticket_bundle_path,
+			'tickets'            => $tickets,
 		);
 		$data['tickets'] = $tickets;
 
@@ -316,12 +490,17 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 		if ( ! empty( $artifacts['invoice_path'] ) && file_exists( $artifacts['invoice_path'] ) ) {
 			$attachments[] = $artifacts['invoice_path'];
 		}
-		foreach ( (array) ( $artifacts['tickets'] ?? array() ) as $ticket ) {
-			if ( ! empty( $ticket['path'] ) && file_exists( $ticket['path'] ) ) {
-				$attachments[] = $ticket['path'];
-			}
+		if ( ! empty( $artifacts['ticket_bundle_path'] ) && file_exists( $artifacts['ticket_bundle_path'] ) ) {
+			$attachments[] = $artifacts['ticket_bundle_path'];
 		}
 		return array_values( array_unique( $attachments ) );
+	}
+
+	public static function document_path( TAKA_Ticketing_Order $order, $document ) {
+		$artifacts = self::artifacts_from_order( $order );
+		$key = 'invoice' === sanitize_key( $document ) ? 'invoice_path' : 'ticket_bundle_path';
+		$path = (string) ( $artifacts[ $key ] ?? '' );
+		return ( '' !== $path && file_exists( $path ) ) ? $path : '';
 	}
 
 	public static function recipient_attachment_map( TAKA_Ticketing_Order $order ) {
@@ -390,7 +569,7 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 	private static function artifacts_from_order( TAKA_Ticketing_Order $order ) {
 		$data = $order->to_array();
 		$artifacts = is_array( $data['ticket_artifacts'] ?? null ) ? $data['ticket_artifacts'] : array();
-		if ( empty( $artifacts['tickets'] ) || empty( $artifacts['invoice_path'] ) ) {
+		if ( empty( $artifacts['tickets'] ) || empty( $artifacts['invoice_path'] ) || empty( $artifacts['ticket_bundle_path'] ) || absint( $artifacts['version'] ?? 0 ) < self::VERSION ) {
 			$order = self::ensure_order_artifacts( $order, true );
 			$data = $order->to_array();
 			$artifacts = is_array( $data['ticket_artifacts'] ?? null ) ? $data['ticket_artifacts'] : array();
@@ -420,6 +599,7 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 				$payload = 'TAKA-TICKET:' . absint( $data['id'] ?? 0 ) . ':' . $ticket_id . ':' . $token;
 				$recipient = self::recipient_for_line_item( $data, $item, $sequence );
 				$file_base = sanitize_file_name( strtolower( $ticket_id ) );
+				$ticket_dir = trailingslashit( $dir ) . 'tickets/' . $file_base;
 
 				$tickets[] = array(
 					'ticket_id'        => $ticket_id,
@@ -436,8 +616,9 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 					'recipient_email'  => $recipient['email'],
 					'recipient_name'   => $recipient['name'],
 					'status'           => sanitize_key( $ticket['status'] ?? 'valid' ),
-					'path'             => trailingslashit( $dir ) . 'ticket-' . $file_base . '.html',
-					'qr_svg_path'      => trailingslashit( $dir ) . 'ticket-' . $file_base . '.svg',
+					'path'             => trailingslashit( $ticket_dir ) . 'Ticket.pdf',
+					'html_path'        => trailingslashit( $ticket_dir ) . 'ticket.html',
+					'qr_svg_path'      => trailingslashit( $ticket_dir ) . 'ticket.svg',
 					'wallet_payload'   => self::wallet_payload( $data, $item, $ticket_id, $payload ),
 					'created_at'       => sanitize_text_field( $ticket['created_at'] ?? current_time( 'mysql' ) ),
 				);
@@ -518,7 +699,22 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 	}
 
 	private static function invoice_path( $data, $dir ) {
+		return trailingslashit( $dir ) . 'Rechnung.pdf';
+	}
+
+	private static function invoice_html_path( $data, $dir ) {
 		return trailingslashit( $dir ) . 'invoice-' . sanitize_file_name( (string) ( $data['order_number'] ?? $data['id'] ?? 'order' ) ) . '.html';
+	}
+
+	private static function ticket_bundle_path( $data, $dir ) {
+		return trailingslashit( $dir ) . 'Ticket.pdf';
+	}
+
+	private static function document_title( $data, $document ) {
+		$lang = sanitize_key( $data['language'] ?? TAKA_Platform_Data::platform_fallback_language() );
+		return 'invoice' === $document
+			? TAKA_Ticketing_Module::text( 'ticketing.booking_confirmation_invoice', 'Booking confirmation / invoice', $lang )
+			: TAKA_Ticketing_Module::text( 'ticketing.ticket', 'Ticket', $lang );
 	}
 
 	private static function invoice_html( $data, $tickets ) {
@@ -526,15 +722,15 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 		$line_items = is_array( $data['line_items'] ?? null ) ? $data['line_items'] : array();
 		$buyer = is_array( $data['buyer'] ?? null ) ? $data['buyer'] : array();
 		$organizer = is_array( $data['billing_organizer'] ?? null ) ? $data['billing_organizer'] : array();
+		$provider = TAKA_Ticketing_Module::payment_provider( $data['payment_method'] ?? '' );
+		$instructions = $provider ? $provider->get_public_instructions( $data ) : array();
 		$title = TAKA_Ticketing_Module::text( 'ticketing.booking_confirmation_invoice', 'Booking confirmation / invoice', $lang );
 		$html = self::html_header( $title );
 		$html .= '<h1>' . esc_html( $title ) . '</h1>';
 		$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.order_number', 'Order number', $lang ) ) . ':</strong> ' . esc_html( $data['order_number'] ?? '' ) . '</p>';
 		$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.event', 'Event', $lang ) ) . ':</strong> ' . esc_html( $data['event_title'] ?? '' ) . '</p>';
 		$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.buyer', 'Buyer', $lang ) ) . ':</strong> ' . esc_html( self::person_name( $buyer ) . ( ! empty( $buyer['email'] ) ? ' <' . $buyer['email'] . '>' : '' ) ) . '</p>';
-		if ( '' !== trim( (string) ( $organizer['organizer_name'] ?? '' ) ) ) {
-			$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.billing_organizer', 'Billing organizer', $lang ) ) . ':</strong> ' . esc_html( $organizer['organizer_name'] ) . '</p>';
-		}
+		$html .= self::organizer_invoice_html( $organizer, $lang );
 		$html .= '<table><thead><tr><th>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.item', 'Item', $lang ) ) . '</th><th>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.quantity', 'Quantity', $lang ) ) . '</th><th>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.total', 'Total', $lang ) ) . '</th></tr></thead><tbody>';
 		foreach ( $line_items as $item ) {
 			$html .= '<tr><td>' . esc_html( $item['title'] ?? '' ) . '</td><td>' . esc_html( (string) max( 1, absint( $item['quantity'] ?? 1 ) ) ) . '</td><td>' . esc_html( TAKA_Ticketing_Module::format_money( $item['total_price'] ?? '0', $item['currency'] ?? ( $data['currency'] ?? 'EUR' ) ) ) . '</td></tr>';
@@ -542,6 +738,9 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 		$html .= '</tbody></table>';
 		$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.final_amount', 'Final amount', $lang ) ) . ':</strong> ' . esc_html( TAKA_Ticketing_Module::format_money( $data['amount'] ?? '0', $data['currency'] ?? 'EUR' ) ) . '</p>';
 		$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.payment_method', 'Payment method', $lang ) ) . ':</strong> ' . esc_html( TAKA_Ticketing_Module::payment_method_label( $data['payment_method'] ?? '', $lang ) ) . '</p>';
+		if ( 'bank_transfer' === (string) ( $data['payment_method'] ?? '' ) ) {
+			$html .= self::bank_transfer_html( $instructions, $lang );
+		}
 		$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.tickets', 'Tickets', $lang ) ) . ':</strong> ' . esc_html( (string) count( $tickets ) ) . '</p>';
 		return $html . self::html_footer();
 	}
@@ -556,6 +755,7 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 		if ( '' !== trim( (string) ( $data['event_title'] ?? '' ) ) ) {
 			$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.event', 'Event', $lang ) ) . ':</strong> ' . esc_html( $data['event_title'] ) . '</p>';
 		}
+		$html .= self::event_details_html( $data, $lang );
 		$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.order_number', 'Order number', $lang ) ) . ':</strong> ' . esc_html( $data['order_number'] ?? '' ) . '</p>';
 		if ( '' !== trim( (string) ( $ticket['recipient_name'] ?? '' ) ) ) {
 			$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.recipient', 'Recipient', $lang ) ) . ':</strong> ' . esc_html( $ticket['recipient_name'] ) . '</p>';
@@ -573,8 +773,204 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 		return $html . self::html_footer();
 	}
 
+	private static function ticket_bundle_html( $data, $tickets ) {
+		$lang = sanitize_key( $data['language'] ?? TAKA_Platform_Data::platform_fallback_language() );
+		$title = TAKA_Ticketing_Module::text( 'ticketing.ticket', 'Ticket', $lang );
+		$html = self::html_header( $title );
+		$html .= '<h1>' . esc_html( $title ) . '</h1>';
+		foreach ( $tickets as $ticket ) {
+			$ticket['qr_svg'] = TAKA_Ticketing_QR_Code::svg( $ticket['payload'], __( 'Ticket QR code', 'taka-platform' ) );
+			$html .= '<section class="ticket-page">' . self::ticket_html_body( $data, $ticket ) . '</section>';
+		}
+		return $html . self::html_footer();
+	}
+
+	private static function ticket_html_body( $data, $ticket ) {
+		$lang = sanitize_key( $data['language'] ?? TAKA_Platform_Data::platform_fallback_language() );
+		$html = '<h2>' . esc_html( $ticket['title'] ?? '' ) . '</h2>';
+		if ( '' !== trim( (string) ( $data['event_title'] ?? '' ) ) ) {
+			$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.event', 'Event', $lang ) ) . ':</strong> ' . esc_html( $data['event_title'] ) . '</p>';
+		}
+		$html .= self::event_details_html( $data, $lang );
+		$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.order_number', 'Order number', $lang ) ) . ':</strong> ' . esc_html( $data['order_number'] ?? '' ) . '</p>';
+		if ( '' !== trim( (string) ( $ticket['recipient_name'] ?? '' ) ) ) {
+			$html .= '<p><strong>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.recipient', 'Recipient', $lang ) ) . ':</strong> ' . esc_html( $ticket['recipient_name'] ) . '</p>';
+		}
+		$html .= '<div class="qr">' . ( $ticket['qr_svg'] ?? '' ) . '</div>';
+		$html .= '<p><code>' . esc_html( $ticket['payload'] ?? '' ) . '</code></p>';
+		return $html;
+	}
+
+	private static function organizer_invoice_html( $organizer, $lang ) {
+		$lines = self::organizer_invoice_lines( $organizer, $lang );
+		if ( empty( $lines ) ) {
+			return '';
+		}
+		$html = '<section><h2>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.billing_organizer', 'Billing organizer', $lang ) ) . '</h2>';
+		foreach ( $lines as $line ) {
+			$html .= '<p>' . esc_html( $line ) . '</p>';
+		}
+		return $html . '</section>';
+	}
+
+	private static function bank_transfer_html( $instructions, $lang ) {
+		$html = '<section><h2>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.bank_transfer_instructions', 'Bank transfer instructions', $lang ) ) . '</h2>';
+		foreach ( self::bank_transfer_lines( $instructions, $lang ) as $line ) {
+			$html .= '<p>' . esc_html( $line ) . '</p>';
+		}
+		return $html . '</section>';
+	}
+
+	private static function event_details_html( $data, $lang ) {
+		$lines = self::event_detail_lines( $data, $lang );
+		if ( empty( $lines ) ) {
+			return '';
+		}
+		$html = '<section><h3>' . esc_html( TAKA_Ticketing_Module::text( 'ticketing.event_details', 'Event details', $lang ) ) . '</h3>';
+		foreach ( $lines as $line ) {
+			$html .= '<p>' . esc_html( $line ) . '</p>';
+		}
+		return $html . '</section>';
+	}
+
+	private static function invoice_pdf_sections( $data, $tickets ) {
+		$lang = sanitize_key( $data['language'] ?? TAKA_Platform_Data::platform_fallback_language() );
+		$buyer = is_array( $data['buyer'] ?? null ) ? $data['buyer'] : array();
+		$sections = array(
+			array(
+				'heading' => TAKA_Ticketing_Module::text( 'ticketing.order', 'Order', $lang ),
+				'lines'   => array_filter(
+					array(
+						TAKA_Ticketing_Module::text( 'ticketing.order_number', 'Order number', $lang ) . ': ' . ( $data['order_number'] ?? '' ),
+						TAKA_Ticketing_Module::text( 'ticketing.event', 'Event', $lang ) . ': ' . ( $data['event_title'] ?? '' ),
+						TAKA_Ticketing_Module::text( 'ticketing.buyer', 'Buyer', $lang ) . ': ' . self::person_name( $buyer ) . ( ! empty( $buyer['email'] ) ? ' <' . $buyer['email'] . '>' : '' ),
+					)
+				),
+			),
+			array(
+				'heading' => TAKA_Ticketing_Module::text( 'ticketing.billing_organizer', 'Billing organizer', $lang ),
+				'lines'   => self::organizer_invoice_lines( $data['billing_organizer'] ?? array(), $lang ),
+			),
+			array(
+				'heading' => TAKA_Ticketing_Module::text( 'ticketing.order_items', 'Order items', $lang ),
+				'lines'   => self::line_item_lines( $data ),
+			),
+			array(
+				'heading' => TAKA_Ticketing_Module::text( 'ticketing.payment', 'Payment', $lang ),
+				'lines'   => array(
+					TAKA_Ticketing_Module::text( 'ticketing.final_amount', 'Final amount', $lang ) . ': ' . TAKA_Ticketing_Module::format_money( $data['amount'] ?? '0', $data['currency'] ?? 'EUR' ),
+					TAKA_Ticketing_Module::text( 'ticketing.payment_method', 'Payment method', $lang ) . ': ' . TAKA_Ticketing_Module::payment_method_label( $data['payment_method'] ?? '', $lang ),
+					TAKA_Ticketing_Module::text( 'ticketing.tickets', 'Tickets', $lang ) . ': ' . count( $tickets ),
+				),
+			),
+		);
+		if ( 'bank_transfer' === (string) ( $data['payment_method'] ?? '' ) ) {
+			$provider = TAKA_Ticketing_Module::payment_provider( 'bank_transfer' );
+			$sections[] = array(
+				'heading' => TAKA_Ticketing_Module::text( 'ticketing.bank_transfer_instructions', 'Bank transfer instructions', $lang ),
+				'lines'   => $provider ? self::bank_transfer_lines( $provider->get_public_instructions( $data ), $lang ) : array(),
+			);
+		}
+		return $sections;
+	}
+
+	private static function ticket_pdf_sections( $data, $tickets ) {
+		$lang = sanitize_key( $data['language'] ?? TAKA_Platform_Data::platform_fallback_language() );
+		$sections = array();
+		foreach ( $tickets as $ticket ) {
+			$lines = array_merge(
+				array_filter(
+					array(
+						TAKA_Ticketing_Module::text( 'ticketing.ticket', 'Ticket', $lang ) . ': ' . ( $ticket['title'] ?? '' ),
+						TAKA_Ticketing_Module::text( 'ticketing.event', 'Event', $lang ) . ': ' . ( $data['event_title'] ?? '' ),
+					)
+				),
+				self::event_detail_lines( $data, $lang ),
+				array_filter(
+					array(
+						TAKA_Ticketing_Module::text( 'ticketing.order_number', 'Order number', $lang ) . ': ' . ( $data['order_number'] ?? '' ),
+						TAKA_Ticketing_Module::text( 'ticketing.recipient', 'Recipient', $lang ) . ': ' . ( $ticket['recipient_name'] ?? '' ),
+						TAKA_Ticketing_Module::text( 'ticketing.ticket_id', 'Ticket ID', $lang ) . ': ' . ( $ticket['ticket_id'] ?? '' ),
+					)
+				)
+			);
+			$sections[] = array(
+				'heading'    => trim( ( $ticket['ticket_id'] ?? '' ) . ' ' . ( $ticket['title'] ?? '' ) ),
+				'lines'      => $lines,
+				'qr_payload' => $ticket['payload'] ?? '',
+			);
+		}
+		return $sections;
+	}
+
+	private static function line_item_lines( $data ) {
+		$lines = array();
+		foreach ( (array) ( $data['line_items'] ?? array() ) as $item ) {
+			$lines[] = sanitize_text_field( $item['title'] ?? '' ) . ' x ' . max( 1, absint( $item['quantity'] ?? 1 ) ) . ' - ' . TAKA_Ticketing_Module::format_money( $item['total_price'] ?? '0', $item['currency'] ?? ( $data['currency'] ?? 'EUR' ) );
+		}
+		return $lines;
+	}
+
+	private static function organizer_invoice_lines( $organizer, $lang ) {
+		$organizer = is_array( $organizer ) ? $organizer : array();
+		$lines = array();
+		$name = trim( (string) ( $organizer['organizer_billing_name'] ?? $organizer['organizer_legal_name'] ?? $organizer['organizer_name'] ?? '' ) );
+		if ( '' !== $name ) {
+			$lines[] = $name;
+		}
+		foreach ( preg_split( '/\r\n|\r|\n/', (string) ( $organizer['organizer_address'] ?? '' ) ) as $line ) {
+			if ( '' !== trim( $line ) ) {
+				$lines[] = trim( $line );
+			}
+		}
+		foreach ( array( 'organizer_email' => 'Email', 'organizer_phone' => 'Phone', 'organizer_website' => 'Website', 'organizer_tax_id' => 'VAT ID / tax number' ) as $field => $fallback ) {
+			if ( '' !== trim( (string) ( $organizer[ $field ] ?? '' ) ) ) {
+				$lines[] = TAKA_Ticketing_Module::text( 'ticketing.' . $field, $fallback, $lang ) . ': ' . $organizer[ $field ];
+			}
+		}
+		return $lines;
+	}
+
+	private static function bank_transfer_lines( $instructions, $lang ) {
+		$instructions = is_array( $instructions ) ? $instructions : array();
+		$lines = array();
+		foreach ( array( 'account_holder' => 'Account holder', 'bank_name' => 'Bank name', 'iban' => 'IBAN', 'bic' => 'BIC', 'amount' => 'Amount', 'payment_reference' => 'Payment reference', 'due_date' => 'Payment due date' ) as $field => $fallback ) {
+			if ( '' !== trim( (string) ( $instructions[ $field ] ?? '' ) ) ) {
+				$lines[] = TAKA_Ticketing_Module::text( 'ticketing.' . $field, $fallback, $lang ) . ': ' . $instructions[ $field ];
+			}
+		}
+		if ( '' !== trim( (string) ( $instructions['instructions'] ?? '' ) ) ) {
+			$lines[] = $instructions['instructions'];
+		}
+		return $lines;
+	}
+
+	private static function event_detail_lines( $data, $lang ) {
+		$details = is_array( $data['event_details'] ?? null ) ? $data['event_details'] : array();
+		if ( empty( $details ) && ! empty( $data['event_id'] ) && class_exists( 'TAKA_Ticketing_Module' ) ) {
+			$details = TAKA_Ticketing_Module::event_ticket_details( absint( $data['event_id'] ), $lang );
+		}
+		$lines = array();
+		foreach ( array( 'date' => 'Date', 'start_time' => 'Start time', 'end_time' => 'End time', 'doors_open' => 'Doors open', 'venue_name' => 'Venue', 'venue_address' => 'Address', 'room' => 'Room / dojo / hall' ) as $field => $fallback ) {
+			if ( '' !== trim( (string) ( $details[ $field ] ?? '' ) ) ) {
+				$lines[] = TAKA_Ticketing_Module::text( 'ticketing.' . $field, $fallback, $lang ) . ': ' . $details[ $field ];
+			}
+		}
+		$schedule = is_array( $details['schedule'] ?? null ) ? $details['schedule'] : array();
+		if ( count( $schedule ) > 1 ) {
+			foreach ( $schedule as $item ) {
+				$time = trim( (string) ( $item['time_start'] ?? '' ) . ( ! empty( $item['time_end'] ) ? ' - ' . $item['time_end'] : '' ) );
+				$value = implode( ' ', array_filter( array( $item['date'] ?? '', $time, $item['title'] ?? '' ) ) );
+				if ( '' !== trim( $value ) ) {
+					$lines[] = TAKA_Ticketing_Module::text( 'event.schedule', 'Schedule', $lang ) . ': ' . $value;
+				}
+			}
+		}
+		return $lines;
+	}
+
 	private static function html_header( $title ) {
-		return '<!doctype html><html><head><meta charset="utf-8"><title>' . esc_html( $title ) . '</title><style>body{font-family:Arial,sans-serif;line-height:1.45;color:#1d2327;margin:24px}.qr svg{width:220px;height:220px}table{border-collapse:collapse;width:100%;margin:16px 0}th,td{border:1px solid #ccd0d4;padding:8px;text-align:left}code{font-size:12px;word-break:break-all}</style></head><body>';
+		return '<!doctype html><html><head><meta charset="utf-8"><title>' . esc_html( $title ) . '</title><style>body{font-family:DejaVu Sans,Arial,sans-serif;line-height:1.45;color:#1d2327;margin:24px}.qr svg{width:220px;height:220px}.ticket-page{page-break-after:always}table{border-collapse:collapse;width:100%;margin:16px 0}th,td{border:1px solid #ccd0d4;padding:8px;text-align:left}code{font-size:12px;word-break:break-all}</style></head><body>';
 	}
 
 	private static function html_footer() {
