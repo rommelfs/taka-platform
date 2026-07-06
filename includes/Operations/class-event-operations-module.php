@@ -385,11 +385,19 @@ class TAKA_Event_Operations_Module {
 			'sync-finished'        => __( 'Synchronization finished: %d check-ins processed.', 'taka-platform' ),
 			'sync-failed'          => __( 'Synchronization failed.', 'taka-platform' ),
 			'camera-unavailable'   => __( 'Camera access is not available in this browser.', 'taka-platform' ),
+			'camera-insecure'      => __( 'Camera access requires HTTPS or localhost. Please open this check-in page over HTTPS.', 'taka-platform' ),
+			'camera-unsupported'   => __( 'Camera access is not supported in this browser/context.', 'taka-platform' ),
+			'camera-permission'    => __( 'Camera permission denied. Please allow camera access in your browser.', 'taka-platform' ),
+			'camera-not-found'     => __( 'No camera device found.', 'taka-platform' ),
+			'camera-in-use'        => __( 'Camera is already in use by another app.', 'taka-platform' ),
+			'camera-test-starting' => __( 'Starting camera test...', 'taka-platform' ),
+			'camera-test-running'  => __( 'Camera test is running.', 'taka-platform' ),
 			'barcode-unavailable'  => __( 'BarcodeDetector is not available. Paste the QR payload below or use a browser with QR scanning support.', 'taka-platform' ),
 			'scanner-starting'     => __( 'Starting camera scanner...', 'taka-platform' ),
 			'scanner-running'      => __( 'Camera scanner is running.', 'taka-platform' ),
 			'scanner-stopped'      => __( 'Camera stopped.', 'taka-platform' ),
 			'scanner-unavailable'  => __( 'QR scanner is not available in this browser.', 'taka-platform' ),
+			'scanner-library-missing' => __( 'QR scanner library could not be loaded. Please reload the page.', 'taka-platform' ),
 			'offline-init-failed'  => __( 'Offline mode is not available in this browser.', 'taka-platform' ),
 			'camera-failed'        => __( 'Camera could not be opened.', 'taka-platform' ),
 		);
@@ -408,11 +416,12 @@ class TAKA_Event_Operations_Module {
 					<h3><?php echo esc_html__( 'QR scanner', 'taka-platform' ); ?></h3>
 					<div class="taka-operations-scanner__actions">
 						<button class="button button-primary" type="button" data-taka-scan-start><?php echo esc_html__( 'Scan QR code', 'taka-platform' ); ?></button>
+						<button class="button" type="button" data-taka-camera-test><?php echo esc_html__( 'Test camera', 'taka-platform' ); ?></button>
 						<button class="button" type="button" data-taka-scan-stop hidden><?php echo esc_html__( 'Stop camera', 'taka-platform' ); ?></button>
 						<button class="button" type="button" data-taka-offline-load><?php echo esc_html__( 'Load offline data for this event', 'taka-platform' ); ?></button>
 						<button class="button" type="button" data-taka-offline-sync><?php echo esc_html__( 'Synchronize', 'taka-platform' ); ?></button>
 					</div>
-					<video class="taka-operations-scanner__video" data-taka-scan-video playsinline muted hidden></video>
+					<video class="taka-operations-scanner__video" data-taka-scan-video autoplay playsinline muted hidden></video>
 					<div class="taka-operations-scanner__fallback" data-taka-html5-reader hidden></div>
 					<div class="taka-operations-scanner__fallback" data-taka-scan-fallback hidden></div>
 					<p class="description" data-taka-offline-status><?php echo esc_html__( 'Offline not ready.', 'taka-platform' ); ?></p>

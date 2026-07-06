@@ -320,7 +320,7 @@ Food preference and allergy collection is event-configurable and disabled by def
 
 The default admin UI accepts scanned or pasted QR payloads. Registration cards render a real SVG QR code by default and still expose the `taka_event_operations_qr_markup` filter for sites that need a dedicated renderer. Ticket email attachments are generated server-side by `TAKA_Ticketing_Ticket_Artifact_Service`. Apple Wallet and Google Wallet should be added by hooking into `taka_ticketing_wallet_links`, because signed wallet passes require organizer-specific credentials and must not be faked by the core plugin.
 
-Browser check-in is available in Event Operations. It uses the browser `BarcodeDetector` API when supported and falls back to the bundled `html5-qrcode` scanner when native QR detection is unavailable. Scans submit the token to the server for authoritative validation and return explicit states for valid check-ins, duplicate scans, wrong event, cancelled ticket, pending payment and missing ticket. The manual QR payload field remains available for emergency lookup and debugging.
+Browser check-in is available in Event Operations. It uses the browser `BarcodeDetector` API when supported and falls back to the bundled `html5-qrcode` scanner when native QR detection is unavailable. Scans submit the token to the server for authoritative validation and return explicit states for valid check-ins, duplicate scans, wrong event, cancelled ticket, pending payment and missing ticket. The manual QR payload field remains available for emergency lookup and debugging. The `Test camera` button calls `getUserMedia({ video: true })` directly, which helps distinguish HTTPS/browser/permission problems from QR scanner problems.
 
 Offline check-in is intentionally event-scoped. Authorized organizers can load a local IndexedDB manifest for one event, scan tickets without connectivity, detect local duplicate scans, and synchronize pending check-ins when the device is online again. The server still makes the final decision during synchronization and reports conflicts such as already checked-in, cancelled, wrong event or unpaid tickets. Offline manifests should be treated as temporary operational data and refreshed for each event day.
 
@@ -328,10 +328,11 @@ Manual check-in smoke test:
 
 1. Create a native ticketing order and open the generated `Ticket.pdf`.
 2. Scan the ticket QR code with a normal phone camera; it should resolve to `/checkin/t/{ticket_token}`.
-3. Open Event Operations for the event and use `Scan QR code`.
-4. Scan the same QR code; the participant card should show a successful check-in.
-5. Scan the same code again; the response should be `already checked in`.
-6. Use `Load offline data for this event`, disable connectivity, scan a ticket, then reconnect and use `Synchronize`.
+3. Open Event Operations for the event over HTTPS or localhost and use `Test camera`.
+4. If the preview appears, stop the camera and use `Scan QR code`.
+5. Scan the same QR code; the participant card should show a successful check-in.
+6. Scan the same code again; the response should be `already checked in`.
+7. Use `Load offline data for this event`, disable connectivity, scan a ticket, then reconnect and use `Synchronize`.
 
 Walk-in registration creates or reuses a Person, creates a private ticket order, reserves capacity immediately, syncs a Registration, and marks it as a walk-in. This keeps walk-ins compatible with existing People profiles, order timelines, products, payments and future check-in features.
 

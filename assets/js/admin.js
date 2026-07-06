@@ -759,6 +759,116 @@ document.addEventListener('click', function (event) {
     }
   }
 
+  function isLocalhost() {
+    return ['localhost', '127.0.0.1', '::1'].indexOf(window.location.hostname) !== -1;
+  }
+
+  function cameraSupportError(root) {
+    if (!window.isSecureContext && !isLocalhost()) {
+      return label(root, 'camera-insecure', 'Camera access requires HTTPS or localhost. Please open this check-in page over HTTPS.');
+    }
+    if (!window.navigator.mediaDevices || !window.navigator.mediaDevices.getUserMedia) {
+      return label(root, 'camera-unsupported', 'Camera access is not supported in this browser/context.');
+    }
+    return '';
+  }
+
+  function cameraErrorMessage(root, error) {
+    var name = error && error.name ? error.name : '';
+    var raw = 'string' === typeof error ? error : (error && error.message ? error.message : '');
+    var lower = raw.toLowerCase();
+    if (lower.indexOf('permission') !== -1 || lower.indexOf('notallowed') !== -1 || lower.indexOf('not allowed') !== -1 || lower.indexOf('denied') !== -1) {
+      return label(root, 'camera-permission', 'Camera permission denied. Please allow camera access in your browser.');
+    }
+    if (lower.indexOf('notfound') !== -1 || lower.indexOf('not found') !== -1 || lower.indexOf('no camera') !== -1 || lower.indexOf('no video') !== -1) {
+      return label(root, 'camera-not-found', 'No camera device found.');
+    }
+    if (lower.indexOf('notreadable') !== -1 || lower.indexOf('in use') !== -1 || lower.indexOf('could not start') !== -1) {
+      return label(root, 'camera-in-use', 'Camera is already in use by another app.');
+    }
+    if ('NotAllowedError' === name || 'SecurityError' === name || 'PermissionDeniedError' === name) {
+      return label(root, 'camera-permission', 'Camera permission denied. Please allow camera access in your browser.');
+    }
+    if ('NotFoundError' === name || 'DevicesNotFoundError' === name) {
+      return label(root, 'camera-not-found', 'No camera device found.');
+    }
+    if ('NotReadableError' === name || 'TrackStartError' === name) {
+      return label(root, 'camera-in-use', 'Camera is already in use by another app.');
+    }
+    if ('OverconstrainedError' === name || 'ConstraintNotSatisfiedError' === name) {
+      return error && error.message ? error.message : label(root, 'camera-failed', 'Camera could not be opened.');
+    }
+    return error && error.message ? error.message : label(root, 'camera-failed', 'Camera could not be opened.');
+  }
+
+  function cameraConstraints() {
+    return [
+      { video: { facingMode: { ideal: 'environment' } } },
+      { video: { facingMode: 'environment' } },
+      { video: true }
+    ];
+  }
+
+  function canRetryCameraError(error) {
+    var name = error && error.name ? error.name : '';
+    var raw = 'string' === typeof error ? error : (error && error.message ? error.message : '');
+    return ['OverconstrainedError', 'ConstraintNotSatisfiedError', 'TypeError'].indexOf(name) !== -1 || raw.toLowerCase().indexOf('constraint') !== -1;
+  }
+
+  function normalizeCameraError(root, error) {
+    var normalized = error instanceof Error ? error : new Error(String(error || label(root, 'camera-failed', 'Camera could not be opened.')));
+    normalized._takaCameraMessage = cameraErrorMessage(root, error);
+    return normalized;
+  }
+
+  function getCameraStream(root, index) {
+    var supportError = cameraSupportError(root);
+    var constraints = cameraConstraints();
+    index = index || 0;
+
+    if (supportError) {
+      return Promise.reject(new Error(supportError));
+    }
+
+    return window.navigator.mediaDevices.getUserMedia(constraints[index]).catch(function (error) {
+      if (index + 1 < constraints.length && canRetryCameraError(error)) {
+        logError('Camera constraint failed, trying fallback ' + (index + 2), error);
+        return getCameraStream(root, index + 1);
+      }
+      throw normalizeCameraError(root, error);
+    });
+  }
+
+  function showCameraStream(root, stream, mode) {
+    var video = root.querySelector('[data-taka-scan-video]');
+    var stop = root.querySelector('[data-taka-scan-stop]');
+
+    if (!video) {
+      stream.getTracks().forEach(function (track) { track.stop(); });
+      throw new Error(label(root, 'camera-unsupported', 'Camera access is not supported in this browser/context.'));
+    }
+
+    video.setAttribute('autoplay', 'autoplay');
+    video.setAttribute('playsinline', 'playsinline');
+    video.muted = true;
+    video.srcObject = stream;
+    video.hidden = false;
+    if (stop) {
+      stop.hidden = false;
+    }
+    root._takaStopScanner = function () {
+      stream.getTracks().forEach(function (track) { track.stop(); });
+      video.srcObject = null;
+      video.hidden = true;
+      if (stop) {
+        stop.hidden = true;
+      }
+    };
+    return video.play().catch(function (error) {
+      logError(mode + ' video playback failed', error);
+    });
+  }
+
   function ajax(root, action, data) {
     var form = new window.FormData();
     form.append('action', action);
@@ -992,6 +1102,7 @@ document.addEventListener('click', function (event) {
     }
     if (reader) {
       reader.hidden = true;
+      reader.innerHTML = '';
     }
     if (stop) {
       stop.hidden = true;
@@ -1001,75 +1112,147 @@ document.addEventListener('click', function (event) {
     }
   }
 
+  function html5CameraConfigs() {
+    return [
+      { facingMode: { ideal: 'environment' } },
+      { facingMode: 'environment' },
+      null
+    ];
+  }
+
+  function startHtml5Scanner(root, Html5Qrcode, reader, index) {
+    var configs = html5CameraConfigs();
+    var config = configs[index || 0];
+    var scanner = root._takaHtml5Scanner;
+
+    if (!scanner) {
+      scanner = new Html5Qrcode(reader.id, false);
+      root._takaHtml5Scanner = scanner;
+    }
+
+    function startWith(cameraConfig) {
+      return scanner.start(
+        cameraConfig,
+        { fps: 10, qrbox: { width: 260, height: 260 } },
+        function (decodedText) {
+          handlePayload(root, decodedText);
+        },
+        function () {}
+      );
+    }
+
+    if (config) {
+      return startWith(config).catch(function (error) {
+        if (index + 1 < configs.length && canRetryCameraError(error)) {
+          logError('html5-qrcode camera constraint failed, trying fallback ' + (index + 2), error);
+          return startHtml5Scanner(root, Html5Qrcode, reader, index + 1);
+        }
+        throw normalizeCameraError(root, error);
+      });
+    }
+
+    return Html5Qrcode.getCameras().then(function (cameras) {
+      if (!cameras || !cameras.length) {
+        throw new Error(label(root, 'camera-not-found', 'No camera device found.'));
+      }
+      return startWith(cameras[0].id);
+    });
+  }
+
+  function startHtml5ScannerUi(root, Html5Qrcode, reader, stop) {
+    if (!Html5Qrcode || !reader) {
+      setResult(root, 'invalid', label(root, 'scanner-library-missing', 'QR scanner library could not be loaded. Please reload the page.'));
+      return false;
+    }
+    if (!reader.id) {
+      reader.id = 'taka-html5-qrcode-' + (root.getAttribute('data-event-id') || 'event');
+    }
+    reader.innerHTML = '';
+    reader.hidden = false;
+    if (stop) {
+      stop.hidden = false;
+    }
+    try {
+      startHtml5Scanner(root, Html5Qrcode, reader, 0).then(function () {
+        setResult(root, 'info', label(root, 'scanner-running', 'Camera scanner is running.'));
+      }).catch(function (error) {
+        logError('Starting html5-qrcode failed', error);
+        setResult(root, 'invalid', error._takaCameraMessage || (error && error.message ? error.message : label(root, 'camera-failed', 'Camera could not be opened.')));
+      });
+    } catch (error) {
+      logError('html5-qrcode initialization failed', error);
+      setResult(root, 'invalid', error.message || label(root, 'scanner-unavailable', 'QR scanner is not available in this browser.'));
+    }
+    return true;
+  }
+
+  function testCamera(root) {
+    setResult(root, 'info', label(root, 'camera-test-starting', 'Starting camera test...'));
+    stopScanner(root, false);
+    getCameraStream(root, 0).then(function (stream) {
+      return showCameraStream(root, stream, 'Camera test').then(function () {
+        setResult(root, 'info', label(root, 'camera-test-running', 'Camera test is running.'));
+      });
+    }).catch(function (error) {
+      logError('Camera test failed', error);
+      setResult(root, 'invalid', error._takaCameraMessage || error.message || label(root, 'camera-failed', 'Camera could not be opened.'));
+    });
+  }
+
   function startScanner(root) {
     var video = root.querySelector('[data-taka-scan-video]');
     var stop = root.querySelector('[data-taka-scan-stop]');
     var reader = root.querySelector('[data-taka-html5-reader]');
     var Html5Qrcode = window.Html5Qrcode || (window.__Html5QrcodeLibrary__ && window.__Html5QrcodeLibrary__.Html5Qrcode);
+    var supportError = cameraSupportError(root);
 
     setResult(root, 'info', label(root, 'scanner-starting', 'Starting camera scanner...'));
     stopScanner(root, false);
 
-    if (!video || !window.navigator.mediaDevices || !window.navigator.mediaDevices.getUserMedia) {
-      if (!Html5Qrcode) {
-        setResult(root, 'invalid', label(root, 'camera-unavailable', 'Camera access is not available in this browser.'));
-        return;
-      }
-    }
-
-    if (!('BarcodeDetector' in window)) {
-      if (!Html5Qrcode || !reader) {
-        setResult(root, 'invalid', label(root, 'barcode-unavailable', 'BarcodeDetector is not available. Paste the QR payload below or use a browser with QR scanning support.'));
-        return;
-      }
-      if (!reader.id) {
-        reader.id = 'taka-html5-qrcode-' + (root.getAttribute('data-event-id') || 'event');
-      }
-      reader.hidden = false;
-      if (stop) {
-        stop.hidden = false;
-      }
-      try {
-        var scanner = new Html5Qrcode(reader.id, false);
-        root._takaHtml5Scanner = scanner;
-        scanner.start(
-          { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 260, height: 260 } },
-          function (decodedText) {
-            handlePayload(root, decodedText);
-          },
-          function () {}
-        ).then(function () {
-          setResult(root, 'info', label(root, 'scanner-running', 'Camera scanner is running.'));
-        }).catch(function (error) {
-          logError('Starting html5-qrcode failed', error);
-          setResult(root, 'invalid', error && error.message ? error.message : label(root, 'camera-failed', 'Camera could not be opened.'));
-        });
-      } catch (error) {
-        logError('html5-qrcode initialization failed', error);
-        setResult(root, 'invalid', error.message || label(root, 'scanner-unavailable', 'QR scanner is not available in this browser.'));
-      }
+    if (supportError) {
+      setResult(root, 'invalid', supportError);
       return;
     }
 
-    var detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+    if (!('BarcodeDetector' in window)) {
+      startHtml5ScannerUi(root, Html5Qrcode, reader, stop);
+      return;
+    }
+
+    var detector;
+    try {
+      detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+    } catch (error) {
+      logError('BarcodeDetector initialization failed', error);
+      if (startHtml5ScannerUi(root, Html5Qrcode, reader, stop)) {
+        return;
+      }
+      setResult(root, 'invalid', label(root, 'barcode-unavailable', 'BarcodeDetector is not available. Paste the QR payload below or use a browser with QR scanning support.'));
+      return;
+    }
     var active = true;
     var last = '';
-    window.navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(function (stream) {
-      video.srcObject = stream;
-      video.hidden = false;
-      if (stop) {
-        stop.hidden = false;
-      }
-      video.play();
-      root._takaStopScanner = function () {
-        active = false;
-        stream.getTracks().forEach(function (track) { track.stop(); });
-        video.hidden = true;
-        if (stop) {
-          stop.hidden = true;
-        }
-      };
+    getCameraStream(root, 0).then(function (stream) {
+      return showCameraStream(root, stream, 'Camera scanner').then(function () {
+        root._takaStopScanner = function () {
+          active = false;
+          stream.getTracks().forEach(function (track) { track.stop(); });
+          video.srcObject = null;
+          video.hidden = true;
+          if (stop) {
+            stop.hidden = true;
+          }
+        };
+      });
+    }).then(function () {
+      root._takaStopScanner = (function (originalStop) {
+        return function () {
+          active = false;
+          if (originalStop) {
+            originalStop();
+          }
+        };
+      })(root._takaStopScanner);
       setResult(root, 'info', label(root, 'scanner-running', 'Camera scanner is running.'));
       function tick() {
         if (!active) {
@@ -1087,7 +1270,7 @@ document.addEventListener('click', function (event) {
       tick();
     }).catch(function (error) {
       logError('Camera scanner failed', error);
-      setResult(root, 'invalid', error.message || label(root, 'camera-failed', 'Camera could not be opened.'));
+      setResult(root, 'invalid', error._takaCameraMessage || error.message || label(root, 'camera-failed', 'Camera could not be opened.'));
     });
   }
 
@@ -1106,10 +1289,11 @@ document.addEventListener('click', function (event) {
 
   document.addEventListener('click', function (event) {
     var start = event.target.closest('[data-taka-scan-start]');
+    var test = event.target.closest('[data-taka-camera-test]');
     var stop = event.target.closest('[data-taka-scan-stop]');
     var load = event.target.closest('[data-taka-offline-load]');
     var sync = event.target.closest('[data-taka-offline-sync]');
-    var trigger = start || stop || load || sync;
+    var trigger = start || test || stop || load || sync;
     var root = trigger ? scannerRootForTrigger(trigger) : null;
 
     if (!trigger) {
@@ -1124,6 +1308,9 @@ document.addEventListener('click', function (event) {
     if (start) {
       root.scrollIntoView({ block: 'start', behavior: 'smooth' });
       startScanner(root);
+    } else if (test) {
+      root.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      testCamera(root);
     } else if (stop) {
       stopScanner(root, true);
     } else if (load) {
