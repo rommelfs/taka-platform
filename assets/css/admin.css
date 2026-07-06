@@ -623,6 +623,10 @@
 	margin-bottom: 10px;
 }
 
+.taka-operations-scanner [hidden] {
+	display: none !important;
+}
+
 .taka-operations-scanner__video {
 	aspect-ratio: 4 / 3;
 	background: #111;
@@ -630,6 +634,7 @@
 	display: block;
 	margin: 10px 0;
 	max-height: 58vh;
+	max-width: 480px;
 	object-fit: cover;
 	width: 100%;
 }
@@ -637,9 +642,11 @@
 .taka-operations-scanner__fallback {
 	background: #111;
 	border-radius: 4px;
+	line-height: 0;
 	margin: 10px 0;
-	max-width: 640px;
+	max-width: 480px;
 	overflow: hidden;
+	width: 100%;
 }
 
 .taka-operations-scanner__fallback video,
