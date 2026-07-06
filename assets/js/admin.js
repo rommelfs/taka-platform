@@ -862,11 +862,16 @@ document.addEventListener('click', function (event) {
 
   function showCameraStream(root, stream, mode) {
     var video = root.querySelector('[data-taka-scan-video]');
+    var reader = root.querySelector('[data-taka-html5-reader]');
     var stop = root.querySelector('[data-taka-scan-stop]');
 
     if (!video) {
       stream.getTracks().forEach(function (track) { track.stop(); });
       throw new Error(label(root, 'camera-unsupported', 'Camera access is not supported in this browser/context.'));
+    }
+    if (reader) {
+      reader.hidden = true;
+      reader.innerHTML = '';
     }
 
     video.setAttribute('autoplay', 'autoplay');
@@ -1238,9 +1243,18 @@ document.addEventListener('click', function (event) {
   }
 
   function startHtml5ScannerUi(root, Html5Qrcode, reader, stop) {
+    var video = root.querySelector('[data-taka-scan-video]');
+
     if (!Html5Qrcode || !reader) {
       setResult(root, 'invalid', label(root, 'scanner-library-missing', 'QR scanner library could not be loaded. Please reload the page.'));
       return false;
+    }
+    if (video) {
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(function (track) { track.stop(); });
+      }
+      video.srcObject = null;
+      video.hidden = true;
     }
     if (!reader.id) {
       reader.id = 'taka-html5-qrcode-' + (root.getAttribute('data-event-id') || 'event');

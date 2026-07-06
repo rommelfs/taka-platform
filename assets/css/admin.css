@@ -647,6 +647,10 @@
 	max-width: 100%;
 }
 
+.taka-operations-scanner__fallback canvas {
+	display: none !important;
+}
+
 .taka-operations-scan-result {
 	background: #f6f7f7;
 	border: 1px solid var(--taka-ops-border);
