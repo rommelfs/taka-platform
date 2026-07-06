@@ -40,9 +40,15 @@ class TAKA_Event_Operations_Module {
 			return;
 		}
 
-		wp_enqueue_style( 'taka-platform-admin', TAKA_PLATFORM_PLUGIN_URL . 'assets/css/admin.css', array(), TAKA_PLATFORM_VERSION );
+		wp_enqueue_style( 'taka-platform-admin', TAKA_PLATFORM_PLUGIN_URL . 'assets/css/admin.css', array(), self::asset_version( 'assets/css/admin.css' ) );
 		wp_enqueue_script( 'taka-platform-html5-qrcode', TAKA_PLATFORM_PLUGIN_URL . 'assets/vendor/html5-qrcode.min.js', array(), '2.3.8', true );
-		wp_enqueue_script( 'taka-platform-admin', TAKA_PLATFORM_PLUGIN_URL . 'assets/js/admin.js', array( 'taka-platform-html5-qrcode' ), TAKA_PLATFORM_VERSION, true );
+		wp_enqueue_script( 'taka-platform-admin', TAKA_PLATFORM_PLUGIN_URL . 'assets/js/admin.js', array( 'taka-platform-html5-qrcode' ), self::asset_version( 'assets/js/admin.js' ), true );
+		wp_enqueue_script( 'taka-platform-event-operations', TAKA_PLATFORM_PLUGIN_URL . 'assets/js/event-operations.js', array( 'taka-platform-html5-qrcode' ), self::asset_version( 'assets/js/event-operations.js' ), true );
+	}
+
+	private static function asset_version( $relative_path ) {
+		$path = TAKA_PLATFORM_PLUGIN_DIR . ltrim( $relative_path, '/' );
+		return file_exists( $path ) ? (string) filemtime( $path ) : TAKA_PLATFORM_VERSION;
 	}
 
 	public static function ensure_capabilities() {
