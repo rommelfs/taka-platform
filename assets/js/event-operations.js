@@ -565,8 +565,8 @@
 
   function startHtml5Scanner(root, Html5Qrcode, reader, index) {
     var configs = [
-      { facingMode: { ideal: 'environment' } },
       { facingMode: 'environment' },
+      { facingMode: { exact: 'environment' } },
       null
     ];
     var config = configs[index || 0];

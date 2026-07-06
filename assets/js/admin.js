@@ -1192,8 +1192,8 @@ document.addEventListener('click', function (event) {
 
   function html5CameraConfigs() {
     return [
-      { facingMode: { ideal: 'environment' } },
       { facingMode: 'environment' },
+      { facingMode: { exact: 'environment' } },
       null
     ];
   }
