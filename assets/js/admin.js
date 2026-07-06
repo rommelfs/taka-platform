@@ -657,6 +657,15 @@ document.addEventListener('click', function (event) {
 
 (function () {
   var dbPromise = null;
+  var checkinLogPrefix = '[TAKA Event Operations] ';
+
+  if (window.console && window.console.log) {
+    window.console.log('TAKA check-in JS loaded');
+  }
+
+  function closestElement(target, selector) {
+    return target && target.closest ? target.closest(selector) : null;
+  }
 
   function getDeviceId() {
     var key = 'taka_operations_device_id';
@@ -753,9 +762,21 @@ document.addEventListener('click', function (event) {
     return label(root, key, fallback).replace('%d', count);
   }
 
+  function logInfo(message, data) {
+    if (window.console && window.console.log) {
+      window.console.log(checkinLogPrefix + message, data || '');
+    }
+  }
+
+  function logWarn(message, data) {
+    if (window.console && window.console.warn) {
+      window.console.warn(checkinLogPrefix + message, data || '');
+    }
+  }
+
   function logError(context, error) {
     if (window.console && window.console.error) {
-      window.console.error('[TAKA Event Operations] ' + context, error);
+      window.console.error(checkinLogPrefix + context, error);
     }
   }
 
@@ -853,6 +874,7 @@ document.addEventListener('click', function (event) {
     video.muted = true;
     video.srcObject = stream;
     video.hidden = false;
+    root._takaCameraActive = true;
     if (stop) {
       stop.hidden = false;
     }
@@ -860,6 +882,7 @@ document.addEventListener('click', function (event) {
       stream.getTracks().forEach(function (track) { track.stop(); });
       video.srcObject = null;
       video.hidden = true;
+      root._takaCameraActive = false;
       if (stop) {
         stop.hidden = true;
       }
@@ -871,12 +894,19 @@ document.addEventListener('click', function (event) {
 
   function ajax(root, action, data) {
     var form = new window.FormData();
+    var ajaxUrl = root.getAttribute('data-ajax-url') || '';
+    var nonce = root.getAttribute('data-nonce') || '';
+
+    if (!ajaxUrl || !nonce || !action) {
+      return Promise.reject(new Error(label(root, 'config-missing', 'Check-in configuration missing.')));
+    }
+
     form.append('action', action);
-    form.append('nonce', root.getAttribute('data-nonce') || '');
+    form.append('nonce', nonce);
     Object.keys(data || {}).forEach(function (key) {
       form.append(key, data[key]);
     });
-    return window.fetch(root.getAttribute('data-ajax-url'), {
+    return window.fetch(ajaxUrl, {
       method: 'POST',
       credentials: 'same-origin',
       body: form
@@ -888,6 +918,43 @@ document.addEventListener('click', function (event) {
       }
       return json.data;
     });
+  }
+
+  function configMissing(root, missing) {
+    var message = label(root, 'config-missing', 'Check-in configuration missing.');
+    if (missing && missing.length) {
+      message += ' (' + missing.join(', ') + ')';
+    }
+    setResult(root, 'invalid', message);
+    setOfflineStatus(root, message);
+    logError('Check-in configuration missing', missing || []);
+  }
+
+  function validateConfig(root, mode) {
+    var required = ['ajax-url', 'nonce', 'event-id'];
+    var missing = [];
+
+    if ('scan' === mode) {
+      required.push('scan-action');
+    } else if ('offline' === mode) {
+      required.push('manifest-action');
+    } else if ('sync' === mode) {
+      required.push('sync-action');
+    } else {
+      required.push('scan-action', 'manifest-action', 'sync-action');
+    }
+
+    required.forEach(function (key) {
+      if (!root.getAttribute('data-' + key)) {
+        missing.push('data-' + key);
+      }
+    });
+
+    if (missing.length) {
+      configMissing(root, missing);
+      return false;
+    }
+    return true;
   }
 
   function setResult(root, status, message, data) {
@@ -935,6 +1002,9 @@ document.addEventListener('click', function (event) {
 
   function loadOfflineData(root) {
     var eventId = parseInt(root.getAttribute('data-event-id'), 10);
+    if (!validateConfig(root, 'offline')) {
+      return Promise.resolve();
+    }
     return ajax(root, root.getAttribute('data-manifest-action'), { event_id: eventId }).then(function (data) {
       return dbPut('manifests', {
         event_id: eventId,
@@ -1015,6 +1085,9 @@ document.addEventListener('click', function (event) {
   }
 
   function onlineScan(root, payload) {
+    if (!validateConfig(root, 'scan')) {
+      return Promise.resolve();
+    }
     return ajax(root, root.getAttribute('data-scan-action'), {
       event_id: root.getAttribute('data-event-id'),
       payload: payload,
@@ -1040,6 +1113,9 @@ document.addEventListener('click', function (event) {
 
   function syncOffline(root) {
     var eventId = parseInt(root.getAttribute('data-event-id'), 10);
+    if (!validateConfig(root, 'sync')) {
+      return Promise.resolve();
+    }
     dbAllByEvent('checkins', eventId).then(function (items) {
       var pending = items.filter(function (item) { return 'pending' === item.sync_status; });
       if (!pending.length) {
@@ -1076,6 +1152,7 @@ document.addEventListener('click', function (event) {
     var stop = root.querySelector('[data-taka-scan-stop]');
     var reader = root.querySelector('[data-taka-html5-reader]');
     var html5 = root._takaHtml5Scanner;
+    var hadActiveCamera = !!root._takaCameraActive || !!root._takaStopScanner || !!html5 || !!(video && video.srcObject);
 
     if (root._takaStopScanner) {
       root._takaStopScanner();
@@ -1092,6 +1169,7 @@ document.addEventListener('click', function (event) {
       });
       root._takaHtml5Scanner = null;
     }
+    root._takaCameraActive = false;
 
     if (video) {
       if (video.srcObject) {
@@ -1108,7 +1186,7 @@ document.addEventListener('click', function (event) {
       stop.hidden = true;
     }
     if (showStatus) {
-      setResult(root, 'info', label(root, 'scanner-stopped', 'Camera stopped.'));
+      setResult(root, 'info', hadActiveCamera ? label(root, 'scanner-stopped', 'Camera stopped.') : label(root, 'no-active-camera', 'No active camera.'));
     }
   }
 
@@ -1174,6 +1252,7 @@ document.addEventListener('click', function (event) {
     }
     try {
       startHtml5Scanner(root, Html5Qrcode, reader, 0).then(function () {
+        root._takaCameraActive = true;
         setResult(root, 'info', label(root, 'scanner-running', 'Camera scanner is running.'));
       }).catch(function (error) {
         logError('Starting html5-qrcode failed', error);
@@ -1207,6 +1286,9 @@ document.addEventListener('click', function (event) {
     var supportError = cameraSupportError(root);
 
     setResult(root, 'info', label(root, 'scanner-starting', 'Starting camera scanner...'));
+    if (!validateConfig(root, 'scan')) {
+      return;
+    }
     stopScanner(root, false);
 
     if (supportError) {
@@ -1263,7 +1345,9 @@ document.addEventListener('click', function (event) {
             last = codes[0].rawValue;
             handlePayload(root, last);
           }
-        }).catch(function () {}).finally(function () {
+        }).catch(function (error) {
+          logError('BarcodeDetector frame failed', error);
+        }).finally(function () {
           window.requestAnimationFrame(tick);
         });
       }
@@ -1275,7 +1359,7 @@ document.addEventListener('click', function (event) {
   }
 
   function scannerRootForTrigger(trigger) {
-    var root = trigger.closest('[data-taka-operations-scanner]');
+    var root = closestElement(trigger, '[data-taka-operations-scanner]');
     var target;
     if (root) {
       return root;
@@ -1287,16 +1371,91 @@ document.addEventListener('click', function (event) {
     return document.querySelector('[data-taka-operations-scanner]');
   }
 
+  function handleCheckinAction(root, action) {
+    if (!root) {
+      logError('Scanner root missing', action);
+      return;
+    }
+
+    try {
+      if ('start' === action) {
+        root.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        setResult(root, 'info', label(root, 'scan-clicked', 'Scan button clicked. Starting camera scanner...'));
+        window.setTimeout(function () { startScanner(root); }, 50);
+      } else if ('test' === action) {
+        root.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        setResult(root, 'info', label(root, 'test-clicked', 'Test camera clicked. Starting camera test...'));
+        window.setTimeout(function () { testCamera(root); }, 50);
+      } else if ('stop' === action) {
+        setResult(root, 'info', label(root, 'stop-clicked', 'Stop camera clicked.'));
+        stopScanner(root, true);
+      } else if ('load' === action) {
+        setOfflineStatus(root, label(root, 'offline-clicked', 'Load offline clicked.'));
+        window.setTimeout(function () { loadOfflineData(root); }, 50);
+      } else if ('sync' === action) {
+        setOfflineStatus(root, label(root, 'sync-clicked', 'Synchronize clicked.'));
+        window.setTimeout(function () { syncOffline(root); }, 50);
+      }
+    } catch (error) {
+      logError('Check-in button action failed', error);
+      setResult(root, 'invalid', error && error.message ? error.message : String(error));
+    }
+  }
+
+  function bindButton(root, selector, action) {
+    var button = root.querySelector(selector);
+    if (!button) {
+      logWarn('Check-in button missing: ' + selector);
+      return;
+    }
+    if (button._takaCheckinBound) {
+      return;
+    }
+    button._takaCheckinBound = true;
+    button.addEventListener('click', function (event) {
+      event._takaCheckinHandled = true;
+      event.preventDefault();
+      handleCheckinAction(root, action);
+    });
+  }
+
+  function bindCheckinButtons(root) {
+    if (!root) {
+      return;
+    }
+    setResult(root, 'info', label(root, 'js-loaded', 'Check-in JavaScript loaded.'));
+    validateConfig(root, 'all');
+    bindButton(root, '#taka-scan-qr', 'start');
+    bindButton(root, '#taka-test-camera', 'test');
+    bindButton(root, '#taka-stop-camera', 'stop');
+    bindButton(root, '#taka-load-offline', 'load');
+    bindButton(root, '#taka-sync-offline', 'sync');
+    refreshPending(root);
+  }
+
+  function bindAllCheckinButtons() {
+    logInfo('Binding check-in buttons');
+    document.querySelectorAll('[data-taka-operations-scanner]').forEach(bindCheckinButtons);
+  }
+
+  function onReady(callback) {
+    if ('loading' === document.readyState) {
+      document.addEventListener('DOMContentLoaded', callback);
+      return;
+    }
+    callback();
+  }
+
   document.addEventListener('click', function (event) {
-    var start = event.target.closest('[data-taka-scan-start]');
-    var test = event.target.closest('[data-taka-camera-test]');
-    var stop = event.target.closest('[data-taka-scan-stop]');
-    var load = event.target.closest('[data-taka-offline-load]');
-    var sync = event.target.closest('[data-taka-offline-sync]');
+    var start = closestElement(event.target, '[data-taka-scan-start]');
+    var test = closestElement(event.target, '[data-taka-camera-test]');
+    var stop = closestElement(event.target, '[data-taka-scan-stop]');
+    var load = closestElement(event.target, '[data-taka-offline-load]');
+    var sync = closestElement(event.target, '[data-taka-offline-sync]');
     var trigger = start || test || stop || load || sync;
     var root = trigger ? scannerRootForTrigger(trigger) : null;
 
-    if (!trigger) {
+    if (!trigger || event._takaCheckinHandled) {
       return;
     }
     event.preventDefault();
@@ -1306,27 +1465,19 @@ document.addEventListener('click', function (event) {
     }
 
     if (start) {
-      root.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      startScanner(root);
+      handleCheckinAction(root, 'start');
     } else if (test) {
-      root.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      testCamera(root);
+      handleCheckinAction(root, 'test');
     } else if (stop) {
-      stopScanner(root, true);
+      handleCheckinAction(root, 'stop');
     } else if (load) {
-      setOfflineStatus(root, label(root, 'offline-loading', 'Loading offline data...'));
-      loadOfflineData(root);
+      handleCheckinAction(root, 'load');
     } else if (sync) {
-      setOfflineStatus(root, label(root, 'sync-starting', 'Synchronizing offline check-ins...'));
-      syncOffline(root);
+      handleCheckinAction(root, 'sync');
     }
   });
 
-  document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('[data-taka-operations-scanner]').forEach(function (root) {
-      refreshPending(root);
-    });
-  });
+  onReady(bindAllCheckinButtons);
 })();
 
 document.addEventListener('click', function (event) {

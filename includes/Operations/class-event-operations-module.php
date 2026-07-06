@@ -16,6 +16,7 @@ class TAKA_Event_Operations_Module {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'register_admin_menu' ), 19 );
 		add_action( 'admin_init', array( __CLASS__, 'ensure_capabilities' ) );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ), 9 );
 		add_action( 'admin_post_' . self::ACTION, array( __CLASS__, 'handle_action' ) );
 		add_action( 'wp_ajax_' . self::SCAN_ACTION, array( __CLASS__, 'ajax_scan_ticket' ) );
 		add_action( 'wp_ajax_' . self::OFFLINE_MANIFEST_ACTION, array( __CLASS__, 'ajax_offline_manifest' ) );
@@ -31,6 +32,17 @@ class TAKA_Event_Operations_Module {
 			self::ADMIN_PAGE_SLUG,
 			array( __CLASS__, 'render_admin_page' )
 		);
+	}
+
+	public static function enqueue_assets( $hook ) {
+		$page = sanitize_key( wp_unslash( $_GET['page'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( self::ADMIN_PAGE_SLUG !== $page && false === strpos( (string) $hook, self::ADMIN_PAGE_SLUG ) ) {
+			return;
+		}
+
+		wp_enqueue_style( 'taka-platform-admin', TAKA_PLATFORM_PLUGIN_URL . 'assets/css/admin.css', array(), TAKA_PLATFORM_VERSION );
+		wp_enqueue_script( 'taka-platform-html5-qrcode', TAKA_PLATFORM_PLUGIN_URL . 'assets/vendor/html5-qrcode.min.js', array(), '2.3.8', true );
+		wp_enqueue_script( 'taka-platform-admin', TAKA_PLATFORM_PLUGIN_URL . 'assets/js/admin.js', array( 'taka-platform-html5-qrcode' ), TAKA_PLATFORM_VERSION, true );
 	}
 
 	public static function ensure_capabilities() {
@@ -369,6 +381,8 @@ class TAKA_Event_Operations_Module {
 	private static function render_search_tools( $event_id, $search, $qr, $mode = 'standard', $profile = 'registration' ) {
 		$scanner_labels = array(
 			'request-failed'       => __( 'Request failed.', 'taka-platform' ),
+			'js-loaded'            => __( 'Check-in JavaScript loaded.', 'taka-platform' ),
+			'config-missing'       => __( 'Check-in configuration missing.', 'taka-platform' ),
 			'payment'              => __( 'Payment', 'taka-platform' ),
 			'offline-ready'        => __( 'Offline ready: %d tickets loaded.', 'taka-platform' ),
 			'offline-loading'      => __( 'Loading offline data...', 'taka-platform' ),
@@ -380,7 +394,7 @@ class TAKA_Event_Operations_Module {
 			'already-local'        => __( 'Already checked in locally.', 'taka-platform' ),
 			'offline-stored'       => __( 'Offline check-in stored.', 'taka-platform' ),
 			'offline-unavailable'  => __( 'Offline data is not available.', 'taka-platform' ),
-			'no-unsynced'          => __( 'No unsynchronized check-ins.', 'taka-platform' ),
+			'no-unsynced'          => __( 'No offline check-ins to synchronize.', 'taka-platform' ),
 			'sync-starting'        => __( 'Synchronizing offline check-ins...', 'taka-platform' ),
 			'sync-finished'        => __( 'Synchronization finished: %d check-ins processed.', 'taka-platform' ),
 			'sync-failed'          => __( 'Synchronization failed.', 'taka-platform' ),
@@ -392,6 +406,12 @@ class TAKA_Event_Operations_Module {
 			'camera-in-use'        => __( 'Camera is already in use by another app.', 'taka-platform' ),
 			'camera-test-starting' => __( 'Starting camera test...', 'taka-platform' ),
 			'camera-test-running'  => __( 'Camera test is running.', 'taka-platform' ),
+			'scan-clicked'         => __( 'Scan button clicked. Starting camera scanner...', 'taka-platform' ),
+			'test-clicked'         => __( 'Test camera clicked. Starting camera test...', 'taka-platform' ),
+			'stop-clicked'         => __( 'Stop camera clicked.', 'taka-platform' ),
+			'no-active-camera'     => __( 'No active camera.', 'taka-platform' ),
+			'offline-clicked'      => __( 'Load offline clicked.', 'taka-platform' ),
+			'sync-clicked'         => __( 'Synchronize clicked.', 'taka-platform' ),
 			'barcode-unavailable'  => __( 'BarcodeDetector is not available. Paste the QR payload below or use a browser with QR scanning support.', 'taka-platform' ),
 			'scanner-starting'     => __( 'Starting camera scanner...', 'taka-platform' ),
 			'scanner-running'      => __( 'Camera scanner is running.', 'taka-platform' ),
@@ -415,18 +435,18 @@ class TAKA_Event_Operations_Module {
 				<div class="taka-operations-scanner" id="taka-operations-qr" data-taka-operations-scanner data-event-id="<?php echo esc_attr( (string) absint( $event_id ) ); ?>" data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( self::AJAX_NONCE ) ); ?>" data-scan-action="<?php echo esc_attr( self::SCAN_ACTION ); ?>" data-manifest-action="<?php echo esc_attr( self::OFFLINE_MANIFEST_ACTION ); ?>" data-sync-action="<?php echo esc_attr( self::SYNC_ACTION ); ?>" <?php foreach ( $scanner_labels as $key => $label ) : ?>data-label-<?php echo esc_attr( $key ); ?>="<?php echo esc_attr( $label ); ?>" <?php endforeach; ?>>
 					<h3><?php echo esc_html__( 'QR scanner', 'taka-platform' ); ?></h3>
 					<div class="taka-operations-scanner__actions">
-						<button class="button button-primary" type="button" data-taka-scan-start><?php echo esc_html__( 'Scan QR code', 'taka-platform' ); ?></button>
-						<button class="button" type="button" data-taka-camera-test><?php echo esc_html__( 'Test camera', 'taka-platform' ); ?></button>
-						<button class="button" type="button" data-taka-scan-stop hidden><?php echo esc_html__( 'Stop camera', 'taka-platform' ); ?></button>
-						<button class="button" type="button" data-taka-offline-load><?php echo esc_html__( 'Load offline data for this event', 'taka-platform' ); ?></button>
-						<button class="button" type="button" data-taka-offline-sync><?php echo esc_html__( 'Synchronize', 'taka-platform' ); ?></button>
+						<button id="taka-scan-qr" class="button button-primary" type="button" data-taka-scan-start><?php echo esc_html__( 'Scan QR code', 'taka-platform' ); ?></button>
+						<button id="taka-test-camera" class="button" type="button" data-taka-camera-test><?php echo esc_html__( 'Test camera', 'taka-platform' ); ?></button>
+						<button id="taka-stop-camera" class="button" type="button" data-taka-scan-stop hidden><?php echo esc_html__( 'Stop camera', 'taka-platform' ); ?></button>
+						<button id="taka-load-offline" class="button" type="button" data-taka-offline-load><?php echo esc_html__( 'Load offline data for this event', 'taka-platform' ); ?></button>
+						<button id="taka-sync-offline" class="button" type="button" data-taka-offline-sync><?php echo esc_html__( 'Synchronize', 'taka-platform' ); ?></button>
 					</div>
-					<video class="taka-operations-scanner__video" data-taka-scan-video autoplay playsinline muted hidden></video>
+					<video id="taka-video" class="taka-operations-scanner__video" data-taka-scan-video autoplay playsinline muted hidden></video>
 					<div class="taka-operations-scanner__fallback" data-taka-html5-reader hidden></div>
 					<div class="taka-operations-scanner__fallback" data-taka-scan-fallback hidden></div>
 					<p class="description" data-taka-offline-status><?php echo esc_html__( 'Offline not ready.', 'taka-platform' ); ?></p>
 					<p class="description"><?php echo esc_html__( 'Unsynchronized check-ins:', 'taka-platform' ); ?> <strong data-taka-offline-pending>0</strong></p>
-					<div class="taka-operations-scan-result" data-taka-scan-result aria-live="polite"></div>
+					<div id="taka-status" class="taka-operations-scan-result" data-taka-scan-result aria-live="polite"><?php echo esc_html__( 'Check-in JavaScript not loaded yet.', 'taka-platform' ); ?></div>
 				</div>
 				<form class="taka-operations-search" method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
 					<input type="hidden" name="page" value="<?php echo esc_attr( self::ADMIN_PAGE_SLUG ); ?>">
