@@ -2,7 +2,6 @@
 
 **TAKA** means **Ticketing, Attendance, Knowledge & Administration**. The plugin is a reusable WordPress platform for international event and seminar tours: seminars, conferences, martial-arts events, workshops, festivals, concerts, community events and multi-location tours.
 
-The TAKA European Tour 2026 remains the first reference implementation and bundled demo/fallback dataset, but it is no longer the product boundary.
 
 ## White-label direction
 
