@@ -26,33 +26,35 @@ if ( '' !== $hero_image ) {
 }
 ?>
 <section class="taka-hero taka-hero--text-<?php echo esc_attr( $text_position ); ?> taka-hero--vertical-<?php echo esc_attr( $vertical ); ?>" style="<?php echo esc_attr( $style ); ?>">
-	<div class="taka-hero-content <?php echo $box_enabled ? 'taka-hero-content--boxed' : ''; ?>">
-		<?php if ( '' !== trim( (string) ( $hero['kicker'] ?? '' ) ) ) : ?>
-			<p class="taka-kicker"><?php echo esc_html( $hero['kicker'] ); ?></p>
-		<?php endif; ?>
-		<?php if ( '' !== trim( (string) ( $hero['title'] ?? '' ) ) ) : ?>
-			<h1><?php echo esc_html( $hero['title'] ); ?></h1>
-		<?php endif; ?>
-		<?php if ( '' !== trim( (string) ( $hero['description'] ?? '' ) ) ) : ?>
-			<p><?php echo esc_html( $hero['description'] ); ?></p>
-		<?php endif; ?>
+	<div class="taka-hero-content <?php echo $box_enabled ? 'taka-hero-content--boxed' : ''; ?> <?php echo $show_map ? 'taka-hero-content--with-map' : ''; ?>">
+		<div class="taka-hero-content__copy">
+			<?php if ( '' !== trim( (string) ( $hero['kicker'] ?? '' ) ) ) : ?>
+				<p class="taka-kicker"><?php echo esc_html( $hero['kicker'] ); ?></p>
+			<?php endif; ?>
+			<?php if ( '' !== trim( (string) ( $hero['title'] ?? '' ) ) ) : ?>
+				<h1><?php echo esc_html( $hero['title'] ); ?></h1>
+			<?php endif; ?>
+			<?php if ( '' !== trim( (string) ( $hero['description'] ?? '' ) ) ) : ?>
+				<p><?php echo esc_html( $hero['description'] ); ?></p>
+			<?php endif; ?>
+			<?php if ( $show_list && ! $show_map ) : ?>
+				<nav class="taka-tour-stations" aria-label="<?php echo esc_attr( taka_tour_translate( 'hero.stations_label', 'Tourstationen' ) ); ?>">
+					<?php foreach ( $hero_stations as $station ) : ?>
+						<?php if ( 'cta' === (string) ( $station['type'] ?? '' ) ) { continue; } ?>
+						<?php $event = $station['event'] ?? array(); $label = $station['label'] ?? ( $event['title'] ?? '' ); ?>
+						<?php $tab_key = TAKA_Platform_Data::event_panel_key( $event ); $share_url = TAKA_Platform_Data::event_share_url( $event, taka_tour_current_language() ) ?: '#tickets'; ?>
+						<a class="taka-tour-station-link" href="<?php echo esc_url( $share_url ); ?>" data-taka-ticket-tab="<?php echo esc_attr( $tab_key ); ?>"><?php if ( $show_flags && '' !== trim( (string) ( $event['hero_flag'] ?? '' ) ) ) : ?><span class="taka-hero-location-flag" aria-hidden="true"><?php echo esc_html( $event['hero_flag'] ); ?></span><?php endif; ?><span><?php echo esc_html( $label ); ?></span></a>
+					<?php endforeach; ?>
+				</nav>
+			<?php endif; ?>
+			<div class="taka-card-actions">
+				<?php if ( '' !== trim( (string) ( $hero['primary_button_label'] ?? '' ) ) ) : ?>
+					<a class="taka-button" href="<?php echo esc_url( $hero['primary_button_target'] ?? '#tour' ); ?>"><?php echo esc_html( $hero['primary_button_label'] ); ?></a>
+				<?php endif; ?>
+			</div>
+		</div>
 		<?php if ( $show_map ) : ?>
 			<?php echo taka_tour_render_template( 'partials/hero-route-map.php', array( 'stations' => $hero_stations, 'show_list' => 'route_map_with_list' === $location_mode ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		<?php endif; ?>
-		<?php if ( $show_list && ! $show_map ) : ?>
-			<nav class="taka-tour-stations" aria-label="<?php echo esc_attr( taka_tour_translate( 'hero.stations_label', 'Tourstationen' ) ); ?>">
-				<?php foreach ( $hero_stations as $station ) : ?>
-					<?php if ( 'cta' === (string) ( $station['type'] ?? '' ) ) { continue; } ?>
-					<?php $event = $station['event'] ?? array(); $label = $station['label'] ?? ( $event['title'] ?? '' ); ?>
-					<?php $tab_key = TAKA_Platform_Data::event_panel_key( $event ); $share_url = TAKA_Platform_Data::event_share_url( $event, taka_tour_current_language() ) ?: '#tickets'; ?>
-					<a class="taka-tour-station-link" href="<?php echo esc_url( $share_url ); ?>" data-taka-ticket-tab="<?php echo esc_attr( $tab_key ); ?>"><?php if ( $show_flags && '' !== trim( (string) ( $event['hero_flag'] ?? '' ) ) ) : ?><span class="taka-hero-location-flag" aria-hidden="true"><?php echo esc_html( $event['hero_flag'] ); ?></span><?php endif; ?><span><?php echo esc_html( $label ); ?></span></a>
-				<?php endforeach; ?>
-			</nav>
-		<?php endif; ?>
-		<div class="taka-card-actions">
-			<?php if ( '' !== trim( (string) ( $hero['primary_button_label'] ?? '' ) ) ) : ?>
-				<a class="taka-button" href="<?php echo esc_url( $hero['primary_button_target'] ?? '#tour' ); ?>"><?php echo esc_html( $hero['primary_button_label'] ); ?></a>
-			<?php endif; ?>
-		</div>
 	</div>
 </section>

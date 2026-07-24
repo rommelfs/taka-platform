@@ -26,7 +26,8 @@ if ( '' !== $hero_image ) {
 }
 ?>
 <section class="taka-hero taka-hero--text-<?php echo esc_attr( $text_position ); ?> taka-hero--vertical-<?php echo esc_attr( $vertical ); ?>" style="<?php echo esc_attr( $style ); ?>">
-	<div class="taka-hero-content <?php echo $box_enabled ? 'taka-hero-content--boxed' : ''; ?>">
+	<div class="taka-hero-content <?php echo $box_enabled ? 'taka-hero-content--boxed' : ''; ?> <?php echo $show_map ? 'taka-hero-content--with-map' : ''; ?>">
+		<div class="taka-hero-content__copy">
 		<?php if ( '' !== trim( (string) ( $hero['kicker'] ?? '' ) ) ) : ?>
 			<p class="taka-kicker"><?php echo esc_html( $hero['kicker'] ); ?></p>
 		<?php endif; ?>
@@ -35,9 +36,6 @@ if ( '' !== $hero_image ) {
 		<?php endif; ?>
 		<?php if ( '' !== trim( (string) ( $hero['description'] ?? '' ) ) ) : ?>
 			<p><?php echo esc_html( $hero['description'] ); ?></p>
-		<?php endif; ?>
-		<?php if ( $show_map ) : ?>
-			<?php echo taka_tour_render_template( 'partials/hero-route-map.php', array( 'stations' => $hero_stations, 'show_list' => 'route_map_with_list' === $location_mode ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		<?php endif; ?>
 		<?php if ( $show_list && ! $show_map ) : ?>
 			<nav class="taka-tour-stations" aria-label="<?php echo esc_attr( taka_tour_translate( 'hero.stations_label', 'Tourstationen' ) ); ?>">
@@ -56,5 +54,9 @@ if ( '' !== $hero_image ) {
 				<a class="taka-button taka-button-secondary" href="<?php echo esc_url( $hero['secondary_button_target'] ?? '#seminar-konz' ); ?>"><?php echo esc_html( $hero['secondary_button_label'] ); ?></a>
 			<?php endif; ?>
 		</div>
+		</div>
+		<?php if ( $show_map ) : ?>
+			<?php echo taka_tour_render_template( 'partials/hero-route-map.php', array( 'stations' => $hero_stations, 'show_list' => 'route_map_with_list' === $location_mode ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+		<?php endif; ?>
 	</div>
 </section>

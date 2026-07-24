@@ -1004,6 +1004,7 @@ body.admin-bar {
 .taka-hero {
 	justify-content: flex-start;
 	background-image: var(--taka-hero-image, none);
+	background-position: center;
 }
 
 .taka-hero::before {
@@ -1017,7 +1018,38 @@ body.admin-bar {
 .taka-hero--vertical-bottom { align-items: flex-end; }
 
 .taka-hero-content {
+	width: min(100%, 1180px);
+	max-width: 1180px;
+	margin-inline: auto;
+}
+
+.taka-hero-content__copy {
+	width: 100%;
 	max-width: var(--taka-hero-content-max-width, 620px);
+	min-width: 0;
+}
+
+.taka-hero-content--with-map {
+	display: grid;
+	grid-template-columns: minmax(24rem, 1fr) minmax(22rem, 34rem);
+	gap: clamp(2rem, 5vw, 5rem);
+	align-items: center;
+}
+
+.taka-hero h1,
+.taka-hero h1 * {
+	word-break: normal;
+	overflow-wrap: normal;
+	hyphens: none;
+}
+
+.taka-hero h1 {
+	font-size: clamp(3.25rem, 6.25vw, 6.5rem);
+}
+
+.taka-hero-content--with-map .taka-hero-route-map {
+	width: 100%;
+	margin-top: 0;
 }
 
 .taka-hero-content--boxed {
@@ -1121,6 +1153,26 @@ body.admin-bar {
 }
 
 @media (max-width: 900px) {
+	.taka-hero {
+		min-height: auto;
+		background-position: 62% center;
+	}
+
+	.taka-hero::before {
+		background: linear-gradient(180deg, rgba(17,17,17,var(--taka-hero-overlay-alpha, .78)), rgba(17,17,17,.76));
+	}
+
+	.taka-hero-content--with-map {
+		display: flex;
+		flex-direction: column;
+		gap: clamp(1.5rem, 6vw, 2.5rem);
+		align-items: stretch;
+	}
+
+	.taka-hero-content__copy {
+		max-width: min(100%, var(--taka-hero-content-max-width, 620px));
+	}
+
 	.taka-hero .taka-language-menu {
 		position: relative;
 		top: auto;
@@ -1133,6 +1185,29 @@ body.admin-bar {
 	}
 	.taka-content-section--image_left .taka-content-section__media {
 		order: 0;
+	}
+}
+
+@media (max-width: 480px) {
+	.taka-hero {
+		padding-top: clamp(2.5rem, 12vw, 3.5rem);
+		padding-bottom: clamp(2.5rem, 12vw, 3.5rem);
+	}
+
+	.taka-hero h1 {
+		font-size: clamp(2.35rem, 13vw, 3.6rem);
+		line-height: 1;
+	}
+
+	.taka-hero-content--boxed {
+		padding: clamp(1rem, 5vw, 1.35rem);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.taka-hero-route-map__pin,
+	.taka-hero-route-map__label {
+		transition: none;
 	}
 }
 
