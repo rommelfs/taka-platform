@@ -322,6 +322,7 @@ class TAKA_Platform_Admin_Event_Assistant {
 
 		$event_id = absint( $result );
 		$inline_results = self::process_inline_object_creates( $event_id );
+		$_POST[ TAKA_Platform_Admin::EVENT_FORM_MARKER ] = '1';
 		TAKA_Platform_Admin::save_event( $event_id );
 		self::remember_recent_settings( $event_id );
 		$redirect_args = array_merge( array( 'saved' => '1' ), self::inline_redirect_args( $inline_results ) );

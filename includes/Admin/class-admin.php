@@ -10,6 +10,10 @@ class TAKA_Platform_Admin {
 	const IMPORT_NONCE = 'taka_tour_import_export_nonce';
 	const MEDIA_OPTION = 'taka_tour_media_settings';
 	const PLATFORM_ADMIN_CAP = 'access_taka_platform_admin';
+	const EVENT_FORM_MARKER = '_taka_event_form_present';
+	const EVENT_SAVE_NOTICE = 'taka_event_save_notice';
+
+	private static $event_save_error = '';
 
 	/** Register admin hooks. */
 	public static function init() {
@@ -19,6 +23,8 @@ class TAKA_Platform_Admin {
 		add_action( 'admin_init', array( __CLASS__, 'guard_content_edit_screen' ) );
 		add_action( 'current_screen', array( __CLASS__, 'repair_event_editor_postbox_preferences' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'render_data_source_notice' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'render_event_save_notice' ) );
+		add_filter( 'redirect_post_location', array( __CLASS__, 'add_event_save_notice_to_redirect' ), 10, 2 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'add_meta_boxes' ) );
 		add_action( 'show_user_profile', array( __CLASS__, 'render_user_organizer_fields' ) );
@@ -509,6 +515,28 @@ class TAKA_Platform_Admin {
 			</p>
 		</div>
 		<?php
+	}
+
+	/** Carry Event persistence failures across WordPress's post-update redirect. */
+	public static function add_event_save_notice_to_redirect( $location, $post_id ) {
+		if ( '' === self::$event_save_error || TAKA_PLATFORM_CPT_EVENT !== get_post_type( $post_id ) ) {
+			return $location;
+		}
+		return add_query_arg( self::EVENT_SAVE_NOTICE, sanitize_key( self::$event_save_error ), $location );
+	}
+
+	/** Explain why an Event update was rejected instead of silently showing stale values. */
+	public static function render_event_save_notice() {
+		$reason = sanitize_key( wp_unslash( $_GET[ self::EVENT_SAVE_NOTICE ] ?? '' ) );
+		$messages = array(
+			'missing_form' => __( 'Event details were not saved because the Event form was incomplete. Reload the edit page and try again.', 'taka-platform' ),
+			'missing_nonce' => __( 'Event details were not saved because the security token was missing. The form may exceed the server input limit; reload the page and contact an administrator if this repeats.', 'taka-platform' ),
+			'invalid_nonce' => __( 'Event details were not saved because the security token expired. Reload the edit page and submit again.', 'taka-platform' ),
+			'forbidden' => __( 'Event details were not saved because your account is not permitted to edit this Event.', 'taka-platform' ),
+			'persistence_failed' => __( 'WordPress did not persist all submitted Event values. No config import was run. Please retry and check the server database/error log.', 'taka-platform' ),
+		);
+		if ( ! isset( $messages[ $reason ] ) ) { return; }
+		echo '<div class="notice notice-error"><p><strong>' . esc_html__( 'Event update failed.', 'taka-platform' ) . '</strong> ' . esc_html( $messages[ $reason ] ) . '</p></div>';
 	}
 
 	/** Render active data source and CPT status. */
@@ -1203,7 +1231,8 @@ class TAKA_Platform_Admin {
 					</td></tr>
 					<tr><th scope="row"><?php echo esc_html__( 'Options', 'taka-platform' ); ?></th><td>
 						<p><label><input type="checkbox" name="dry_run" value="1"> <?php echo esc_html__( 'Dry run / preview only', 'taka-platform' ); ?></label></p>
-						<p><label><?php echo esc_html__( 'Import mode', 'taka-platform' ); ?> <select name="mode"><option value="missing"><?php echo esc_html__( 'Import missing only', 'taka-platform' ); ?></option><option value="update"><?php echo esc_html__( 'Update existing', 'taka-platform' ); ?></option><option value="overwrite"><?php echo esc_html__( 'Overwrite existing', 'taka-platform' ); ?></option></select></label></p>
+						<p><label><?php echo esc_html__( 'Import mode', 'taka-platform' ); ?> <select name="mode"><option value="missing"><?php echo esc_html__( 'Import missing only', 'taka-platform' ); ?></option><option value="update"><?php echo esc_html__( 'Update empty fields only', 'taka-platform' ); ?></option><option value="overwrite"><?php echo esc_html__( 'Overwrite existing', 'taka-platform' ); ?></option></select></label></p>
+						<p><label><input type="checkbox" name="confirm_overwrite" value="1"> <?php echo esc_html__( 'I understand that Overwrite existing replaces manually edited WordPress values.', 'taka-platform' ); ?></label></p>
 						<p><label><input type="checkbox" name="delete_existing" value="1"> <?php echo esc_html__( 'Delete existing plugin data before import', 'taka-platform' ); ?></label></p>
 					</td></tr>
 				</tbody></table>
@@ -1961,6 +1990,9 @@ class TAKA_Platform_Admin {
 		$mode = sanitize_key( wp_unslash( $_POST['mode'] ?? 'missing' ) );
 		if ( ! in_array( $mode, array( 'missing', 'update', 'overwrite' ), true ) ) { $mode = 'missing'; }
 		$delete_existing = ! empty( $_POST['delete_existing'] );
+		if ( ( 'overwrite' === $mode || $delete_existing ) && empty( $_POST['confirm_overwrite'] ) ) {
+			wp_die( esc_html__( 'Confirm that existing WordPress values may be replaced before running a destructive import.', 'taka-platform' ) );
+		}
 		$source = sanitize_key( wp_unslash( $_POST['source'] ?? 'bundled' ) );
 		$loaded = self::load_import_source( $source );
 		if ( is_wp_error( $loaded ) ) {
@@ -2348,6 +2380,7 @@ class TAKA_Platform_Admin {
 	/** Event meta. */
 	public static function render_event_meta_box( $post ) {
 		self::nonce();
+		echo '<input type="hidden" name="' . esc_attr( self::EVENT_FORM_MARKER ) . '" value="1">';
 		self::admin_section_open( __( 'Basic information', 'taka-platform' ), __( 'Core event classification and location data used across listings and detail pages.', 'taka-platform' ), true, 'taka-admin-section--essential', 'event-basic-information' );
 		self::event_option_select( $post->ID, 'country', __( 'Country', 'taka-platform' ) );
 		self::render_derived_country_fields( $post->ID );
@@ -2502,12 +2535,18 @@ class TAKA_Platform_Admin {
 		}
 	}
 	public static function save_event( $post_id ) {
-		if ( ! self::can_save_post_meta( $post_id ) ) { return; }
+		$validation_error = self::post_meta_save_validation_error( $post_id, true );
+		if ( '' !== $validation_error ) {
+			if ( ! in_array( $validation_error, array( 'autosave', 'revision' ), true ) ) {
+				self::$event_save_error = $validation_error;
+			}
+			return;
+		}
 		self::save_access_fields( $post_id );
 		$posted_relationships = self::sanitize_event_organizer_relationships( $_POST['taka_platform_event_organizers'] ?? array() );
-		if ( ! empty( $posted_relationships ) ) {
-			$_POST['_taka_organizer_id'] = (string) absint( $posted_relationships[0]['organizer_id'] ?? 0 );
-		}
+		$posted_primary = isset( $_POST['_taka_organizer_id'] ) ? absint( wp_unslash( $_POST['_taka_organizer_id'] ) ) : 0;
+		$posted_relationships = self::synchronize_primary_event_organizer( $posted_relationships, $posted_primary );
+		$_POST['_taka_organizer_id'] = (string) $posted_primary;
 		if ( ! self::current_user_is_platform_admin() ) {
 			$assigned = self::get_current_user_organizer_ids();
 			$existing = absint( get_post_meta( $post_id, '_taka_organizer_id', true ) );
@@ -2546,6 +2585,31 @@ class TAKA_Platform_Admin {
 			TAKA_Ticketing_Module::save_event_ticket_types( $post_id );
 		}
 		self::save_event_structured_meta( $post_id );
+		if ( ! self::event_submitted_values_persisted( $post_id ) ) {
+			self::$event_save_error = 'persistence_failed';
+		}
+	}
+
+	/** Keep the primary Organizer selector authoritative over the relationship editor. */
+	private static function synchronize_primary_event_organizer( $relationships, $primary_id ) {
+		$relationships = is_array( $relationships ) ? array_values( $relationships ) : array();
+		$primary_id = absint( $primary_id );
+		if ( ! $primary_id ) { return $relationships; }
+
+		$primary = null;
+		foreach ( $relationships as $index => $relationship ) {
+			if ( $primary_id !== absint( $relationship['organizer_id'] ?? 0 ) ) { continue; }
+			$primary = $relationship;
+			unset( $relationships[ $index ] );
+			break;
+		}
+		if ( ! is_array( $primary ) ) {
+			$primary = array( 'organizer_id' => (string) $primary_id, 'relationship_type' => 'organizer', 'custom_label' => '', 'visible' => 1, 'sort_order' => 0 );
+		}
+		$primary['organizer_id'] = (string) $primary_id;
+		$primary['relationship_type'] = 'organizer';
+		$primary['sort_order'] = 0;
+		return array_merge( array( $primary ), array_values( $relationships ) );
 	}
 
 	private static function save_access_fields( $post_id ) {
@@ -2842,11 +2906,47 @@ class TAKA_Platform_Admin {
 	}
 
 	private static function can_save_post_meta( $post_id ) {
-		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return false; }
-		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) { return false; }
-		if ( ! isset( $_POST[ self::NONCE ] ) ) { return false; }
-		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE ] ) ), self::NONCE ) ) { return false; }
-		return current_user_can( 'edit_post', $post_id );
+		return '' === self::post_meta_save_validation_error( $post_id );
+	}
+
+	private static function post_meta_save_validation_error( $post_id, $require_event_form = false ) {
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return 'autosave'; }
+		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) { return 'revision'; }
+		if ( $require_event_form && empty( $_POST[ self::EVENT_FORM_MARKER ] ) ) { return 'missing_form'; }
+		if ( ! isset( $_POST[ self::NONCE ] ) ) { return 'missing_nonce'; }
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE ] ) ), self::NONCE ) ) { return 'invalid_nonce'; }
+		return current_user_can( 'edit_post', $post_id ) ? '' : 'forbidden';
+	}
+
+	/** Verify the authoritative WordPress record immediately after an Event update. */
+	private static function event_submitted_values_persisted( $post_id ) {
+		if ( isset( $_POST['post_title'] ) ) {
+			$expected_title = sanitize_text_field( wp_unslash( $_POST['post_title'] ) );
+			if ( $expected_title !== (string) get_the_title( $post_id ) ) { return false; }
+		}
+
+		$source_language = TAKA_Platform_Translation_Packages::sanitize_language( wp_unslash( $_POST['_taka_source_language'] ?? 'de' ) );
+		$text = isset( $_POST['taka_platform_text_translations'] ) && is_array( $_POST['taka_platform_text_translations'] ) ? wp_unslash( $_POST['taka_platform_text_translations'] ) : array();
+		if ( isset( $text['subtitle'][ $source_language ] ) ) {
+			$expected_subtitle = sanitize_text_field( $text['subtitle'][ $source_language ] );
+			if ( $expected_subtitle !== (string) get_post_meta( $post_id, '_taka_subtitle', true ) ) { return false; }
+		}
+
+		foreach ( array( 'format', 'audience', 'level', 'ticket_status', 'ticket_provider' ) as $field ) {
+			$posted_key = self::posted_event_field_key( $field );
+			if ( '' === $posted_key ) { continue; }
+			$expected = TAKA_Platform_Data::normalize_event_option_value( $field, wp_unslash( $_POST[ $posted_key ] ) );
+			if ( (string) $expected !== (string) get_post_meta( $post_id, '_taka_' . $field, true ) ) { return false; }
+		}
+		$url_key = self::posted_event_field_key( 'ticket_shop_url' );
+		if ( '' !== $url_key && esc_url_raw( wp_unslash( $_POST[ $url_key ] ) ) !== (string) get_post_meta( $post_id, '_taka_ticket_shop_url', true ) ) { return false; }
+
+		foreach ( array( 'organizer_id', 'venue_id' ) as $field ) {
+			$posted_key = self::posted_event_field_key( $field );
+			if ( '' === $posted_key ) { continue; }
+			if ( absint( wp_unslash( $_POST[ $posted_key ] ) ) !== absint( get_post_meta( $post_id, '_taka_' . $field, true ) ) ) { return false; }
+		}
+		return true;
 	}
 
 	private static function save_object_country_meta( $post_id, $suggest_timezone = false ) {
