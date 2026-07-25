@@ -36,6 +36,11 @@ class TAKA_Platform_Data {
 	public static function normalize_event_option_value( $field, $value ) { return sanitize_key( $value ); }
 	public static function normalize_language_codes( $value ) { return array_values( array_filter( (array) $value ) ); }
 	public static function sanitize_money_value( $value ) { return (string) $value; }
+	public static function normalize_program_items( $items ) { return array_values( (array) $items ); }
+	public static function compare_program_items( $a, $b ) {
+		return strcmp( (string) ( $a['date'] ?? '' ), (string) ( $b['date'] ?? '' ) )
+			?: strcmp( (string) ( $a['time_start'] ?? '' ), (string) ( $b['time_start'] ?? '' ) );
+	}
 }
 
 require_once dirname( __DIR__ ) . '/includes/Admin/class-admin.php';
@@ -95,6 +100,27 @@ $expected = array(
 foreach ( $expected as $key => $value ) {
 	if ( (string) $value !== (string) get_post_meta( $post_id, $key, true ) ) {
 		fwrite( STDERR, sprintf( "Unexpected %s value.\n", $key ) );
+		exit( 1 );
+	}
+}
+
+$call_private(
+	'synchronize_event_date_meta_from_program_items',
+	$post_id,
+	array(
+		array( 'date' => '2026-09-06', 'time_start' => '10:00', 'time_end' => '16:00' ),
+		array( 'date' => '2026-09-05', 'time_start' => '09:00', 'time_end' => '17:00' ),
+	)
+);
+$expected_dates = array(
+	'_taka_date_start' => '2026-09-05',
+	'_taka_date_end' => '2026-09-06',
+	'_taka_time_start' => '09:00',
+	'_taka_time_end' => '16:00',
+);
+foreach ( $expected_dates as $key => $value ) {
+	if ( $value !== get_post_meta( $post_id, $key, true ) ) {
+		fwrite( STDERR, sprintf( "Unexpected synchronized %s value.\n", $key ) );
 		exit( 1 );
 	}
 }

@@ -2820,7 +2820,40 @@ class TAKA_Platform_Admin {
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
 		if ( ! isset( $_POST[ self::NONCE ] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ self::NONCE ] ) ), self::NONCE ) || ! current_user_can( 'edit_post', $post_id ) ) { return; }
 		$posted = isset( $_POST['taka_program_items'] ) && is_array( $_POST['taka_program_items'] ) ? wp_unslash( $_POST['taka_program_items'] ) : array();
-		update_post_meta( $post_id, '_taka_program_items', TAKA_Platform_Data::merge_program_item_translation_state( $posted, get_post_meta( $post_id, '_taka_program_items', true ) ) );
+		$items = TAKA_Platform_Data::merge_program_item_translation_state( $posted, get_post_meta( $post_id, '_taka_program_items', true ) );
+		update_post_meta( $post_id, '_taka_program_items', $items );
+		self::synchronize_event_date_meta_from_program_items( $post_id, $items );
+	}
+
+	/**
+	 * Keep the backwards-compatible Event date index aligned with the canonical
+	 * dated program. Existing queries and integrations still use these keys.
+	 */
+	private static function synchronize_event_date_meta_from_program_items( $post_id, $items ) {
+		$items = TAKA_Platform_Data::normalize_program_items( is_array( $items ) ? $items : array() );
+		$dated = array_values(
+			array_filter(
+				$items,
+				static function ( $item ) {
+					return '' !== trim( (string) ( $item['date'] ?? '' ) );
+				}
+			)
+		);
+
+		if ( empty( $dated ) ) {
+			foreach ( array( 'date_start', 'date_end', 'time_start', 'time_end' ) as $field ) {
+				delete_post_meta( $post_id, '_taka_' . $field );
+			}
+			return;
+		}
+
+		usort( $dated, array( 'TAKA_Platform_Data', 'compare_program_items' ) );
+		$first = $dated[0];
+		$last  = $dated[ count( $dated ) - 1 ];
+		update_post_meta( $post_id, '_taka_date_start', sanitize_text_field( $first['date'] ?? '' ) );
+		update_post_meta( $post_id, '_taka_date_end', sanitize_text_field( $last['date'] ?? '' ) );
+		update_post_meta( $post_id, '_taka_time_start', sanitize_text_field( $first['time_start'] ?? '' ) );
+		update_post_meta( $post_id, '_taka_time_end', sanitize_text_field( $last['time_end'] ?? '' ) );
 	}
 
 	private static function save_event_videos( $post_id ) {
