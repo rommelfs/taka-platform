@@ -203,7 +203,7 @@ Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `tak
 
 ### v2.2.9
 
-- Derived seminar plan weekdays and date labels from canonical program dates, with stale program item dates falling back to the current event date range.
+- Derived seminar plan weekdays and date labels from canonical program dates. Explicit program dates remain authoritative; the legacy Event date range is used only for undated legacy program rows.
 
 ### v2.2.8
 
