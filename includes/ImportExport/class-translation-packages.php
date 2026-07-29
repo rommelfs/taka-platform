@@ -67,7 +67,7 @@ class TAKA_Platform_Translation_Packages {
 			array( 'term' => 'Okinawa', 'note' => 'Place name.', 'translate' => '0', 'preferred_translations' => array() ),
 			array( 'term' => 'Kata', 'note' => 'Martial art term; usually keep untranslated.', 'translate' => '0', 'preferred_translations' => array() ),
 			array( 'term' => 'Kumite', 'note' => 'Martial art term; usually keep untranslated.', 'translate' => '0', 'preferred_translations' => array() ),
-			array( 'term' => 'Kanade', 'note' => 'Personal name; keep this exact spelling in every language.', 'translate' => '0', 'preferred_translations' => array(), 'protected_variants' => array( 'Kanada' ) ),
+			array( 'term' => 'Kanade', 'note' => 'Personal name; keep this exact spelling in every language.', 'translate' => '0', 'preferred_translations' => array(), 'protected_variants' => array( 'Kanada', 'Canada' ) ),
 		);
 	}
 
@@ -77,9 +77,22 @@ class TAKA_Platform_Translation_Packages {
 		$stored = is_array( $stored ) ? $stored : array();
 		$stored = self::sanitize_glossary( $stored );
 		$by_term = array();
-		foreach ( $stored as $item ) { $by_term[ strtolower( $item['term'] ) ] = $item; }
+		foreach ( $stored as $index => $item ) { $by_term[ strtolower( $item['term'] ) ] = $index; }
 		foreach ( self::default_glossary() as $default ) {
-			if ( ! isset( $by_term[ strtolower( $default['term'] ) ] ) ) { $stored[] = $default; }
+			$key = strtolower( $default['term'] );
+			if ( ! isset( $by_term[ $key ] ) ) {
+				$stored[] = $default;
+				continue;
+			}
+			$index = $by_term[ $key ];
+			$stored[ $index ]['protected_variants'] = array_values(
+				array_unique(
+					array_merge(
+						(array) ( $stored[ $index ]['protected_variants'] ?? array() ),
+						(array) ( $default['protected_variants'] ?? array() )
+					)
+				)
+			);
 		}
 		return $stored;
 	}
@@ -126,10 +139,10 @@ class TAKA_Platform_Translation_Packages {
 		$translation = (string) $translation;
 		foreach ( self::get_glossary() as $item ) {
 			$term = (string) ( $item['term'] ?? '' );
-			if ( ! empty( $item['translate'] ) || '' === $term || false === strpos( (string) $source, $term ) ) { continue; }
-			if ( false !== strpos( $translation, $term ) ) { continue; }
-			foreach ( (array) ( $item['protected_variants'] ?? array() ) as $variant ) {
-				$translation = str_replace( (string) $variant, $term, $translation );
+			if ( ! empty( $item['translate'] ) || '' === $term || false === stripos( (string) $source, $term ) ) { continue; }
+			$variants = array_merge( array( $term ), (array) ( $item['protected_variants'] ?? array() ) );
+			foreach ( array_unique( array_filter( array_map( 'strval', $variants ) ) ) as $variant ) {
+				$translation = preg_replace( '/' . preg_quote( $variant, '/' ) . '/iu', $term, $translation );
 			}
 		}
 		return $translation;

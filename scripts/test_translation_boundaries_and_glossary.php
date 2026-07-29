@@ -33,4 +33,22 @@ if ( 'Kanade leads the seminar.' !== $protected ) {
 	exit( 1 );
 }
 
+$protected_case = TAKA_Platform_Translation_Packages::protect_glossary_terms(
+	'KANADE leitet das Seminar.',
+	'Canada leads the seminar with KANADE.'
+);
+if ( 'Kanade leads the seminar with Kanade.' !== $protected_case ) {
+	fwrite( STDERR, 'The personal name Kanade was not normalized independently of case or translated variant.' . PHP_EOL );
+	exit( 1 );
+}
+
+$country = TAKA_Platform_Translation_Packages::protect_glossary_terms(
+	'Eine Reise nach Kanada.',
+	'A trip to Canada.'
+);
+if ( 'A trip to Canada.' !== $country ) {
+	fwrite( STDERR, 'A genuine geographic reference to Canada was changed.' . PHP_EOL );
+	exit( 1 );
+}
+
 echo 'Translation boundary and glossary regression tests passed.' . PHP_EOL;

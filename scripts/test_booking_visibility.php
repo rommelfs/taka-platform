@@ -18,6 +18,7 @@ class TAKA_Platform_I18n {
 	public function get_all_languages() { return array( 'de', 'en', 'fr', 'nl', 'lb', 'fi', 'ja' ); }
 }
 
+require_once dirname( __DIR__ ) . '/includes/ImportExport/class-translation-packages.php';
 require_once dirname( __DIR__ ) . '/includes/Data/class-repository.php';
 
 $reflection = new ReflectionClass( 'TAKA_Platform_Data' );
@@ -56,6 +57,41 @@ if ( in_array( 'group_booking', $visible, true ) || in_array( 'payment_methods',
 }
 if ( ! in_array( 'multi_event_discount', $visible, true ) || ! in_array( 'cancellation_policy', $visible, true ) ) {
 	fwrite( STDERR, 'Enabled booking topics were removed.' . PHP_EOL );
+	exit( 1 );
+}
+
+$event_a = array( 'ticket_mode' => 'pay_at_door', 'ticket_door_price' => '40', 'currency' => 'EUR', 'ticket_door_note' => 'Week-end Pass' );
+$event_b = array( 'ticket_mode' => 'pay_at_door', 'ticket_door_price' => '30', 'currency' => 'EUR', 'ticket_door_note' => 'Only Saturday' );
+$event_empty = array( 'ticket_mode' => 'pay_at_door', 'ticket_door_price' => '20', 'currency' => 'EUR', 'ticket_door_note' => '' );
+if ( 'Week-end Pass' !== TAKA_Platform_Data::ticket_information_card( $event_a, 'en' )['note'] ) {
+	fwrite( STDERR, 'The first Event lost its own Door price additional note.' . PHP_EOL );
+	exit( 1 );
+}
+if ( 'Only Saturday' !== TAKA_Platform_Data::ticket_information_card( $event_b, 'en' )['note'] ) {
+	fwrite( STDERR, 'The second Event did not retain its separate Door price additional note.' . PHP_EOL );
+	exit( 1 );
+}
+if ( '' !== TAKA_Platform_Data::ticket_information_card( $event_empty, 'en' )['note'] ) {
+	fwrite( STDERR, 'An empty Door price additional note produced frontend content.' . PHP_EOL );
+	exit( 1 );
+}
+$event_free = array( 'ticket_mode' => 'free', 'ticket_door_note' => 'Must not leak' );
+if ( '' !== TAKA_Platform_Data::ticket_information_card( $event_free, 'en' )['note'] ) {
+	fwrite( STDERR, 'A Door price additional note leaked into a non-door-price Event mode.' . PHP_EOL );
+	exit( 1 );
+}
+
+$resolve_text = $reflection->getMethod( 'resolve_dynamic_text_result' );
+if ( PHP_VERSION_ID < 80100 ) { $resolve_text->setAccessible( true ); }
+$resolved_name = $resolve_text->invoke(
+	null,
+	array( 'de' => 'Kanade leitet das Seminar.', 'en' => 'Canada leads the seminar.' ),
+	'en',
+	'de',
+	array()
+);
+if ( 'Kanade leads the seminar.' !== $resolved_name['value'] ) {
+	fwrite( STDERR, 'An already stored website translation did not preserve the personal name Kanade.' . PHP_EOL );
 	exit( 1 );
 }
 

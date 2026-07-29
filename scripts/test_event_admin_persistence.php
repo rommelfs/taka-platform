@@ -58,6 +58,7 @@ $_POST = array(
 	'_taka_ticket_status' => 'available',
 	'_taka_ticket_provider' => 'pretix',
 	'_taka_ticket_shop_url' => 'https://tickets.example.test/event/',
+	'_taka_ticket_door_note' => 'Week-end Pass',
 	'_taka_organizer_id' => '101',
 	'_taka_venue_id' => '202',
 );
@@ -68,7 +69,7 @@ $call_private = Closure::bind(
 	null,
 	'TAKA_Platform_Admin'
 );
-$call_private( 'save', $post_id, array( 'subtitle', 'format', 'audience', 'level', 'ticket_status', 'ticket_provider', 'ticket_shop_url', 'organizer_id', 'venue_id' ) );
+$call_private( 'save', $post_id, array( 'subtitle', 'format', 'audience', 'level', 'ticket_status', 'ticket_provider', 'ticket_shop_url', 'ticket_door_note', 'organizer_id', 'venue_id' ) );
 update_post_meta( $post_id, '_taka_subtitle', sanitize_text_field( $_POST['taka_platform_text_translations']['subtitle']['de'] ) );
 
 if ( true !== $call_private( 'event_submitted_values_persisted', $post_id ) ) {
@@ -94,6 +95,7 @@ $expected = array(
 	'_taka_ticket_status' => 'available',
 	'_taka_ticket_provider' => 'pretix',
 	'_taka_ticket_shop_url' => 'https://tickets.example.test/event/',
+	'_taka_ticket_door_note' => 'Week-end Pass',
 	'_taka_organizer_id' => 101,
 	'_taka_venue_id' => 202,
 );

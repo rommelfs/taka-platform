@@ -2429,10 +2429,11 @@ class TAKA_Platform_Admin {
 		self::event_option_select( $post->ID, 'ticket_status', __( 'Ticket status', 'taka-platform' ) );
 		self::url( $post->ID, 'ticket_shop_url', __( 'Ticket shop URL', 'taka-platform' ) );
 		self::text( $post->ID, 'ticket_door_price', __( 'Door price / admission on site', 'taka-platform' ) );
+		self::text_with_placeholder( $post->ID, 'ticket_door_note', __( 'Door price additional note', 'taka-platform' ), __( 'Week-end Pass', 'taka-platform' ) );
 		self::text( $post->ID, 'ticket_door_price_reduced', __( 'Reduced door price', 'taka-platform' ) );
 		self::text( $post->ID, 'ticket_door_price_child', __( 'Child door price', 'taka-platform' ) );
 		self::text( $post->ID, 'ticket_door_price_member', __( 'Member door price', 'taka-platform' ) );
-		echo '<p class="description">' . esc_html__( 'The optional Door price additional note (for example “Week-end Pass”) is edited in Source language & website translations and shown only when filled.', 'taka-platform' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'The optional Door price additional note is configured separately for each event next to the Door price and can be translated with the other event content.', 'taka-platform' ) . '</p>';
 		self::render_event_booking_information_fields( $post->ID );
 		self::admin_section_close();
 		if ( class_exists( 'TAKA_Ticketing_Module' ) ) {
@@ -2579,7 +2580,7 @@ class TAKA_Platform_Admin {
 				$posted_relationships = TAKA_Platform_Data::normalize_event_organizer_relationships( get_post_meta( $post_id, '_taka_event_organizers', true ), $existing );
 			}
 		}
-		self::save( $post_id, array( 'country', 'country_code', 'flag', 'route_map_x', 'route_map_y', 'route_map_label', 'route_map_label_x', 'route_map_label_y', 'route_map_label_anchor', 'route_map_label_width', 'route_map_leader_line', 'tour_order', 'city', 'doors_open', 'timezone', 'currency', 'format', 'audience', 'level', 'ticket_mode', 'ticket_provider', 'ticket_status', 'ticket_door_price', 'ticket_door_price_reduced', 'ticket_door_price_child', 'ticket_door_price_member', 'photo_credit', 'languages', 'organizer_id', 'venue_id', 'venue_ids', 'ticket_location_detail', 'ticket_shop_url', 'image_id', 'image_url', 'group_image_id', 'group_image_url', 'gallery_image_ids', 'booking_info_override', 'booking_info_enabled', 'booking_info_show_group_booking', 'booking_info_show_multi_event_discount', 'booking_info_show_payment_methods', 'booking_info_show_cancellation_policy', 'booking_info_title', 'booking_info_intro', 'booking_info_group_booking', 'booking_info_multi_event_discount', 'booking_info_contact_email', 'booking_info_booking_process', 'booking_info_payment_methods', 'booking_info_cancellation_policy', 'booking_info_additional_notes', 'sort_order' ) );
+		self::save( $post_id, array( 'country', 'country_code', 'flag', 'route_map_x', 'route_map_y', 'route_map_label', 'route_map_label_x', 'route_map_label_y', 'route_map_label_anchor', 'route_map_label_width', 'route_map_leader_line', 'tour_order', 'city', 'doors_open', 'timezone', 'currency', 'format', 'audience', 'level', 'ticket_mode', 'ticket_provider', 'ticket_status', 'ticket_door_price', 'ticket_door_note', 'ticket_door_price_reduced', 'ticket_door_price_child', 'ticket_door_price_member', 'photo_credit', 'languages', 'organizer_id', 'venue_id', 'venue_ids', 'ticket_location_detail', 'ticket_shop_url', 'image_id', 'image_url', 'group_image_id', 'group_image_url', 'gallery_image_ids', 'booking_info_override', 'booking_info_enabled', 'booking_info_show_group_booking', 'booking_info_show_multi_event_discount', 'booking_info_show_payment_methods', 'booking_info_show_cancellation_policy', 'booking_info_title', 'booking_info_intro', 'booking_info_group_booking', 'booking_info_multi_event_discount', 'booking_info_contact_email', 'booking_info_booking_process', 'booking_info_payment_methods', 'booking_info_cancellation_policy', 'booking_info_additional_notes', 'sort_order' ) );
 		self::save_content_reference_meta( $post_id, 'content_reference_event_description', 'event_description' );
 		self::save_object_text_translations( $post_id, 'event' );
 		self::save_event_organizer_relationships( $post_id, $posted_relationships );
@@ -2977,6 +2978,8 @@ class TAKA_Platform_Admin {
 		}
 		$url_key = self::posted_event_field_key( 'ticket_shop_url' );
 		if ( '' !== $url_key && esc_url_raw( wp_unslash( $_POST[ $url_key ] ) ) !== (string) get_post_meta( $post_id, '_taka_ticket_shop_url', true ) ) { return false; }
+		$door_note_key = self::posted_event_field_key( 'ticket_door_note' );
+		if ( '' !== $door_note_key && sanitize_text_field( wp_unslash( $_POST[ $door_note_key ] ) ) !== (string) get_post_meta( $post_id, '_taka_ticket_door_note', true ) ) { return false; }
 
 		foreach ( array( 'organizer_id', 'venue_id' ) as $field ) {
 			$posted_key = self::posted_event_field_key( $field );
@@ -3192,6 +3195,7 @@ class TAKA_Platform_Admin {
 		echo '<p class="description"><strong>' . esc_html( self::source_text_label( $label ) ) . '</strong><br>' . esc_html__( 'Use the main WordPress editor for this original text. Website translations are managed in the translation fields below.', 'taka-platform' ) . '</p>';
 	}
 	private static function text( $post_id, $field, $label ) { self::field( $label, '<input class="widefat" type="text" name="_taka_' . esc_attr( $field ) . '" value="' . esc_attr( self::meta( $post_id, $field ) ) . '">' ); }
+	private static function text_with_placeholder( $post_id, $field, $label, $placeholder ) { self::field( $label, '<input class="widefat" type="text" name="_taka_' . esc_attr( $field ) . '" value="' . esc_attr( self::meta( $post_id, $field ) ) . '" placeholder="' . esc_attr( $placeholder ) . '">' ); }
 	private static function text_source( $post_id, $field, $label ) { self::field( self::source_text_label( $label ), '<input class="widefat" type="text" name="_taka_' . esc_attr( $field ) . '" value="' . esc_attr( self::meta( $post_id, $field ) ) . '"><p class="description">' . esc_html( self::source_text_help() ) . '</p>' ); }
 	private static function number( $post_id, $field, $label ) { self::field( $label, '<input type="number" name="_taka_' . esc_attr( $field ) . '" value="' . esc_attr( self::meta( $post_id, $field ) ) . '">' ); }
 	private static function url( $post_id, $field, $label ) { self::field( $label, '<input class="widefat" type="url" name="_taka_' . esc_attr( $field ) . '" value="' . esc_attr( self::meta( $post_id, $field ) ) . '">' ); }

@@ -2398,6 +2398,9 @@ class TAKA_Platform_Data {
 			foreach ( $languages as $language ) {
 				if ( isset( $value[ $language ] ) && '' !== trim( (string) $value[ $language ] ) ) {
 					$result['value'] = (string) $value[ $language ];
+					if ( class_exists( 'TAKA_Platform_Translation_Packages' ) && isset( $value[ $source_language ] ) ) {
+						$result['value'] = TAKA_Platform_Translation_Packages::protect_glossary_terms( (string) $value[ $source_language ], $result['value'] );
+					}
 					$result['resolved_language'] = $language;
 					$result['fallback_used'] = self::translation_fallback_label( $language, $lang, $source_language, $site_default );
 					$result['found'] = true;
@@ -3815,7 +3818,7 @@ class TAKA_Platform_Data {
 		);
 		$card = $cards[ $mode ] ?? array();
 		$card['mode'] = $mode;
-		$card['note'] = trim( (string) ( $event['ticket_door_note'] ?? '' ) );
+		$card['note'] = 'pay_at_door' === $mode ? trim( (string) ( $event['ticket_door_note'] ?? '' ) ) : '';
 		$card['details'] = is_array( $card['details'] ?? null ) ? $card['details'] : array();
 		return $card;
 	}
