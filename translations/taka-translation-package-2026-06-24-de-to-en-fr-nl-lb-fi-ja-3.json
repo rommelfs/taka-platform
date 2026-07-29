@@ -1,0 +1,123 @@
+{
+    "package_type": "taka_translation_package",
+    "format_version": 1,
+    "platform_version": "2.2.13",
+    "created_at": "2026-06-24T13:35:07+00:00",
+    "source_language": "de",
+    "use_object_source_languages": true,
+    "target_languages": [
+        "en",
+        "fr",
+        "nl",
+        "lb",
+        "fi",
+        "ja"
+    ],
+    "instructions": {
+        "preserve_html": true,
+        "preserve_placeholders": true,
+        "do_not_translate_terms": [
+            "TAKA",
+            "Sensei",
+            "Dojo",
+            "Karate-Do",
+            "Kobujutsu",
+            "Shorin-Ryu",
+            "Okinawa",
+            "Kata",
+            "Kumite"
+        ]
+    },
+    "translator_prompt": "Please translate this TAKA Translation Package.\nRules:\n- Preserve JSON structure.\n- Preserve all IDs.\n- Fill only the translations object.\n- Do not change source_text.\n- Preserve HTML tags.\n- Preserve placeholders such as {event}, %s, {{name}}.\n- Keep glossary terms untranslated unless the target language requires an accepted local form.\n- Return valid JSON only.",
+    "glossary": [
+        {
+            "term": "TAKA",
+            "note": "Platform name; keep unchanged.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Sensei",
+            "note": "Japanese title; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Dojo",
+            "note": "Training place; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Karate-Do",
+            "note": "Martial art term; keep spelling unless a local convention exists.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Kobujutsu",
+            "note": "Martial art term; keep spelling unless a local convention exists.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Soft Blocking",
+            "note": "Training concept; translate only if the site defines a preferred local form.",
+            "translate": "1",
+            "preferred_translations": []
+        },
+        {
+            "term": "Shorin-Ryu",
+            "note": "Style name; keep unchanged.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Okinawa",
+            "note": "Place name.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Kata",
+            "note": "Martial art term; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Kumite",
+            "note": "Martial art term; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        }
+    ],
+    "warnings": [],
+    "items": [
+        {
+            "id": "event:helsinki-2:description",
+            "object_type": "event",
+            "object_id": "helsinki-2",
+            "field": "description",
+            "source_language": "fi",
+            "source_text": "Erikoistapahtuma 31.8.2026\r\nKarateopettajani Taka-sensei saapuu Fukokasta Hämeenkoskelle yhdessä edistyneen oppilaansa Kanade:n kanssa.\r\nOsallistumismaksu 20 €.\r\nTämä tapahtuma ei vähennä normaaleja harjoituskertoja, vaan on ylimääräinen harjoitusmahdollisuus.",
+            "source_hash": "0aa275fe9704a32baed800e5b48e2b6f0ad28fd54de89b8bdf9dd97e55a6114e",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "ja": "",
+                "de": ""
+            },
+            "translations": {
+                "en": "Special event 31.8.2026\r\nMy Karate teacher Taka-sensei is coming from Fukuoka to Hämeenkoski together with his advanced student Kanade.\r\nParticipation fee 20 €.\r\nThis event does not reduce the normal training sessions; it is an additional training opportunity.",
+                "fr": "Événement spécial 31.8.2026\r\nMon professeur de Karate Taka-sensei vient de Fukuoka à Hämeenkoski avec son élève avancée Kanade.\r\nFrais de participation 20 €.\r\nCet événement ne réduit pas les séances d’entraînement normales ; c’est une occasion d’entraînement supplémentaire.",
+                "nl": "Speciaal evenement 31.8.2026\r\nMijn Karate-leraar Taka-sensei komt vanuit Fukuoka naar Hämeenkoski samen met zijn gevorderde leerling Kanade.\r\nDeelnamekosten 20 €.\r\nDit evenement vermindert de normale trainingsbeurten niet, maar is een extra trainingsmogelijkheid.",
+                "lb": "Spezialevent 31.8.2026\r\nMäi Karate-Enseignant Taka-sensei kënnt vu Fukuoka op Hämeenkoski zesumme mat senger fortgeschrattener Schülerin Kanade.\r\nParticipatiounskäschten 20 €.\r\nDëst Evenement reduzéiert déi normal Trainingsunitéiten net, mee ass eng zousätzlech Trainingsméiglechkeet.",
+                "ja": "特別イベント 2026年8月31日\r\n私のKarateの先生 Taka-sensei が、上級の生徒 Kanade と一緒に福岡から Hämeenkoski に来ます。\r\n参加費 20 €。\r\nこのイベントは通常の稽古回数を減らすものではなく、追加の稽古機会です。",
+                "de": "Sonderveranstaltung 31.8.2026\r\nMein Karatelehrer Taka-sensei kommt aus Fukuoka zusammen mit seiner fortgeschrittenen Schülerin Kanade nach Hämeenkoski.\r\nTeilnahmegebühr 20 €.\r\nDiese Veranstaltung reduziert die normalen Trainingseinheiten nicht, sondern ist eine zusätzliche Trainingsmöglichkeit."
+            },
+            "context": "Event / Helsinki / Seminar description"
+        }
+    ]
+}

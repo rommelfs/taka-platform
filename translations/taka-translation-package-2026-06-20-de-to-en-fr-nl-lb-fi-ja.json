@@ -1,0 +1,510 @@
+{
+    "package_type": "taka_translation_package",
+    "format_version": 1,
+    "platform_version": "2.0.0",
+    "created_at": "2026-06-20T07:45:37+00:00",
+    "source_language": "de",
+    "use_object_source_languages": true,
+    "target_languages": [
+        "en",
+        "fr",
+        "nl",
+        "lb",
+        "fi",
+        "ja"
+    ],
+    "instructions": {
+        "preserve_html": true,
+        "preserve_placeholders": true,
+        "do_not_translate_terms": [
+            "TAKA",
+            "Sensei",
+            "Dojo",
+            "Karate-Do",
+            "Kobujutsu",
+            "Shorin-Ryu",
+            "Okinawa",
+            "Kata",
+            "Kumite"
+        ]
+    },
+    "translator_prompt": "Please translate this TAKA Translation Package.\nRules:\n- Preserve JSON structure.\n- Preserve all IDs.\n- Fill only the translations object.\n- Do not change source_text.\n- Preserve HTML tags.\n- Preserve placeholders such as {event}, %s, {{name}}.\n- Keep glossary terms untranslated unless the target language requires an accepted local form.\n- Return valid JSON only.",
+    "glossary": [
+        {
+            "term": "TAKA",
+            "note": "Platform name; keep unchanged.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Sensei",
+            "note": "Japanese title; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Dojo",
+            "note": "Training place; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Karate-Do",
+            "note": "Martial art term; keep spelling unless a local convention exists.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Kobujutsu",
+            "note": "Martial art term; keep spelling unless a local convention exists.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Soft Blocking",
+            "note": "Training concept; translate only if the site defines a preferred local form.",
+            "translate": "1",
+            "preferred_translations": []
+        },
+        {
+            "term": "Shorin-Ryu",
+            "note": "Style name; keep unchanged.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Okinawa",
+            "note": "Place name.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Kata",
+            "note": "Martial art term; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Kumite",
+            "note": "Martial art term; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        }
+    ],
+    "items": [
+        {
+            "id": "option_list:audience.adults:label",
+            "object_type": "option_list",
+            "object_id": "audience.adults",
+            "field": "label",
+            "source_language": "de",
+            "source_text": "Erwachsene",
+            "source_hash": "cef80864b3a96ef5dc2045eccd284cc9afe9bf08bebe772e3a96abb0fef1f8a0",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Option List / Audience / Erwachsene / Label"
+        },
+        {
+            "id": "option_list:audience.children:label",
+            "object_type": "option_list",
+            "object_id": "audience.children",
+            "field": "label",
+            "source_language": "de",
+            "source_text": "Kinder",
+            "source_hash": "eaa1aebfd86b461569632acaa47523a66d33a9f768c819802f1934cf07ed24aa",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Option List / Audience / Kinder / Label"
+        },
+        {
+            "id": "option_list:audience.children_and_youth:label",
+            "object_type": "option_list",
+            "object_id": "audience.children_and_youth",
+            "field": "label",
+            "source_language": "de",
+            "source_text": "Kinder und Jugendliche",
+            "source_hash": "3844ac1226e6617aea32c3eddd2a6cbc2af339f9c6fce8504356e3a36e30ea18",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Option List / Audience / Kinder und Jugendliche / Label"
+        },
+        {
+            "id": "option_list:audience.youth:label",
+            "object_type": "option_list",
+            "object_id": "audience.youth",
+            "field": "label",
+            "source_language": "de",
+            "source_text": "Jugendliche",
+            "source_hash": "c63f45af3135c12250e327f5580a9cdc4043c4472f9620ef49f5482227eb2f2f",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Option List / Audience / Jugendliche / Label"
+        },
+        {
+            "id": "option_list:audience.adults_and_youth:label",
+            "object_type": "option_list",
+            "object_id": "audience.adults_and_youth",
+            "field": "label",
+            "source_language": "de",
+            "source_text": "Erwachsene und Jugendliche",
+            "source_hash": "d2fedc9cf57eae69aa7feb6d8e9b202dde7987af461304ebd38703bd9c405569",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Option List / Audience / Erwachsene und Jugendliche / Label"
+        },
+        {
+            "id": "option_list:audience.all:label",
+            "object_type": "option_list",
+            "object_id": "audience.all",
+            "field": "label",
+            "source_language": "de",
+            "source_text": "Alle",
+            "source_hash": "3801a35c5182283990f6c7e7cbe137e58d6d7f750f6ab2522b687dcc9aa1d91d",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Option List / Audience / Alle / Label"
+        },
+        {
+            "id": "option_list:format.evening_seminar:label",
+            "object_type": "option_list",
+            "object_id": "format.evening_seminar",
+            "field": "label",
+            "source_language": "de",
+            "source_text": "Abendseminar",
+            "source_hash": "b186efd3dccebe0c336d4e9cc8ef31242cd19c3450c1b1d98ab3259faa2ae412",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Option List / Format / Abendseminar / Label"
+        },
+        {
+            "id": "option_list:format.half_day_seminar:label",
+            "object_type": "option_list",
+            "object_id": "format.half_day_seminar",
+            "field": "label",
+            "source_language": "de",
+            "source_text": "Halbtagsseminar",
+            "source_hash": "9857c2693d86361d3d89befe9e71cecb8298884159fa376aee8dc065bc389393",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Option List / Format / Halbtagsseminar / Label"
+        },
+        {
+            "id": "option_list:format.day_seminar:label",
+            "object_type": "option_list",
+            "object_id": "format.day_seminar",
+            "field": "label",
+            "source_language": "de",
+            "source_text": "Tagesseminar",
+            "source_hash": "974bddbc856e787d2aa723a4edc4627eded8b5ae661f30d3118c30d2e107ab51",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Option List / Format / Tagesseminar / Label"
+        },
+        {
+            "id": "option_list:format.two_day_seminar:label",
+            "object_type": "option_list",
+            "object_id": "format.two_day_seminar",
+            "field": "label",
+            "source_language": "de",
+            "source_text": "2-Tage-Seminar",
+            "source_hash": "f0ed6c50bd03d95166357f69df7118c2aa90c367cfee04e7e6f940f32ce12c49",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Option List / Format / 2-Tage-Seminar / Label"
+        },
+        {
+            "id": "option_list:format.weekend_seminar:label",
+            "object_type": "option_list",
+            "object_id": "format.weekend_seminar",
+            "field": "label",
+            "source_language": "de",
+            "source_text": "Wochenendseminar",
+            "source_hash": "0f0e3fb499884a25d6217834fe46d2d66995ecc5ed200f2231c4c2711f49ac7d",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Option List / Format / Wochenendseminar / Label"
+        },
+        {
+            "id": "option_list:format.tour_event:label",
+            "object_type": "option_list",
+            "object_id": "format.tour_event",
+            "field": "label",
+            "source_language": "de",
+            "source_text": "Tour-Event",
+            "source_hash": "6d83388b6108311fba590f43db84bca7434acaddcf375a3e239bb25b17631077",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Option List / Format / Tour-Event / Label"
+        },
+        {
+            "id": "option_list:format.seminar:label",
+            "object_type": "option_list",
+            "object_id": "format.seminar",
+            "field": "label",
+            "source_language": "de",
+            "source_text": "Seminar",
+            "source_hash": "1bbd481fbe665caafb29cfea6246f618a7f7bad04fa2c6e0bba3695812c447dc",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Option List / Format / Seminar / Label"
+        },
+        {
+            "id": "ticket_section:global:kicker",
+            "object_type": "ticket_section",
+            "object_id": "global",
+            "field": "kicker",
+            "source_language": "de",
+            "source_text": "Tickets",
+            "source_hash": "3d131368b43397ff5fbe0a9bf62c0f79c1d7da4cdd95635d79c6241c68020587",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Ticket Section / Global ticket section / Kicker"
+        },
+        {
+            "id": "ticket_section:global:title",
+            "object_type": "ticket_section",
+            "object_id": "global",
+            "field": "title",
+            "source_language": "de",
+            "source_text": "Seminar buchen",
+            "source_hash": "0f7c8a67181e0e1d4ec259c08886a61b1aecb79857169958ea77602017ba1a0c",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Ticket Section / Global ticket section / Title"
+        },
+        {
+            "id": "event:helsinki-2026:long_description",
+            "object_type": "event",
+            "object_id": "helsinki-2026",
+            "field": "long_description",
+            "source_language": "en",
+            "source_text": "Takafumi 'Taka' Nakayama Sensei, 7th Dan from Shido-kan Fukuoka, Japan, will visit Finland on 29–30 August as part of his European Tour 2026.\r\nTaka’s karate is based on a natural and practical approach to generating power.\r\nThe seminar is open to practitioners of all karate and budo styles, as well as participants of all experience levels.\r\nYou can get an impression of his teaching by visiting the Fukuoka Shido-kan YouTube channel: @fukuoka-shidokan-karate",
+            "source_hash": "edc74805b474ef15539767644382d7c29765fec8bc62e4c5c5b53e4befc76525",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Helsinki / Long description"
+        }
+    ]
+}

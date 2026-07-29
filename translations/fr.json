@@ -11,7 +11,7 @@
   "hero": {
     "kicker": "TAKA European Tour 2026",
     "headline": "Harmony in Motion",
-    "intro": "Un voyage de séminaires européen avec Takafumi Nakayama Sensei – de Helsinki à Berlin, aux Pays-Bas, en Belgique et au Luxembourg jusqu’à la région Trier/Konz.",
+    "intro": "Un voyage de séminaires européen avec Takafumi 'Taka' Nakayama Sensei – de Helsinki à Berlin, aux Pays-Bas, en Belgique et au Luxembourg jusqu’à la région Trier/Konz.",
     "primary_button": "Voir les séminaires",
     "secondary_button": "Tickets",
     "stations_label": "Étapes de la tournée",
@@ -65,7 +65,7 @@
   "sections": {
     "sensei": {
       "kicker": "Sensei",
-      "headline": "Takafumi Nakayama",
+      "headline": "Takafumi 'Taka' Nakayama",
       "text": "Précision, calme et qualité du mouvement issus de la tradition d’Okinawa."
     },
     "training": {
@@ -141,7 +141,7 @@
     },
     "konz": {
       "subtitle": "Séminaire Konz",
-      "description": "Deux jours de séminaire à Konz avec Takafumi Nakayama Sensei.",
+      "description": "Deux jours de séminaire à Konz avec Takafumi 'Taka' Nakayama Sensei.",
       "type": "Séminaire de 2 jours",
       "audience": "Adultes et jeunes",
       "level": "Tous styles et tous niveaux",

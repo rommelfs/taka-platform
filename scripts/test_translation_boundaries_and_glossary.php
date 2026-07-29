@@ -51,4 +51,67 @@ if ( 'A trip to Canada.' !== $country ) {
 	exit( 1 );
 }
 
+$person = TAKA_Platform_Translation_Packages::protect_glossary_terms(
+	'Takafumi “Taka” Nakayama leitet das Seminar.',
+	'TAKAfumi "TAKA" Nakayama leads the seminar.'
+);
+if ( "Takafumi 'Taka' Nakayama leads the seminar." !== $person ) {
+	fwrite( STDERR, 'The full personal name was not restored with canonical apostrophes and case.' . PHP_EOL );
+	exit( 1 );
+}
+
+$person_plain = TAKA_Platform_Translation_Packages::protect_glossary_terms(
+	'Takafumi Nakayama leitet das Seminar.',
+	'Nakayama Takafumi leads the seminar.'
+);
+if ( "Takafumi 'Taka' Nakayama leads the seminar." !== $person_plain ) {
+	fwrite( STDERR, 'A known full-name variant was not canonicalized.' . PHP_EOL );
+	exit( 1 );
+}
+
+$project_and_person = TAKA_Platform_Translation_Packages::protect_glossary_terms(
+	"TAKA presents Takafumi 'Taka' Nakayama.",
+	"TAKA presents Takafumi 'Taka' Nakayama."
+);
+if ( "TAKA presents Takafumi 'Taka' Nakayama." !== $project_and_person ) {
+	fwrite( STDERR, 'The TAKA project rule changed the personal nickname or Takafumi.' . PHP_EOL );
+	exit( 1 );
+}
+
+$nickname_only = TAKA_Platform_Translation_Packages::protect_glossary_terms(
+	'Taka teaches natural movement.',
+	'Taka teaches natural movement.'
+);
+if ( 'Taka teaches natural movement.' !== $nickname_only ) {
+	fwrite( STDERR, 'The personal nickname Taka was incorrectly uppercased as the project name.' . PHP_EOL );
+	exit( 1 );
+}
+
+$mixed_project_context = TAKA_Platform_Translation_Packages::protect_glossary_terms(
+	'TAKA is the platform. Taka teaches natural movement.',
+	'Taka is the platform. Taka teaches natural movement.'
+);
+if ( 'TAKA is the platform. Taka teaches natural movement.' !== $mixed_project_context ) {
+	fwrite( STDERR, 'The project spelling rule leaked into a separate personal nickname.' . PHP_EOL );
+	exit( 1 );
+}
+
+$venue_name = TAKA_Platform_Translation_Packages::protect_glossary_terms(
+	'kanso – Zentrum für Körper, Geist und Seele',
+	'however – center for body, mind and soul'
+);
+if ( 'kanso – center for body, mind and soul' !== $venue_name ) {
+	fwrite( STDERR, 'The venue name kanso was not restored.' . PHP_EOL );
+	exit( 1 );
+}
+
+$ordinary_however = TAKA_Platform_Translation_Packages::protect_glossary_terms(
+	'Der Termin änderte sich jedoch.',
+	'However, the date changed.'
+);
+if ( 'However, the date changed.' !== $ordinary_however ) {
+	fwrite( STDERR, 'An ordinary use of however was incorrectly changed to kanso.' . PHP_EOL );
+	exit( 1 );
+}
+
 echo 'Translation boundary and glossary regression tests passed.' . PHP_EOL;

@@ -96,6 +96,7 @@ require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Admin/class-admin.php';
 
 add_action( 'init', array( 'TAKA_Platform_Admin', 'register_post_types' ), 0 );
 add_action( 'init', array( 'TAKA_Platform_Tour_Planning', 'maybe_redirect_legacy_admin_path' ), 1 );
+add_action( 'admin_init', array( 'TAKA_Platform_Translation_Packages', 'maybe_normalize_stored_protected_names' ), 30 );
 
 register_activation_hook(
 	TAKA_PLATFORM_PLUGIN_FILE,

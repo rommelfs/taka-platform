@@ -1,0 +1,926 @@
+{
+    "package_type": "taka_translation_package",
+    "format_version": 1,
+    "platform_version": "2.0.0",
+    "created_at": "2026-06-19T21:47:03+00:00",
+    "source_language": "de",
+    "use_object_source_languages": true,
+    "target_languages": [
+        "en",
+        "fr",
+        "nl",
+        "lb",
+        "fi",
+        "ja"
+    ],
+    "instructions": {
+        "preserve_html": true,
+        "preserve_placeholders": true,
+        "do_not_translate_terms": [
+            "TAKA",
+            "Sensei",
+            "Dojo",
+            "Karate-Do",
+            "Kobujutsu",
+            "Shorin-Ryu",
+            "Okinawa",
+            "Kata",
+            "Kumite"
+        ]
+    },
+    "translator_prompt": "Please translate this TAKA Translation Package.\nRules:\n- Preserve JSON structure.\n- Preserve all IDs.\n- Fill only the translations object.\n- Do not change source_text.\n- Preserve HTML tags.\n- Preserve placeholders such as {event}, %s, {{name}}.\n- Keep glossary terms untranslated unless the target language requires an accepted local form.\n- Return valid JSON only.",
+    "glossary": [
+        {
+            "term": "TAKA",
+            "note": "Platform name; keep unchanged.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Sensei",
+            "note": "Japanese title; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Dojo",
+            "note": "Training place; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Karate-Do",
+            "note": "Martial art term; keep spelling unless a local convention exists.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Kobujutsu",
+            "note": "Martial art term; keep spelling unless a local convention exists.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Soft Blocking",
+            "note": "Training concept; translate only if the site defines a preferred local form.",
+            "translate": "1",
+            "preferred_translations": []
+        },
+        {
+            "term": "Shorin-Ryu",
+            "note": "Style name; keep unchanged.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Okinawa",
+            "note": "Place name.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Kata",
+            "note": "Martial art term; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Kumite",
+            "note": "Martial art term; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        }
+    ],
+    "items": [
+        {
+            "id": "content_section:sensei:kicker",
+            "object_type": "content_section",
+            "object_id": "sensei",
+            "field": "kicker",
+            "source_language": "en",
+            "source_text": "Sensei",
+            "source_hash": "13282bc8615f8968640c73e39781045b4e004604319e7f6ae231e395120438cb",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / sensei / Kicker"
+        },
+        {
+            "id": "content_section:sensei:title",
+            "object_type": "content_section",
+            "object_id": "sensei",
+            "field": "title",
+            "source_language": "en",
+            "source_text": "Takafumi 'Taka' Nakayama",
+            "source_hash": "f0cd4fe529312d571942384740e0c32d427a937d80e6bfd29583cb4498577b0c",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / sensei / Title"
+        },
+        {
+            "id": "content_section:sensei:body",
+            "object_type": "content_section",
+            "object_id": "sensei",
+            "field": "body",
+            "source_language": "en",
+            "source_text": "Precision, calm and movement quality rooted in the Okinawan tradition.",
+            "source_hash": "57e60c1be8b5e19365d56e278f40503be5f7da5941a84450c52bf40fb87c999d",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / sensei / Body"
+        },
+        {
+            "id": "content_section:student:title",
+            "object_type": "content_section",
+            "object_id": "student",
+            "field": "title",
+            "source_language": "en",
+            "source_text": "Special guest",
+            "source_hash": "042072076b6235db14d482f514263eb7e24ee32a84bbfdffc5bb71b74f4dfb70",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / student / Title"
+        },
+        {
+            "id": "content_section:student:subtitle",
+            "object_type": "content_section",
+            "object_id": "student",
+            "field": "subtitle",
+            "source_language": "en",
+            "source_text": "Student of Sensei",
+            "source_hash": "6da9103901542a31ee4ecb236a09a764ee4c0153503f4bbfa792bfc4429c25f7",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / student / Subtitle"
+        },
+        {
+            "id": "content_section:senseisstudent:kicker",
+            "object_type": "content_section",
+            "object_id": "senseisstudent",
+            "field": "kicker",
+            "source_language": "en",
+            "source_text": "Special guest",
+            "source_hash": "042072076b6235db14d482f514263eb7e24ee32a84bbfdffc5bb71b74f4dfb70",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / Kanade / Kicker"
+        },
+        {
+            "id": "content_section:senseisstudent:title",
+            "object_type": "content_section",
+            "object_id": "senseisstudent",
+            "field": "title",
+            "source_language": "en",
+            "source_text": "Kanade",
+            "source_hash": "e04beb3bddb4b7030102eda692b42ea83734cd6710da73b75f317e8aeab379e2",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / Kanade / Title"
+        },
+        {
+            "id": "content_section:senseisstudent:subtitle",
+            "object_type": "content_section",
+            "object_id": "senseisstudent",
+            "field": "subtitle",
+            "source_language": "en",
+            "source_text": "Student of Sensei",
+            "source_hash": "6da9103901542a31ee4ecb236a09a764ee4c0153503f4bbfa792bfc4429c25f7",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / Kanade / Subtitle"
+        },
+        {
+            "id": "content_section:senseisstudent:body",
+            "object_type": "content_section",
+            "object_id": "senseisstudent",
+            "field": "body",
+            "source_language": "en",
+            "source_text": "Kanade is a senior student of Taka.\r\nSensei loves to encourage people to travel with him to Europe, to show them different parts of the world while practicing Karate with individuals from all over the world.",
+            "source_hash": "d5c42ac3ba777d79e7567918f936551b8c0e4fb18ce46e30828c658ad0293980",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / Kanade / Body"
+        },
+        {
+            "id": "content_section:training:kicker",
+            "object_type": "content_section",
+            "object_id": "training",
+            "field": "kicker",
+            "source_language": "en",
+            "source_text": "Training",
+            "source_hash": "36a798e3f39239ccdec697ee348d2ce0a7b8d2d9087940496e2ca5d0853399f2",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / Karate-Do, Kobujutsu and Soft Blocking / Kicker"
+        },
+        {
+            "id": "content_section:training:title",
+            "object_type": "content_section",
+            "object_id": "training",
+            "field": "title",
+            "source_language": "en",
+            "source_text": "Karate-Do, Kobujutsu and Soft Blocking",
+            "source_hash": "5e238233c8b0b948183beff2cd025c48976369b9e2d26486759b084fc4777ce2",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / Karate-Do, Kobujutsu and Soft Blocking / Title"
+        },
+        {
+            "id": "content_section:training:body",
+            "object_type": "content_section",
+            "object_id": "training",
+            "field": "body",
+            "source_language": "en",
+            "source_text": "The seminars connect fundamentals, partner work, timing, distance and body structure.",
+            "source_hash": "ff928f1fbc3ab91683754f81fac55a0d686c392d448ee302c2218252d06ae763",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / Karate-Do, Kobujutsu and Soft Blocking / Body"
+        },
+        {
+            "id": "content_section:community:kicker",
+            "object_type": "content_section",
+            "object_id": "community",
+            "field": "kicker",
+            "source_language": "en",
+            "source_text": "Community",
+            "source_hash": "bb501d7877eb7ddbd40baf7990e8058212e8140a2e6ceaaf2d54a6412b770bfd",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / Training together / Kicker"
+        },
+        {
+            "id": "content_section:community:title",
+            "object_type": "content_section",
+            "object_id": "community",
+            "field": "title",
+            "source_language": "en",
+            "source_text": "Training together",
+            "source_hash": "1bee59b0b2b6c081ed11c6f6a775b9fc956eac071183c29f6512af52b11592a0",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / Training together / Title"
+        },
+        {
+            "id": "content_section:community:body",
+            "object_type": "content_section",
+            "object_id": "community",
+            "field": "body",
+            "source_language": "en",
+            "source_text": "A European gathering for serious practice and respectful exchange.",
+            "source_hash": "056abe0e8f3e2f3171f611826e6ee963a717e161545113a0b23d34772014ec50",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / Training together / Body"
+        },
+        {
+            "id": "content_section:host:kicker",
+            "object_type": "content_section",
+            "object_id": "host",
+            "field": "kicker",
+            "source_language": "en",
+            "source_text": "Host",
+            "source_hash": "4a823118b9ba8baa2f47489c0716f52755368e3e3c2c26d60736ccfa1bb21b5e",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / 5 years of Kleiner Wald Dojo / Kicker"
+        },
+        {
+            "id": "content_section:host:title",
+            "object_type": "content_section",
+            "object_id": "host",
+            "field": "title",
+            "source_language": "en",
+            "source_text": "5 years of Kleiner Wald Dojo",
+            "source_hash": "acf9a36918c1ba537d4073682e61303f45f86fa153faf780c751e36ed61d931e",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / 5 years of Kleiner Wald Dojo / Title"
+        },
+        {
+            "id": "content_section:host:button_label",
+            "object_type": "content_section",
+            "object_id": "host",
+            "field": "button_label",
+            "source_language": "en",
+            "source_text": "Kleiner Wald Dojo",
+            "source_hash": "109d1ccdc8940679dd6c2c7548e2dbb4cc2ddb759b690681f10a3c6f93918fe4",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / 5 years of Kleiner Wald Dojo / Button label"
+        },
+        {
+            "id": "content_section:sponsor:kicker",
+            "object_type": "content_section",
+            "object_id": "sponsor",
+            "field": "kicker",
+            "source_language": "en",
+            "source_text": "Sponsor",
+            "source_hash": "fd6e874f43f84791735073557ac711f75fc46b06a1d54009727d9f7017aee043",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / kanso / Kicker"
+        },
+        {
+            "id": "content_section:sponsor:title",
+            "object_type": "content_section",
+            "object_id": "sponsor",
+            "field": "title",
+            "source_language": "en",
+            "source_text": "kanso",
+            "source_hash": "abdee6ae366bb0711b2be458467a048e25df98eb897aba688742c0c381bc3b71",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / kanso / Title"
+        },
+        {
+            "id": "content_section:sponsor:body",
+            "object_type": "content_section",
+            "object_id": "sponsor",
+            "field": "body",
+            "source_language": "en",
+            "source_text": "A centre for body, mind and soul in Konz.",
+            "source_hash": "aa67c911523d6dfe5c2b2398436cc6fb43084514333d57dbacc626e1b66fc2c7",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / kanso / Body"
+        },
+        {
+            "id": "content_section:sponsor:button_label",
+            "object_type": "content_section",
+            "object_id": "sponsor",
+            "field": "button_label",
+            "source_language": "en",
+            "source_text": "kan.so",
+            "source_hash": "8dbe95307cbea8cd749eb5ffcaab73efcb7c7928c41f5599e27bc52570f7df65",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Homepage / Content Section / kanso / Button label"
+        },
+        {
+            "id": "booking_information:global:title",
+            "object_type": "booking_information",
+            "object_id": "global",
+            "field": "title",
+            "source_language": "en",
+            "source_text": "Before you book",
+            "source_hash": "aaeaabe57c0b8687d3e478f4fdf76cf0be6b9acdacc2431d17048573bc15105e",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Booking Information / Global booking information / Title"
+        },
+        {
+            "id": "booking_information:global:group_booking",
+            "object_type": "booking_information",
+            "object_id": "global",
+            "field": "group_booking",
+            "source_language": "en",
+            "source_text": "Groups are very welcome. If you would like to register several participants or organize a club delegation, please contact the local organizer.",
+            "source_hash": "2369327e1ac902a9bcefe8221a085adca0b77b3afd36f261fa1049440a3d5da0",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Booking Information / Global booking information / Group booking"
+        },
+        {
+            "id": "booking_information:global:multi_event_discount",
+            "object_type": "booking_information",
+            "object_id": "global",
+            "field": "multi_event_discount",
+            "source_language": "en",
+            "source_text": "Planning to attend multiple seminars during the European Tour? Please contact us before booking. We will gladly prepare an individual offer.",
+            "source_hash": "a5b86ed25b81d24f3e8610ad7c2cc69d3d05b9e9ef390a9d238022f010bc98a8",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Booking Information / Global booking information / Multi-event discount"
+        },
+        {
+            "id": "booking_information:global:payment_methods",
+            "object_type": "booking_information",
+            "object_id": "global",
+            "field": "payment_methods",
+            "source_language": "en",
+            "source_text": "After your booking, we will send you an invoice. Payment is possible by bank transfer, PayPal or cash if agreed with the organizer. Only paid invoices confirm participation in the seminar.",
+            "source_hash": "cb22b30d3c9e6cacf055c1ab97288d937b40e0f241ac5510c26f6c377d40de97",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Booking Information / Global booking information / Payment methods"
+        },
+        {
+            "id": "booking_information:global:cancellation_policy",
+            "object_type": "booking_information",
+            "object_id": "global",
+            "field": "cancellation_policy",
+            "source_language": "en",
+            "source_text": "until 40 days before the seminar: free cancellation\r\n39–30 days before the seminar: 75% refund\r\n29–14 days before the seminar: 40% refund\r\nless than 14 days before the seminar: unfortunately no refund",
+            "source_hash": "e74374f88e335c4b601afd42495767b151349e443f00162d5fbcc6b11fbc0e00",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Booking Information / Global booking information / Cancellation policy"
+        },
+        {
+            "id": "ticket_section:global:kicker",
+            "object_type": "ticket_section",
+            "object_id": "global",
+            "field": "kicker",
+            "source_language": "de",
+            "source_text": "Billets",
+            "source_hash": "1742b33f36eb4e530a533b1d8bc84fa044d88acb6487dfef9f3c3cc874d1651c",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Ticket Section / Global ticket section / Kicker"
+        },
+        {
+            "id": "ticket_section:global:title",
+            "object_type": "ticket_section",
+            "object_id": "global",
+            "field": "title",
+            "source_language": "de",
+            "source_text": "Réserver votre séminaire",
+            "source_hash": "7b6267f3f501804f62273a6af74f40c28b6e522dfcd3ec338b09e094052d4939",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Ticket Section / Global ticket section / Title"
+        },
+        {
+            "id": "hero:global:kicker",
+            "object_type": "hero",
+            "object_id": "global",
+            "field": "kicker",
+            "source_language": "de",
+            "source_text": "TAKA European Tour 2026",
+            "source_hash": "5d51bde28c3c06c404cbe0c8103ae1f99e187da55f8759979dd9123a3c119a62",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Hero / Homepage hero / Kicker"
+        },
+        {
+            "id": "hero:global:title",
+            "object_type": "hero",
+            "object_id": "global",
+            "field": "title",
+            "source_language": "de",
+            "source_text": "Harmony in Motion",
+            "source_hash": "3f61ca53339a5a9089546f8cfd928d2ea318f823d02ed6e9b19a8ed598d01b38",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Hero / Homepage hero / Title"
+        },
+        {
+            "id": "hero:global:subtitle",
+            "object_type": "hero",
+            "object_id": "global",
+            "field": "subtitle",
+            "source_language": "de",
+            "source_text": "A European seminar journey with Takafumi 'Taka' Nakayama Sensei – from Helsinki via Berlin, the Netherlands, Belgium and Luxembourg to the Trier/Konz region.",
+            "source_hash": "9a0503cefe0d75a323cbe48d597b37e460739a6cbaad84066ef4ffa07e2c38c4",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Hero / Homepage hero / Subtitle"
+        },
+        {
+            "id": "hero:global:primary_button_label",
+            "object_type": "hero",
+            "object_id": "global",
+            "field": "primary_button_label",
+            "source_language": "de",
+            "source_text": "View seminars",
+            "source_hash": "787de8765b56f994c6f7597a6ae9249044be6f8a3ef529621d20ca7c43bd10bd",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Hero / Homepage hero / Primary button label"
+        },
+        {
+            "id": "hero:global:secondary_button_label",
+            "object_type": "hero",
+            "object_id": "global",
+            "field": "secondary_button_label",
+            "source_language": "de",
+            "source_text": "Tickets",
+            "source_hash": "3d131368b43397ff5fbe0a9bf62c0f79c1d7da4cdd95635d79c6241c68020587",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Hero / Homepage hero / Secondary button label"
+        }
+    ]
+}

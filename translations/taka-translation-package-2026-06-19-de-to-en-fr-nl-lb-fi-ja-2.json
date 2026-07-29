@@ -1,0 +1,716 @@
+{
+    "package_type": "taka_translation_package",
+    "format_version": 1,
+    "platform_version": "2.0.0",
+    "created_at": "2026-06-19T22:37:56+00:00",
+    "source_language": "de",
+    "use_object_source_languages": true,
+    "target_languages": [
+        "en",
+        "fr",
+        "nl",
+        "lb",
+        "fi",
+        "ja"
+    ],
+    "instructions": {
+        "preserve_html": true,
+        "preserve_placeholders": true,
+        "do_not_translate_terms": [
+            "TAKA",
+            "Sensei",
+            "Dojo",
+            "Karate-Do",
+            "Kobujutsu",
+            "Shorin-Ryu",
+            "Okinawa",
+            "Kata",
+            "Kumite"
+        ]
+    },
+    "translator_prompt": "Please translate this TAKA Translation Package.\nRules:\n- Preserve JSON structure.\n- Preserve all IDs.\n- Fill only the translations object.\n- Do not change source_text.\n- Preserve HTML tags.\n- Preserve placeholders such as {event}, %s, {{name}}.\n- Keep glossary terms untranslated unless the target language requires an accepted local form.\n- Return valid JSON only.",
+    "glossary": [
+        {
+            "term": "TAKA",
+            "note": "Platform name; keep unchanged.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Sensei",
+            "note": "Japanese title; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Dojo",
+            "note": "Training place; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Karate-Do",
+            "note": "Martial art term; keep spelling unless a local convention exists.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Kobujutsu",
+            "note": "Martial art term; keep spelling unless a local convention exists.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Soft Blocking",
+            "note": "Training concept; translate only if the site defines a preferred local form.",
+            "translate": "1",
+            "preferred_translations": []
+        },
+        {
+            "term": "Shorin-Ryu",
+            "note": "Style name; keep unchanged.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Okinawa",
+            "note": "Place name.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Kata",
+            "note": "Martial art term; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Kumite",
+            "note": "Martial art term; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        }
+    ],
+    "items": [
+        {
+            "id": "event:belgium-2026:description",
+            "object_type": "event",
+            "object_id": "belgium-2026",
+            "field": "description",
+            "source_language": "de",
+            "source_text": "Seminar geplant von 10:00 bis 13:00 Uhr.",
+            "source_hash": "38395122ae444b391cd90168f11df641429c9007487ab3272226d0654c17f0dc",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Belgium / Seminar description"
+        },
+        {
+            "id": "event:belgium-2026:subtitle",
+            "object_type": "event",
+            "object_id": "belgium-2026",
+            "field": "subtitle",
+            "source_language": "de",
+            "source_text": "Belgium Seminar",
+            "source_hash": "55c89acdecf4929ed3dd8253f8ccef27cf515e9006907900429c0d00f5370955",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Belgium / Subtitle"
+        },
+        {
+            "id": "event:berlin-2026:description",
+            "object_type": "event",
+            "object_id": "berlin-2026",
+            "field": "description",
+            "source_language": "de",
+            "source_text": "Zwei Tage Seminar in Berlin.",
+            "source_hash": "3453826047b8fbcd812ca397ed21bfc4776a458a483a303699027087abd0ba5c",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Berlin / Seminar description"
+        },
+        {
+            "id": "event:berlin-2026:subtitle",
+            "object_type": "event",
+            "object_id": "berlin-2026",
+            "field": "subtitle",
+            "source_language": "de",
+            "source_text": "Berlin Seminar",
+            "source_hash": "e679e5672814f3ac239fcc5781b248f930d547badcb50473742e1e2179a0c7a0",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Berlin / Subtitle"
+        },
+        {
+            "id": "event:helsinki-2026:description",
+            "object_type": "event",
+            "object_id": "helsinki-2026",
+            "field": "description",
+            "source_language": "en",
+            "source_text": "Takafumi 'Taka' Nakayama Sensei, 7th Dan from Shido-kan Fukuoka, Japan, will visit Finland on 29–30 August as part of his European Tour 2026.\r\nTaka’s karate is based on a natural and practical approach to generating power.\r\nThe seminar is open to practitioners of all karate and budo styles, as well as participants of all experience levels.\r\nYou can get an impression of his teaching by visiting the Fukuoka Shido-kan YouTube channel: @fukuoka-shidokan-karate",
+            "source_hash": "edc74805b474ef15539767644382d7c29765fec8bc62e4c5c5b53e4befc76525",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Helsinki / Seminar description"
+        },
+        {
+            "id": "event:helsinki-2026:subtitle",
+            "object_type": "event",
+            "object_id": "helsinki-2026",
+            "field": "subtitle",
+            "source_language": "en",
+            "source_text": "Helsinki Seminar",
+            "source_hash": "606fd506b61982266b8e0ddb28c801c3fc71e12a38b94b6218500fb21f3afc83",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Helsinki / Subtitle"
+        },
+        {
+            "id": "event:133:subtitle",
+            "object_type": "event",
+            "object_id": "133",
+            "field": "subtitle",
+            "source_language": "de",
+            "source_text": "Kinderseminar",
+            "source_hash": "486c9231b17856d53e6480ad062620217935be3431658b5f99c85175d1aeece8",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Helsinki / Subtitle"
+        },
+        {
+            "id": "event:hosingen-2026:description",
+            "object_type": "event",
+            "object_id": "hosingen-2026",
+            "field": "description",
+            "source_language": "de",
+            "source_text": "Seminarstation in Luxemburg.",
+            "source_hash": "405c12b770bf819bbfae68497c9bd526b04b5a53c815af88919a939cb0a42946",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Hosingen / Seminar description"
+        },
+        {
+            "id": "event:hosingen-2026:subtitle",
+            "object_type": "event",
+            "object_id": "hosingen-2026",
+            "field": "subtitle",
+            "source_language": "de",
+            "source_text": "Hosingen Seminar",
+            "source_hash": "bad65dd0f8cec6c4c71b9c14e00340aa365a0806b99ddc0d7c681e2d3b5f2520",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Hosingen / Subtitle"
+        },
+        {
+            "id": "event:illange-2026:description",
+            "object_type": "event",
+            "object_id": "illange-2026",
+            "field": "description",
+            "source_language": "de",
+            "source_text": "Seminarstation in Frankreich.",
+            "source_hash": "23fb9205b442c532ea27145e3b50d4ba245ab1c1609345ecf517ba9df1f5043f",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Illange / Seminar description"
+        },
+        {
+            "id": "event:illange-2026:subtitle",
+            "object_type": "event",
+            "object_id": "illange-2026",
+            "field": "subtitle",
+            "source_language": "de",
+            "source_text": "Illange Seminar",
+            "source_hash": "89c5f8564798ea5a0b61953a194d04b22ad73efa6b0a79f1ac59b4d8cc766383",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Illange / Subtitle"
+        },
+        {
+            "id": "event:konz-2026:description",
+            "object_type": "event",
+            "object_id": "konz-2026",
+            "field": "description",
+            "source_language": "de",
+            "source_text": "Zwei Tage Seminar in Konz mit Takafumi 'Taka' Nakayama Sensei.",
+            "source_hash": "02506fcf2c4f9ffa5cd3bde7e912574a5c66c4c88c54c2450305aefdf8c665fc",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Konz / Seminar description"
+        },
+        {
+            "id": "event:konz-2026:subtitle",
+            "object_type": "event",
+            "object_id": "konz-2026",
+            "field": "subtitle",
+            "source_language": "de",
+            "source_text": "Konz Seminar",
+            "source_hash": "12daee00f727797a7de3879f8756f5e47abdaa9f13d3698bebe31a3c657a9804",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Konz / Subtitle"
+        },
+        {
+            "id": "event:konz-2026:parking",
+            "object_type": "event",
+            "object_id": "konz-2026",
+            "field": "parking",
+            "source_language": "de",
+            "source_text": "Details zur Parkplatzsituation folgen.",
+            "source_hash": "7ba925e2b272efe2be94ec52a5470e8b197419ba024b7de2553c34304f240af0",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Konz / Parking notes"
+        },
+        {
+            "id": "event:netherlands-2026:description",
+            "object_type": "event",
+            "object_id": "netherlands-2026",
+            "field": "description",
+            "source_language": "de",
+            "source_text": "Zwei Tage Seminar in den Niederlanden.",
+            "source_hash": "93a3ad0da4cc9df2c1f3dc70c69f37a8fd8fdffbab2fc331935bc98932051607",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Netherlands / Seminar description"
+        },
+        {
+            "id": "event:netherlands-2026:subtitle",
+            "object_type": "event",
+            "object_id": "netherlands-2026",
+            "field": "subtitle",
+            "source_language": "de",
+            "source_text": "Netherlands Seminar",
+            "source_hash": "a4c8cc717abcbb5bccc088c264356b2901eafd3e48005f8fb4e196ea3f58ed02",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Netherlands / Subtitle"
+        },
+        {
+            "id": "event:saarwellingen-2026:description",
+            "object_type": "event",
+            "object_id": "saarwellingen-2026",
+            "field": "description",
+            "source_language": "de",
+            "source_text": "Abschlussseminar der Tourstationen in der Region.",
+            "source_hash": "2e0bfc5ded9dab725e0f1e6d7ddf0e9455cdbff2a70573b74b200ca0e28f6b99",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Saarwellingen / Seminar description"
+        },
+        {
+            "id": "event:saarwellingen-2026:subtitle",
+            "object_type": "event",
+            "object_id": "saarwellingen-2026",
+            "field": "subtitle",
+            "source_language": "de",
+            "source_text": "Saarwellingen Seminar",
+            "source_hash": "b6e74578771f78ea7758aab11d4a0c4d4f7da78b174bc4e93ff26084048320d8",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Saarwellingen / Subtitle"
+        },
+        {
+            "id": "event:trier-kids-2026:description",
+            "object_type": "event",
+            "object_id": "trier-kids-2026",
+            "field": "description",
+            "source_language": "de",
+            "source_text": "Kinderseminar in Trier im Rahmen der TAKA European Tour.",
+            "source_hash": "88ba25af7555682295fe868cf43703e6fbc7a98f58f68df443341b4d25fe9310",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Trier / Seminar description"
+        },
+        {
+            "id": "event:trier-kids-2026:subtitle",
+            "object_type": "event",
+            "object_id": "trier-kids-2026",
+            "field": "subtitle",
+            "source_language": "de",
+            "source_text": "Kinderseminar",
+            "source_hash": "486c9231b17856d53e6480ad062620217935be3431658b5f99c85175d1aeece8",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event / Trier / Subtitle"
+        },
+        {
+            "id": "organizer:kleiner-wald:description",
+            "object_type": "organizer",
+            "object_id": "kleiner-wald",
+            "field": "description",
+            "source_language": "de",
+            "source_text": "Die Karateschule in Konz, ganz in der Nähe von Trier, verbindet Tradition mit Gemeinschaft. Bei uns üben Kinder, Jugendliche und Erwachsene den Weg des Karate-Do – so, wie er seit Jahrhunderten auf Okinawa, einer kleinen Insel Japans, gepflegt wird.\r\n\r\nDer Name „Kleiner Wald“ ist kein Zufall: Vor über 300 Jahren ließen sich die Meister Okinawas von den Shaolin-Mönchen in China inspirieren. Daraus entstand der Karatestil Shorin Ryu – übersetzt bedeutet das, genau wie Shaolin, „Kleiner Wald“. Wir greifen diese Wurzeln auf und bringen die alten Techniken in die heutige Zeit.\r\n\r\nUnser Ziel: Karate für Körper, Geist und Herz.\r\nOb du dich bewegen, auspowern, fokussieren oder einfach etwas Neues ausprobieren möchtest – im Kleinen Wald bist du willkommen.",
+            "source_hash": "3de50473bca1d916980d3efb2172bce2fc7c7ccc84d1e3fa178ea0b86f0b9d35",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Organizer / Kleiner Wald Dojo / Description"
+        },
+        {
+            "id": "venue:120:parking",
+            "object_type": "venue",
+            "object_id": "120",
+            "field": "parking",
+            "source_language": "de",
+            "source_text": "Parkplätze auf dem Schulgelände vorhanden. Einfahrt unterhalb der Schule.",
+            "source_hash": "6742987eb83f3fae6fcee43b0919c1503464c189df16b719f9ac749009869654",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Venue / Blandine-Merten Realschule Trier / Parking notes"
+        },
+        {
+            "id": "venue:kanso-konz:parking",
+            "object_type": "venue",
+            "object_id": "kanso-konz",
+            "field": "parking",
+            "source_language": "de",
+            "source_text": "Details zur Parkplatzsituation folgen.",
+            "source_hash": "7ba925e2b272efe2be94ec52a5470e8b197419ba024b7de2553c34304f240af0",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Venue / kanso – Zentrum für Körper, Geist und Seele / Parking notes"
+        },
+        {
+            "id": "venue:121:parking",
+            "object_type": "venue",
+            "object_id": "121",
+            "field": "parking",
+            "source_language": "de",
+            "source_text": "Ausreichend Parkplätze rund um die Sportstätte vorhanden.",
+            "source_hash": "61a1a54e48307b0ef409b6926ac455fa64daea1c550794934d71046ee1501b34",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Venue / TG-Halle Sportpark Konz / Parking notes"
+        }
+    ]
+}

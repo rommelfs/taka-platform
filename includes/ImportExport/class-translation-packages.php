@@ -9,6 +9,8 @@ class TAKA_Platform_Translation_Packages {
 	const PACKAGE_TYPE = 'taka_translation_package';
 	const FORMAT_VERSION = 1;
 	const GLOSSARY_OPTION = 'taka_platform_translation_glossary';
+	const PROTECTED_NAMES_MIGRATION_OPTION = 'taka_platform_protected_names_migration';
+	const PROTECTED_NAMES_MIGRATION_VERSION = 1;
 
 	/** Supported language labels for admin controls. */
 	public static function language_labels() {
@@ -57,7 +59,7 @@ class TAKA_Platform_Translation_Packages {
 	/** Default glossary terms. */
 	public static function default_glossary() {
 		return array(
-			array( 'term' => 'TAKA', 'note' => 'Platform name; keep unchanged.', 'translate' => '0', 'preferred_translations' => array() ),
+			array( 'term' => 'TAKA', 'note' => 'Platform name; keep unchanged. This case-sensitive rule must not affect the personal nickname Taka or Takafumi.', 'translate' => '0', 'preferred_translations' => array(), 'match_case' => '1', 'limit_to_source_occurrences' => '1' ),
 			array( 'term' => 'Sensei', 'note' => 'Japanese title; usually keep untranslated.', 'translate' => '0', 'preferred_translations' => array() ),
 			array( 'term' => 'Dojo', 'note' => 'Training place; usually keep untranslated.', 'translate' => '0', 'preferred_translations' => array() ),
 			array( 'term' => 'Karate-Do', 'note' => 'Martial art term; keep spelling unless a local convention exists.', 'translate' => '0', 'preferred_translations' => array() ),
@@ -68,6 +70,24 @@ class TAKA_Platform_Translation_Packages {
 			array( 'term' => 'Kata', 'note' => 'Martial art term; usually keep untranslated.', 'translate' => '0', 'preferred_translations' => array() ),
 			array( 'term' => 'Kumite', 'note' => 'Martial art term; usually keep untranslated.', 'translate' => '0', 'preferred_translations' => array() ),
 			array( 'term' => 'Kanade', 'note' => 'Personal name; keep this exact spelling in every language.', 'translate' => '0', 'preferred_translations' => array(), 'protected_variants' => array( 'Kanada', 'Canada' ) ),
+			array(
+				'term' => "Takafumi 'Taka' Nakayama",
+				'note' => 'Full personal name; preserve this spelling and apostrophe style in every language.',
+				'translate' => '0',
+				'preferred_translations' => array(),
+				'match_source_variants' => '1',
+				'protected_variants' => array(
+					'Takafumi Nakayama',
+					'Nakayama Takafumi',
+					'Takafumi "Taka" Nakayama',
+					'Takafumi “Taka” Nakayama',
+					'Takafumi ‘Taka’ Nakayama',
+					'TAKAfumi "TAKA" Nakayama',
+					'TAKAfumi “TAKA” Nakayama',
+					"TAKAfumi 'TAKA' Nakayama",
+				),
+			),
+			array( 'term' => 'kanso', 'note' => 'Venue name; preserve this exact lowercase spelling in every language.', 'translate' => '0', 'preferred_translations' => array(), 'protected_variants' => array( 'however' ), 'limit_to_source_occurrences' => '1' ),
 		);
 	}
 
@@ -93,6 +113,15 @@ class TAKA_Platform_Translation_Packages {
 					)
 				)
 			);
+			if ( ! empty( $default['match_case'] ) ) {
+				$stored[ $index ]['match_case'] = '1';
+			}
+			if ( ! empty( $default['limit_to_source_occurrences'] ) ) {
+				$stored[ $index ]['limit_to_source_occurrences'] = '1';
+			}
+			if ( ! empty( $default['match_source_variants'] ) ) {
+				$stored[ $index ]['match_source_variants'] = '1';
+			}
 		}
 		return $stored;
 	}
@@ -114,6 +143,9 @@ class TAKA_Platform_Translation_Packages {
 				'translate' => ! empty( $item['translate'] ) ? '1' : '0',
 				'preferred_translations' => array_values( array_filter( array_map( 'sanitize_text_field', (array) $preferred ) ) ),
 				'protected_variants' => array_values( array_filter( array_map( 'sanitize_text_field', (array) $protected_variants ) ) ),
+				'match_case' => ! empty( $item['match_case'] ) ? '1' : '0',
+				'limit_to_source_occurrences' => ! empty( $item['limit_to_source_occurrences'] ) ? '1' : '0',
+				'match_source_variants' => ! empty( $item['match_source_variants'] ) ? '1' : '0',
 			);
 		}
 		return $clean;
@@ -136,16 +168,138 @@ class TAKA_Platform_Translation_Packages {
 
 	/** Restore protected glossary spellings when a known translated variant was returned. */
 	public static function protect_glossary_terms( $source, $translation ) {
+		$source = (string) $source;
 		$translation = (string) $translation;
 		foreach ( self::get_glossary() as $item ) {
 			$term = (string) ( $item['term'] ?? '' );
-			if ( ! empty( $item['translate'] ) || '' === $term || false === stripos( (string) $source, $term ) ) { continue; }
 			$variants = array_merge( array( $term ), (array) ( $item['protected_variants'] ?? array() ) );
-			foreach ( array_unique( array_filter( array_map( 'strval', $variants ) ) ) as $variant ) {
-				$translation = preg_replace( '/' . preg_quote( $variant, '/' ) . '/iu', $term, $translation );
+			$variants = array_values( array_unique( array_filter( array_map( 'strval', $variants ) ) ) );
+			if ( ! empty( $item['translate'] ) || '' === $term ) { continue; }
+
+			$source_occurrences = 0;
+			$source_variants = ! empty( $item['match_source_variants'] ) ? $variants : array( $term );
+			foreach ( $source_variants as $variant ) {
+				$pattern = self::protected_term_pattern( $variant, ! empty( $item['match_case'] ) );
+				$count = preg_match_all( $pattern, $source );
+				if ( $count ) {
+					$source_occurrences = (int) $count;
+					break;
+				}
+			}
+			if ( 0 === $source_occurrences ) { continue; }
+
+			$remaining = ! empty( $item['limit_to_source_occurrences'] ) ? $source_occurrences : -1;
+			foreach ( $variants as $variant ) {
+				$pattern = self::protected_term_pattern( $variant, false );
+				$translation = preg_replace( $pattern, $term, $translation, $remaining, $replaced );
+				if ( $remaining > 0 ) {
+					$remaining -= (int) $replaced;
+					if ( $remaining <= 0 ) { break; }
+				}
 			}
 		}
 		return $translation;
+	}
+
+	/** Match a protected word or phrase without touching it inside another word. */
+	private static function protected_term_pattern( $value, $case_sensitive = false ) {
+		$flags = $case_sensitive ? 'u' : 'iu';
+		return '/(?<![\p{L}\p{N}_])' . preg_quote( (string) $value, '/' ) . '(?![\p{L}\p{N}_])/' . $flags;
+	}
+
+	/** Canonicalize known full-name variants without applying unrelated glossary rules. */
+	public static function canonicalize_person_name( $text ) {
+		$canonical = "Takafumi 'Taka' Nakayama";
+		$variants = array(
+			$canonical,
+			'Takafumi Nakayama',
+			'Nakayama Takafumi',
+			'Takafumi "Taka" Nakayama',
+			'Takafumi “Taka” Nakayama',
+			'Takafumi ‘Taka’ Nakayama',
+			'TAKAfumi "TAKA" Nakayama',
+			'TAKAfumi “TAKA” Nakayama',
+			"TAKAfumi 'TAKA' Nakayama",
+		);
+		$text = (string) $text;
+		foreach ( $variants as $variant ) {
+			$text = preg_replace( self::protected_term_pattern( $variant, false ), $canonical, $text );
+		}
+		return $text;
+	}
+
+	/**
+	 * One-time repair for object translations saved before protected phrases used
+	 * bounded matching. Each translation is evaluated against its own source text.
+	 */
+	public static function maybe_normalize_stored_protected_names() {
+		if ( ! function_exists( 'get_option' ) || (int) get_option( self::PROTECTED_NAMES_MIGRATION_OPTION, 0 ) >= self::PROTECTED_NAMES_MIGRATION_VERSION ) { return; }
+		if ( function_exists( 'current_user_can' ) && ! current_user_can( 'manage_options' ) ) { return; }
+		if ( ! function_exists( 'get_posts' ) || ! function_exists( 'get_post_meta' ) || ! function_exists( 'update_post_meta' ) ) { return; }
+
+		$objects = array(
+			TAKA_PLATFORM_CPT_EVENT => array(
+				'description' => 'short_description',
+				'subtitle' => 'subtitle',
+				'long_description' => 'long_description',
+				'ticket_card_text' => 'ticket_card_text',
+				'ticket_tab_label' => 'ticket_tab_label',
+				'ticket_door_note' => 'ticket_door_note',
+				'accessibility' => 'accessibility',
+				'notes' => 'notes',
+				'parking' => 'parking',
+			),
+			TAKA_PLATFORM_CPT_ORGANIZER => array( 'description' => 'description' ),
+			TAKA_PLATFORM_CPT_VENUE => array( 'parking' => 'parking', 'accessibility' => 'accessibility', 'notes' => 'notes' ),
+			TAKA_PLATFORM_CPT_CONTENT_BLOCK => array( 'kicker' => 'kicker', 'title' => 'block_title', 'subtitle' => 'subtitle', 'body' => '', 'button_label' => 'button_label', 'button_url' => 'button_url' ),
+		);
+
+		foreach ( $objects as $post_type => $field_meta ) {
+			$post_ids = get_posts( array( 'post_type' => $post_type, 'post_status' => 'any', 'numberposts' => -1, 'fields' => 'ids', 'suppress_filters' => false ) );
+			foreach ( (array) $post_ids as $post_id ) {
+				if ( function_exists( 'get_post' ) && function_exists( 'wp_update_post' ) ) {
+					$post = get_post( $post_id );
+					if ( $post ) {
+						$normalized_title = self::canonicalize_person_name( (string) $post->post_title );
+						$normalized_title = self::protect_glossary_terms( $normalized_title, $normalized_title );
+						$normalized_content = self::canonicalize_person_name( (string) $post->post_content );
+						$normalized_content = self::protect_glossary_terms( $normalized_content, $normalized_content );
+						if ( $normalized_title !== (string) $post->post_title || $normalized_content !== (string) $post->post_content ) {
+							wp_update_post( array( 'ID' => $post_id, 'post_title' => $normalized_title, 'post_content' => $normalized_content ) );
+						}
+					}
+				}
+				$source_language = self::sanitize_language( get_post_meta( $post_id, '_taka_source_language', true ) ?: self::default_source_language() );
+				$translations = get_post_meta( $post_id, '_taka_text_translations', true );
+				$translations = is_array( $translations ) ? $translations : array();
+				$changed = false;
+				foreach ( $field_meta as $field => $meta_field ) {
+					$source = '' !== $meta_field ? (string) get_post_meta( $post_id, '_taka_' . $meta_field, true ) : '';
+					if ( '' === trim( $source ) ) {
+						$source = (string) ( $translations[ $field ][ $source_language ] ?? '' );
+					}
+					$normalized_source = self::canonicalize_person_name( $source );
+					$normalized_source = self::protect_glossary_terms( $normalized_source, $normalized_source );
+					if ( '' !== $meta_field && $normalized_source !== $source ) {
+						update_post_meta( $post_id, '_taka_' . $meta_field, $normalized_source );
+					}
+					$source = $normalized_source;
+					foreach ( (array) ( $translations[ $field ] ?? array() ) as $language => $translation ) {
+						$normalized = self::canonicalize_person_name( (string) $translation );
+						$normalized = self::protect_glossary_terms( $source, $normalized );
+						if ( $normalized !== (string) $translation ) {
+							$translations[ $field ][ $language ] = $normalized;
+							$changed = true;
+						}
+					}
+				}
+				if ( $changed ) {
+					update_post_meta( $post_id, '_taka_text_translations', $translations );
+					if ( function_exists( 'clean_post_cache' ) ) { clean_post_cache( $post_id ); }
+				}
+			}
+		}
+		update_option( self::PROTECTED_NAMES_MIGRATION_OPTION, self::PROTECTED_NAMES_MIGRATION_VERSION, false );
 	}
 
 	/** Export a downloadable package array. */

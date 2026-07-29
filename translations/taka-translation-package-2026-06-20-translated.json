@@ -1,0 +1,201 @@
+{
+  "package_type": "taka_translation_package",
+  "format_version": 1,
+  "platform_version": "2.0.1",
+  "created_at": "2026-06-20T08:02:40+00:00",
+  "source_language": "de",
+  "use_object_source_languages": true,
+  "target_languages": [
+    "en",
+    "fr",
+    "nl",
+    "lb",
+    "fi",
+    "ja"
+  ],
+  "instructions": {
+    "preserve_html": true,
+    "preserve_placeholders": true,
+    "do_not_translate_terms": [
+      "TAKA",
+      "Sensei",
+      "Dojo",
+      "Karate-Do",
+      "Kobujutsu",
+      "Shorin-Ryu",
+      "Okinawa",
+      "Kata",
+      "Kumite"
+    ]
+  },
+  "translator_prompt": "Please translate this TAKA Translation Package.\nRules:\n- Preserve JSON structure.\n- Preserve all IDs.\n- Fill only the translations object.\n- Do not change source_text.\n- Preserve HTML tags.\n- Preserve placeholders such as {event}, %s, {{name}}.\n- Keep glossary terms untranslated unless the target language requires an accepted local form.\n- Return valid JSON only.",
+  "glossary": [
+    {
+      "term": "TAKA",
+      "note": "Platform name; keep unchanged.",
+      "translate": "0",
+      "preferred_translations": []
+    },
+    {
+      "term": "Sensei",
+      "note": "Japanese title; usually keep untranslated.",
+      "translate": "0",
+      "preferred_translations": []
+    },
+    {
+      "term": "Dojo",
+      "note": "Training place; usually keep untranslated.",
+      "translate": "0",
+      "preferred_translations": []
+    },
+    {
+      "term": "Karate-Do",
+      "note": "Martial art term; keep spelling unless a local convention exists.",
+      "translate": "0",
+      "preferred_translations": []
+    },
+    {
+      "term": "Kobujutsu",
+      "note": "Martial art term; keep spelling unless a local convention exists.",
+      "translate": "0",
+      "preferred_translations": []
+    },
+    {
+      "term": "Soft Blocking",
+      "note": "Training concept; translate only if the site defines a preferred local form.",
+      "translate": "1",
+      "preferred_translations": []
+    },
+    {
+      "term": "Shorin-Ryu",
+      "note": "Style name; keep unchanged.",
+      "translate": "0",
+      "preferred_translations": []
+    },
+    {
+      "term": "Okinawa",
+      "note": "Place name.",
+      "translate": "0",
+      "preferred_translations": []
+    },
+    {
+      "term": "Kata",
+      "note": "Martial art term; usually keep untranslated.",
+      "translate": "0",
+      "preferred_translations": []
+    },
+    {
+      "term": "Kumite",
+      "note": "Martial art term; usually keep untranslated.",
+      "translate": "0",
+      "preferred_translations": []
+    }
+  ],
+  "warnings": [],
+  "items": [
+    {
+      "id": "event:helsinki-2026:description",
+      "object_type": "event",
+      "object_id": "helsinki-2026",
+      "field": "description",
+      "source_language": "en",
+      "source_text": "Takafumi 'Taka' Nakayama Sensei, 7th Dan from Shido-kan Fukuoka, Japan, will visit Finland on 29–30 August as part of his European Tour 2026.\r\nTaka’s karate is based on a natural and practical approach to generating power.\r\nThe seminar is open to practitioners of all karate and budo styles, as well as participants of all experience levels.\r\nYou can get an impression of his teaching by visiting the Fukuoka Shido-kan YouTube channel: @fukuoka-shidokan-karate\r\n\r\n&nbsp;",
+      "source_hash": "36b93a7d6dd8df1df8d381ae56315495d2d1a6f6ffcc90bb6fc541638dc5ba41",
+      "existing_translations": {
+        "fr": "",
+        "nl": "",
+        "lb": "",
+        "fi": "",
+        "ja": "",
+        "de": ""
+      },
+      "translations": {
+        "fr": "Takafumi 'Taka' Nakayama Sensei, 7e dan du Shido-kan Fukuoka, au Japon, se rendra en Finlande les 29 et 30 août dans le cadre de sa European Tour 2026.\r\nLe karaté de Taka repose sur une approche naturelle et pratique de la génération de puissance.\r\nLe séminaire est ouvert aux pratiquants de tous les styles de karaté et de budo, ainsi qu’aux participants de tous niveaux d’expérience.\r\nVous pouvez vous faire une idée de son enseignement en consultant la chaîne YouTube Fukuoka Shido-kan : @fukuoka-shidokan-karate\r\n\r\n&nbsp;",
+        "nl": "Takafumi 'Taka' Nakayama Sensei, 7e dan van Shido-kan Fukuoka, Japan, bezoekt Finland op 29 en 30 augustus als onderdeel van zijn European Tour 2026.\r\nTaka’s karate is gebaseerd op een natuurlijke en praktische benadering van krachtontwikkeling.\r\nHet seminar staat open voor beoefenaars van alle karate- en budostijlen, en voor deelnemers van elk ervaringsniveau.\r\nJe krijgt een indruk van zijn manier van lesgeven via het YouTube-kanaal Fukuoka Shido-kan: @fukuoka-shidokan-karate\r\n\r\n&nbsp;",
+        "lb": "Takafumi 'Taka' Nakayama Sensei, 7. Dan vum Shido-kan Fukuoka a Japan, kënnt den 29.–30. August am Kader vu senger European Tour 2026 a Finnland.\r\nDem Taka säi Karate baséiert op enger natierlecher a praktescher Approche fir Kraaft ze entwéckelen.\r\nDe Seminar ass op fir Praktizéierender aus alle Karate- a Budo-Stiler, souwéi fir Participanten op all Erfarungsniveau.\r\nDir kritt en Androck vu sengem Unterrecht um YouTube-Kanal vum Fukuoka Shido-kan: @fukuoka-shidokan-karate\r\n\r\n&nbsp;",
+        "fi": "Takafumi 'Taka' Nakayama Sensei, 7. dan Shido-kan Fukuokasta Japanista, vierailee Suomessa 29.–30. elokuuta osana European Tour 2026 -kiertuettaan.\r\nTakan karate perustuu luonnolliseen ja käytännölliseen tapaan tuottaa voimaa.\r\nSeminaari on avoin kaikkien karate- ja budolajien harjoittelijoille sekä kaiken tasoisille osallistujille.\r\nSaat käsityksen hänen opetuksestaan Fukuoka Shido-kanin YouTube-kanavalta: @fukuoka-shidokan-karate\r\n\r\n&nbsp;",
+        "ja": "Takafumi 'Taka' Nakayama Sensei（日本・福岡 Shido-kan 7段）が、European Tour 2026 の一環として8月29日〜30日にフィンランドを訪れます。\r\nTakaのKarateは、自然で実践的な力の生み出し方に基づいています。\r\nこのセミナーは、あらゆるKarateおよび武道スタイルの実践者、そしてすべての経験レベルの参加者に開かれています。\r\n彼の指導の雰囲気は、Fukuoka Shido-kan のYouTubeチャンネルでご覧いただけます：@fukuoka-shidokan-karate\r\n\r\n&nbsp;",
+        "de": "Takafumi 'Taka' Nakayama Sensei, 7. Dan vom Shido-kan Fukuoka in Japan, besucht Finnland am 29. und 30. August im Rahmen seiner European Tour 2026.\r\nTakas Karate basiert auf einem natürlichen und praktischen Ansatz zur Kraftentwicklung.\r\nDas Seminar ist offen für Praktizierende aller Karate- und Budo-Stile sowie für Teilnehmende aller Erfahrungsstufen.\r\nEinen Eindruck von seinem Unterricht erhalten Sie auf dem YouTube-Kanal des Fukuoka Shido-kan: @fukuoka-shidokan-karate\r\n\r\n&nbsp;"
+      },
+      "context": "Event / Helsinki / Seminar description"
+    },
+    {
+      "id": "event:helsinki-2026:subtitle",
+      "object_type": "event",
+      "object_id": "helsinki-2026",
+      "field": "subtitle",
+      "source_language": "en",
+      "source_text": "Helsinki Seminar",
+      "source_hash": "606fd506b61982266b8e0ddb28c801c3fc71e12a38b94b6218500fb21f3afc83",
+      "existing_translations": {
+        "fr": "",
+        "nl": "",
+        "lb": "",
+        "fi": "",
+        "ja": "",
+        "de": ""
+      },
+      "translations": {
+        "fr": "Séminaire à Helsinki",
+        "nl": "Seminar in Helsinki",
+        "lb": "Seminar zu Helsinki",
+        "fi": "Helsingin seminaari",
+        "ja": "ヘルシンキセミナー",
+        "de": "Helsinki-Seminar"
+      },
+      "context": "Event / Helsinki / Subtitle"
+    },
+    {
+      "id": "event:helsinki-2026:long_description",
+      "object_type": "event",
+      "object_id": "helsinki-2026",
+      "field": "long_description",
+      "source_language": "en",
+      "source_text": "Takafumi 'Taka' Nakayama Sensei, 7th Dan from Shido-kan Fukuoka, Japan, will visit Finland on 29–30 August as part of his European Tour 2026.\r\nTaka’s karate is based on a natural and practical approach to generating power.\r\nThe seminar is open to practitioners of all karate and budo styles, as well as participants of all experience levels.\r\nYou can get an impression of his teaching by visiting the Fukuoka Shido-kan YouTube channel: @fukuoka-shidokan-karate",
+      "source_hash": "edc74805b474ef15539767644382d7c29765fec8bc62e4c5c5b53e4befc76525",
+      "existing_translations": {
+        "fr": "",
+        "nl": "",
+        "lb": "",
+        "fi": "",
+        "ja": "",
+        "de": ""
+      },
+      "translations": {
+        "fr": "Takafumi 'Taka' Nakayama Sensei, 7e dan du Shido-kan Fukuoka, au Japon, se rendra en Finlande les 29 et 30 août dans le cadre de sa European Tour 2026.\r\nLe karaté de Taka repose sur une approche naturelle et pratique de la génération de puissance.\r\nLe séminaire est ouvert aux pratiquants de tous les styles de karaté et de budo, ainsi qu’aux participants de tous niveaux d’expérience.\r\nVous pouvez vous faire une idée de son enseignement en consultant la chaîne YouTube Fukuoka Shido-kan : @fukuoka-shidokan-karate",
+        "nl": "Takafumi 'Taka' Nakayama Sensei, 7e dan van Shido-kan Fukuoka, Japan, bezoekt Finland op 29 en 30 augustus als onderdeel van zijn European Tour 2026.\r\nTaka’s karate is gebaseerd op een natuurlijke en praktische benadering van krachtontwikkeling.\r\nHet seminar staat open voor beoefenaars van alle karate- en budostijlen, en voor deelnemers van elk ervaringsniveau.\r\nJe krijgt een indruk van zijn manier van lesgeven via het YouTube-kanaal Fukuoka Shido-kan: @fukuoka-shidokan-karate",
+        "lb": "Takafumi 'Taka' Nakayama Sensei, 7. Dan vum Shido-kan Fukuoka a Japan, kënnt den 29.–30. August am Kader vu senger European Tour 2026 a Finnland.\r\nDem Taka säi Karate baséiert op enger natierlecher a praktescher Approche fir Kraaft ze entwéckelen.\r\nDe Seminar ass op fir Praktizéierender aus alle Karate- a Budo-Stiler, souwéi fir Participanten op all Erfarungsniveau.\r\nDir kritt en Androck vu sengem Unterrecht um YouTube-Kanal vum Fukuoka Shido-kan: @fukuoka-shidokan-karate",
+        "fi": "Takafumi 'Taka' Nakayama Sensei, 7. dan Shido-kan Fukuokasta Japanista, vierailee Suomessa 29.–30. elokuuta osana European Tour 2026 -kiertuettaan.\r\nTakan karate perustuu luonnolliseen ja käytännölliseen tapaan tuottaa voimaa.\r\nSeminaari on avoin kaikkien karate- ja budolajien harjoittelijoille sekä kaiken tasoisille osallistujille.\r\nSaat käsityksen hänen opetuksestaan Fukuoka Shido-kanin YouTube-kanavalta: @fukuoka-shidokan-karate",
+        "ja": "Takafumi 'Taka' Nakayama Sensei（日本・福岡 Shido-kan 7段）が、European Tour 2026 の一環として8月29日〜30日にフィンランドを訪れます。\r\nTakaのKarateは、自然で実践的な力の生み出し方に基づいています。\r\nこのセミナーは、あらゆるKarateおよび武道スタイルの実践者、そしてすべての経験レベルの参加者に開かれています。\r\n彼の指導の雰囲気は、Fukuoka Shido-kan のYouTubeチャンネルでご覧いただけます：@fukuoka-shidokan-karate",
+        "de": "Takafumi 'Taka' Nakayama Sensei, 7. Dan vom Shido-kan Fukuoka in Japan, besucht Finnland am 29. und 30. August im Rahmen seiner European Tour 2026.\r\nTakas Karate basiert auf einem natürlichen und praktischen Ansatz zur Kraftentwicklung.\r\nDas Seminar ist offen für Praktizierende aller Karate- und Budo-Stile sowie für Teilnehmende aller Erfahrungsstufen.\r\nEinen Eindruck von seinem Unterricht erhalten Sie auf dem YouTube-Kanal des Fukuoka Shido-kan: @fukuoka-shidokan-karate"
+      },
+      "context": "Event / Helsinki / Long description"
+    },
+    {
+      "id": "event:133:subtitle",
+      "object_type": "event",
+      "object_id": "133",
+      "field": "subtitle",
+      "source_language": "en",
+      "source_text": "Kinderseminar",
+      "source_hash": "486c9231b17856d53e6480ad062620217935be3431658b5f99c85175d1aeece8",
+      "existing_translations": {
+        "fr": "",
+        "nl": "",
+        "lb": "",
+        "fi": "",
+        "ja": "",
+        "de": ""
+      },
+      "translations": {
+        "fr": "Séminaire enfants",
+        "nl": "Kinderseminar",
+        "lb": "Kannerseminar",
+        "fi": "Lasten seminaari",
+        "ja": "子どもセミナー",
+        "de": "Kinderseminar"
+      },
+      "context": "Event / Helsinki / Subtitle"
+    }
+  ]
+}

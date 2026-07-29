@@ -1,0 +1,929 @@
+{
+    "package_type": "taka_translation_package",
+    "format_version": 1,
+    "platform_version": "2.2.19",
+    "created_at": "2026-07-06T14:55:05+00:00",
+    "source_language": "de",
+    "use_object_source_languages": true,
+    "target_languages": [
+        "en",
+        "fr",
+        "nl",
+        "lb",
+        "fi",
+        "ja"
+    ],
+    "instructions": {
+        "preserve_html": true,
+        "preserve_placeholders": true,
+        "do_not_translate_terms": [
+            "TAKA",
+            "Sensei",
+            "Dojo",
+            "Karate-Do",
+            "Kobujutsu",
+            "Shorin-Ryu",
+            "Okinawa",
+            "Kata",
+            "Kumite"
+        ]
+    },
+    "translator_prompt": "Please translate this TAKA Translation Package.\nRules:\n- Preserve JSON structure.\n- Preserve all IDs.\n- Fill only the translations object.\n- Do not change source_text.\n- Preserve HTML tags.\n- Preserve placeholders such as {event}, %s, {{name}}.\n- Keep glossary terms untranslated unless the target language requires an accepted local form.\n- Return valid JSON only.",
+    "glossary": [
+        {
+            "term": "TAKA",
+            "note": "Platform name; keep unchanged.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Sensei",
+            "note": "Japanese title; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Dojo",
+            "note": "Training place; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Karate-Do",
+            "note": "Martial art term; keep spelling unless a local convention exists.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Kobujutsu",
+            "note": "Martial art term; keep spelling unless a local convention exists.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Soft Blocking",
+            "note": "Training concept; translate only if the site defines a preferred local form.",
+            "translate": "1",
+            "preferred_translations": []
+        },
+        {
+            "term": "Shorin-Ryu",
+            "note": "Style name; keep unchanged.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Okinawa",
+            "note": "Place name.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Kata",
+            "note": "Martial art term; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        },
+        {
+            "term": "Kumite",
+            "note": "Martial art term; usually keep untranslated.",
+            "translate": "0",
+            "preferred_translations": []
+        }
+    ],
+    "warnings": [],
+    "items": [
+        {
+            "id": "option_list:ticket_mode.online_shop:label",
+            "object_type": "option_list",
+            "object_id": "ticket_mode.online_shop",
+            "field": "label",
+            "source_language": "en",
+            "source_text": "Online ticket shop",
+            "source_hash": "c0e253d281c2f9e6c557cc6e81d992e71454ef79969ccbb1f48327f1242f5af5",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "context": "Option List / Ticket Mode / Online ticket shop / Label"
+        },
+        {
+            "id": "option_list:ticket_mode.external:label",
+            "object_type": "option_list",
+            "object_id": "ticket_mode.external",
+            "field": "label",
+            "source_language": "en",
+            "source_text": "External booking URL",
+            "source_hash": "d079827fa6a6179f2403d8908a275db9d59acba61b1a60e1be2b0f339563916b",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "context": "Option List / Ticket Mode / External booking URL / Label"
+        },
+        {
+            "id": "option_list:ticket_mode.native_taka_ticketing:label",
+            "object_type": "option_list",
+            "object_id": "ticket_mode.native_taka_ticketing",
+            "field": "label",
+            "source_language": "en",
+            "source_text": "Native TAKA Ticketing",
+            "source_hash": "ef015c91b4afe06b1744e72e9e84a7ee27c15a28dd235e8290ffdd6c93646a32",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "context": "Option List / Ticket Mode / Native TAKA Ticketing / Label"
+        },
+        {
+            "id": "option_list:ticket_mode.coming_soon:label",
+            "object_type": "option_list",
+            "object_id": "ticket_mode.coming_soon",
+            "field": "label",
+            "source_language": "en",
+            "source_text": "Tickets coming soon",
+            "source_hash": "4b20cee2bb5729780c1ca4ef350f636a1bd5992a1530567a2e6a5c3507c0256f",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "context": "Option List / Ticket Mode / Tickets coming soon / Label"
+        },
+        {
+            "id": "option_list:ticket_mode.sold_out:label",
+            "object_type": "option_list",
+            "object_id": "ticket_mode.sold_out",
+            "field": "label",
+            "source_language": "en",
+            "source_text": "Sold out / waiting list",
+            "source_hash": "a27f48d7b09e274773d725d600184f6a02758a0a34ff18145f9112a546ac9559",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "context": "Option List / Ticket Mode / Sold out / waiting list / Label"
+        },
+        {
+            "id": "option_list:ticket_mode.pay_at_door:label",
+            "object_type": "option_list",
+            "object_id": "ticket_mode.pay_at_door",
+            "field": "label",
+            "source_language": "en",
+            "source_text": "Pay at the door",
+            "source_hash": "b6c97a0c30e174aca6e8051c223d3d102782854388bc237856f7e0c207415e28",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "context": "Option List / Ticket Mode / Pay at the door / Label"
+        },
+        {
+            "id": "option_list:ticket_mode.free:label",
+            "object_type": "option_list",
+            "object_id": "ticket_mode.free",
+            "field": "label",
+            "source_language": "en",
+            "source_text": "Free entry",
+            "source_hash": "890c7dbbaeda0c5283a5ec3ec083d1976323db1a8e97343c9cb4a333a7282a1d",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "context": "Option List / Ticket Mode / Free entry / Label"
+        },
+        {
+            "id": "option_list:ticket_mode.none:label",
+            "object_type": "option_list",
+            "object_id": "ticket_mode.none",
+            "field": "label",
+            "source_language": "en",
+            "source_text": "No ticket shop",
+            "source_hash": "9b99f2cf9c549b833739edc960c1916dd5f9d9dc95b282727f60354c6773d71d",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "context": "Option List / Ticket Mode / No ticket shop / Label"
+        },
+        {
+            "id": "option_list:ticket_status.pay_at_door:label",
+            "object_type": "option_list",
+            "object_id": "ticket_status.pay_at_door",
+            "field": "label",
+            "source_language": "de",
+            "source_text": "Abendkasse",
+            "source_hash": "242a4f5e57dac2743892c4fbbf6c178772f3c31fd786ce103ee8579b08edf044",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Option List / Ticket Status / Abendkasse / Label"
+        },
+        {
+            "id": "option_list:ticket_status.free_entry:label",
+            "object_type": "option_list",
+            "object_id": "ticket_status.free_entry",
+            "field": "label",
+            "source_language": "de",
+            "source_text": "Freier Eintritt",
+            "source_hash": "5f57977a862cf5bf38f0fc47e536eb6ebccf2aca1260595da4f2fddfe143e81a",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Option List / Ticket Status / Freier Eintritt / Label"
+        },
+        {
+            "id": "option_list:ticket_status.no_ticket_shop:label",
+            "object_type": "option_list",
+            "object_id": "ticket_status.no_ticket_shop",
+            "field": "label",
+            "source_language": "de",
+            "source_text": "Kein Ticketshop",
+            "source_hash": "a69c194d9d97a9cb692102854f4d57f4cbf9f6ebd55c210ab5560adf5931d41f",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Option List / Ticket Status / Kein Ticketshop / Label"
+        },
+        {
+            "id": "event:illange-2026:description",
+            "object_type": "event",
+            "object_id": "illange-2026",
+            "field": "description",
+            "source_language": "fr",
+            "source_text": "Étape de séminaire en France.",
+            "source_hash": "7c2703a5add24eff4336deb8aff25ebdb52fffefc77d4e22803129239c2f98bf",
+            "existing_translations": {
+                "en": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "translations": {
+                "en": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "context": "Event / Illange / Seminar description"
+        },
+        {
+            "id": "event:illange-2026:subtitle",
+            "object_type": "event",
+            "object_id": "illange-2026",
+            "field": "subtitle",
+            "source_language": "fr",
+            "source_text": "Séminaire d’Illange",
+            "source_hash": "c2dbbf0f479b7657cb5a1071b23892cdbc08b62d07a78581c40f510c8a4de8c4",
+            "existing_translations": {
+                "en": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "translations": {
+                "en": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "context": "Event / Illange / Subtitle"
+        },
+        {
+            "id": "event_program:netherlands-2026.program-2:title",
+            "object_type": "event_program",
+            "object_id": "netherlands-2026.program-2",
+            "field": "title",
+            "source_language": "nl",
+            "source_text": "seminar dag 2",
+            "source_hash": "5784155d9d240f65cc4187198bec41bcd6277758ae0b5d9ba85e3771c23ce970",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "context": "Event Program / Enschede / seminar dag 2 / Title"
+        },
+        {
+            "id": "event_program:netherlands-2026.program-1:title",
+            "object_type": "event_program",
+            "object_id": "netherlands-2026.program-1",
+            "field": "title",
+            "source_language": "nl",
+            "source_text": "seminar dag 1",
+            "source_hash": "21e8b35878d1fe12aa9d7ebe86068d69bb6345fe3b974477f978000d2c632373",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "context": "Event Program / Enschede / seminar dag 1 / Title"
+        },
+        {
+            "id": "event_program:helsinki-2026.program-1:title",
+            "object_type": "event_program",
+            "object_id": "helsinki-2026.program-1",
+            "field": "title",
+            "source_language": "en",
+            "source_text": "Seminar Day 1",
+            "source_hash": "5082593929ddb34c4d0392270f1cba97caf9ed861e303b761d396879cf60843d",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "context": "Event Program / Espoo / Seminar Day 1 / Title"
+        },
+        {
+            "id": "event_program:helsinki-2026.program-2:title",
+            "object_type": "event_program",
+            "object_id": "helsinki-2026.program-2",
+            "field": "title",
+            "source_language": "en",
+            "source_text": "Seminar Day 2",
+            "source_hash": "fbf385b9190f0c16750e3f647f9ec984118856ca6b03a6b863bbbe8275f77084",
+            "existing_translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "translations": {
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "context": "Event Program / Espoo / Seminar Day 2 / Title"
+        },
+        {
+            "id": "event_program:hosingen-2026.program-1:title",
+            "object_type": "event_program",
+            "object_id": "hosingen-2026.program-1",
+            "field": "title",
+            "source_language": "de",
+            "source_text": "Seminar",
+            "source_hash": "1bbd481fbe665caafb29cfea6246f618a7f7bad04fa2c6e0bba3695812c447dc",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event Program / Hosingen / Seminar / Title"
+        },
+        {
+            "id": "event_program:illange-2026.program-1:title",
+            "object_type": "event_program",
+            "object_id": "illange-2026.program-1",
+            "field": "title",
+            "source_language": "fr",
+            "source_text": "Seminaire",
+            "source_hash": "1ea8ef1a76ba97ba5cf6a56f612b3c6630a14aa834e4214de9d43488cf00e352",
+            "existing_translations": {
+                "en": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "translations": {
+                "en": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": "",
+                "de": ""
+            },
+            "context": "Event Program / Illange / Seminaire / Title"
+        },
+        {
+            "id": "event_program:konz-2026.program-1:title",
+            "object_type": "event_program",
+            "object_id": "konz-2026.program-1",
+            "field": "title",
+            "source_language": "de",
+            "source_text": "Taka Seminar Tag 2",
+            "source_hash": "6b5c9073cc28aea47637cf761a5927e15954b651a28b5cb7dbcee31dc4a51371",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event Program / Konz / Taka Seminar Tag 2 / Title"
+        },
+        {
+            "id": "event_program:konz-2026.program-2:title",
+            "object_type": "event_program",
+            "object_id": "konz-2026.program-2",
+            "field": "title",
+            "source_language": "de",
+            "source_text": "Taka Seminar Tag 1",
+            "source_hash": "7663136ef8dbf9b87b2bdca87e5c2d98596e0b09690d300f04544e1f6b8c36c5",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event Program / Konz / Taka Seminar Tag 1 / Title"
+        },
+        {
+            "id": "event_program:konz-2026.program-3:title",
+            "object_type": "event_program",
+            "object_id": "konz-2026.program-3",
+            "field": "title",
+            "source_language": "de",
+            "source_text": "Community Practice",
+            "source_hash": "76bd6b500b0954ae4d85a116caa2b361a985bcd3c5be9c19861edca87832c826",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event Program / Konz / Community Practice / Title"
+        },
+        {
+            "id": "event_program:konz-2026.program-3:notes",
+            "object_type": "event_program",
+            "object_id": "konz-2026.program-3",
+            "field": "notes",
+            "source_language": "de",
+            "source_text": "Vertiefende Übung In Eigenregie und mit Seniorstudenten",
+            "source_hash": "dd240f1350d4b015ee57915ef7d8a09d8d92f9bb5d051a3f2fba1ef9a8ae1b87",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event Program / Konz / Community Practice / Notes"
+        },
+        {
+            "id": "event_program:saarwellingen-2026.program-1:title",
+            "object_type": "event_program",
+            "object_id": "saarwellingen-2026.program-1",
+            "field": "title",
+            "source_language": "de",
+            "source_text": "Seminar",
+            "source_hash": "1bbd481fbe665caafb29cfea6246f618a7f7bad04fa2c6e0bba3695812c447dc",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Event Program / Saarwellingen / Seminar / Title"
+        },
+        {
+            "id": "native_ticket_type:konz-2026.early:name",
+            "object_type": "native_ticket_type",
+            "object_id": "konz-2026.early",
+            "field": "name",
+            "source_language": "de",
+            "source_text": "Frühbucher",
+            "source_hash": "5ddf086504fb4856f6ac66616ad45b9d7216ed768103b6330c02840210b4f8da",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Native Ticket Type / Konz / Frühbucher / Name"
+        },
+        {
+            "id": "native_ticket_type:konz-2026.normal:name",
+            "object_type": "native_ticket_type",
+            "object_id": "konz-2026.normal",
+            "field": "name",
+            "source_language": "de",
+            "source_text": "Standard",
+            "source_hash": "ef6691545d2c5523efed00424407cb261aeb0037d165ca5792f7f8bac3381362",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Native Ticket Type / Konz / Standard / Name"
+        },
+        {
+            "id": "native_ticket_type:saarwellingen-2026.0:name",
+            "object_type": "native_ticket_type",
+            "object_id": "saarwellingen-2026.0",
+            "field": "name",
+            "source_language": "de",
+            "source_text": "Adults",
+            "source_hash": "c8a7592805b75a25bd41cad1b729eaaf4d3b8882abcd27e94063add45726c042",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Native Ticket Type / Saarwellingen / Adults / Name"
+        },
+        {
+            "id": "native_ticket_type:saarwellingen-2026.0:description",
+            "object_type": "native_ticket_type",
+            "object_id": "saarwellingen-2026.0",
+            "field": "description",
+            "source_language": "de",
+            "source_text": "Adult ticket category",
+            "source_hash": "818bf08916b458dfa93b0ce9c44ec3365ac782115ac70ff0e4da4abe0c7c9179",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Native Ticket Type / Saarwellingen / Adults / Description"
+        },
+        {
+            "id": "native_ticket_type:saarwellingen-2026.1:name",
+            "object_type": "native_ticket_type",
+            "object_id": "saarwellingen-2026.1",
+            "field": "name",
+            "source_language": "de",
+            "source_text": "Children",
+            "source_hash": "3583a358a585b13b6d6228f12d2baf3ef937fcf50bed4a521b70f95a520bc933",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Native Ticket Type / Saarwellingen / Children / Name"
+        },
+        {
+            "id": "native_ticket_type:saarwellingen-2026.1:description",
+            "object_type": "native_ticket_type",
+            "object_id": "saarwellingen-2026.1",
+            "field": "description",
+            "source_language": "de",
+            "source_text": "Children up to 13 years",
+            "source_hash": "7de66259ebc6d2ab4fc66722c0d7fd34ef43df28feff286a0ace4d31eeb0f589",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Native Ticket Type / Saarwellingen / Children / Description"
+        },
+        {
+            "id": "ticket_product:dojopartykonz2026:title",
+            "object_type": "ticket_product",
+            "object_id": "dojopartykonz2026",
+            "field": "title",
+            "source_language": "de",
+            "source_text": "Dojo Party Konz",
+            "source_hash": "80d52f8575a2fd64cdb9fb123682591603f6f809d27ee803e76c8d38e302068a",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Ticketing Product / Dojo Party Konz / Title"
+        },
+        {
+            "id": "ticket_product:dojopartykonz2026:description",
+            "object_type": "ticket_product",
+            "object_id": "dojopartykonz2026",
+            "field": "description",
+            "source_language": "de",
+            "source_text": "Die legendäre Dojo-Party - dieses Jahr offen für alle. Location: eine Grillhütte mit viel Platz. Essen und Getränke inklusive, soweit Vorrat reicht. \r\nUm Buffetspenden wird gebeten!",
+            "source_hash": "9a28df70e804795120e5abfc66a66fa4f5261c781cabb1d6112c9c296ea34ded",
+            "existing_translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "translations": {
+                "en": "",
+                "fr": "",
+                "nl": "",
+                "lb": "",
+                "fi": "",
+                "ja": ""
+            },
+            "context": "Ticketing Product / Dojo Party Konz / Description"
+        }
+    ]
+}

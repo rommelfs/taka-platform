@@ -83,7 +83,7 @@ if ( ! class_exists( 'TAKA_Platform_I18n' ) ) {
 
 require_once dirname( __DIR__ ) . '/includes/Data/class-repository.php';
 
-$expected = 'Tweedaags seminar in Nederland met Takafumi ‘Taka’ Nakayama';
+$expected = "Tweedaags seminar in Nederland met Takafumi 'Taka' Nakayama";
 $object = array(
 	'source_language' => 'de',
 	'description' => "Zwei Tage Seminar in den Niederlanden mit Takafumi 'Taka' Nakayama",

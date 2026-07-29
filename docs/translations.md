@@ -37,7 +37,7 @@ The import summary reports imported translations, created translations, updated 
 
 ## Glossary
 
-The glossary stores terms that should be preserved or translated consistently. Default entries include TAKA, Sensei, Dojo, Karate-Do, Kobujutsu, Soft Blocking, Shorin-Ryu, Okinawa, Kata, Kumite and the protected personal name Kanade. Protected entries may define known incorrect variants that are restored to the canonical spelling during automated translation and package import.
+The glossary stores terms that should be preserved or translated consistently. Default entries include the case-sensitive project name `TAKA`, Sensei, Dojo, Karate-Do, Kobujutsu, Soft Blocking, Shorin-Ryu, Okinawa, Kata, Kumite, the personal names `Kanade` and `Takafumi 'Taka' Nakayama`, and the lowercase venue name `kanso`. Protected phrases use word boundaries, preserve canonical case, and may define known incorrect variants that are restored during automated translation, package import, frontend resolution, and the one-time stored-translation migration. The project rule only matches uppercase `TAKA` in the source and therefore does not alter the nickname `Taka` or the `Taka` substring in `Takafumi`.
 
 Individual translation blocks preserve their source block’s leading and trailing whitespace. This keeps separately translated sentence fragments joinable without introducing duplicate spaces.
 
