@@ -752,7 +752,7 @@ class TAKA_Platform_Data {
 				'long_description' => 'Long description',
 				'ticket_card_text' => 'Ticket card text',
 				'ticket_tab_label' => 'Ticket tab label',
-				'ticket_door_note' => 'Pay-at-door note',
+				'ticket_door_note' => 'Door price additional note',
 				'accessibility' => 'Accessibility notes',
 				'notes' => 'Notes',
 				'parking' => 'Parking notes',
@@ -2050,6 +2050,10 @@ class TAKA_Platform_Data {
 			'payment_methods' => $is_de ? 'Nach Ihrer Buchung verschicken wir eine Rechnung. Die Zahlung ist per Überweisung, PayPal oder nach Absprache bar möglich. Nur vorab bezahlte Rechnungen berechtigen zur Teilnahme am Seminar.' : 'After your booking, we will send you an invoice. Payment is possible by bank transfer, PayPal or cash if agreed with the organizer. Only paid invoices confirm participation in the seminar.',
 			'cancellation_policy' => $is_de ? "bis 40 Tage vor dem Seminar: kostenloser Rücktritt\n39–30 Tage vor dem Seminar: 75% Rückerstattung\n29–14 Tage vor dem Seminar: 40% Rückerstattung\nweniger als 14 Tage vor dem Seminar: leider keine Rückerstattung" : "until 40 days before the seminar: free cancellation\n39–30 days before the seminar: 75% refund\n29–14 days before the seminar: 40% refund\nless than 14 days before the seminar: unfortunately no refund",
 			'additional_notes' => '',
+			'show_group_booking' => '1',
+			'show_multi_event_discount' => '1',
+			'show_payment_methods' => '1',
+			'show_cancellation_policy' => '1',
 		);
 	}
 
@@ -2065,7 +2069,9 @@ class TAKA_Platform_Data {
 		$override = self::normalize_booking_information( $event['booking_information'] ?? array(), false );
 		if ( ! empty( $override['override'] ) ) {
 			$booking = array_merge( $booking, array_filter( $override, static function ( $value ) { return is_array( $value ) ? '' !== trim( implode( '', array_map( 'strval', $value ) ) ) : '' !== trim( (string) $value ); } ) );
-			$booking['enabled'] = $override['enabled'] ?? $booking['enabled'];
+		}
+		foreach ( array( 'enabled', 'show_group_booking', 'show_multi_event_discount', 'show_payment_methods', 'show_cancellation_policy' ) as $control ) {
+			if ( array_key_exists( $control, $override ) ) { $booking[ $control ] = $override[ $control ]; }
 		}
 
 		$lang_defaults = self::default_booking_information( $lang );
@@ -2090,14 +2096,14 @@ class TAKA_Platform_Data {
 
 		$sections = array(
 			array( 'key' => 'intro', 'title' => '', 'text' => $booking['intro'] ?? '' ),
-			array( 'key' => 'group_booking', 'title' => taka_tour_translate( 'booking.groups_clubs', 'Groups & clubs', $lang ), 'text' => $booking['group_booking'] ?? '' ),
-			array( 'key' => 'multi_event_discount', 'title' => taka_tour_translate( 'booking.multiple_seminars', 'Multiple seminars', $lang ), 'text' => $booking['multi_event_discount'] ?? '' ),
+			array( 'key' => 'group_booking', 'title' => taka_tour_translate( 'booking.groups_clubs', 'Groups & clubs', $lang ), 'text' => $booking['group_booking'] ?? '', 'enabled' => $booking['show_group_booking'] ?? '1' ),
+			array( 'key' => 'multi_event_discount', 'title' => taka_tour_translate( 'booking.multiple_seminars', 'Multiple seminars', $lang ), 'text' => $booking['multi_event_discount'] ?? '', 'enabled' => $booking['show_multi_event_discount'] ?? '1' ),
 			array( 'key' => 'booking_process', 'title' => taka_tour_translate( 'booking.booking_process', 'Booking process', $lang ), 'text' => $booking['booking_process'] ?? '' ),
-			array( 'key' => 'payment_methods', 'title' => taka_tour_translate( 'booking.payment', 'Payment', $lang ), 'text' => $booking['payment_methods'] ?? '' ),
-			array( 'key' => 'cancellation_policy', 'title' => taka_tour_translate( 'booking.cancellation', 'Cancellation', $lang ), 'text' => $booking['cancellation_policy'] ?? '', 'list' => self::lines_to_array( $booking['cancellation_policy'] ?? '' ) ),
+			array( 'key' => 'payment_methods', 'title' => taka_tour_translate( 'booking.payment', 'Payment', $lang ), 'text' => $booking['payment_methods'] ?? '', 'enabled' => $booking['show_payment_methods'] ?? '1' ),
+			array( 'key' => 'cancellation_policy', 'title' => taka_tour_translate( 'booking.cancellation', 'Cancellation', $lang ), 'text' => $booking['cancellation_policy'] ?? '', 'list' => self::lines_to_array( $booking['cancellation_policy'] ?? '' ), 'enabled' => $booking['show_cancellation_policy'] ?? '1' ),
 			array( 'key' => 'additional_notes', 'title' => taka_tour_translate( 'event.notes', 'Notes', $lang ), 'text' => $booking['additional_notes'] ?? '' ),
 		);
-		$booking['sections'] = array_values( array_filter( $sections, static function ( $section ) { return '' !== trim( (string) ( $section['text'] ?? '' ) ); } ) );
+		$booking['sections'] = array_values( array_filter( $sections, static function ( $section ) { return '0' !== (string) ( $section['enabled'] ?? '1' ) && '' !== trim( (string) ( $section['text'] ?? '' ) ); } ) );
 		return $booking;
 	}
 
@@ -2157,13 +2163,13 @@ class TAKA_Platform_Data {
 	/** Normalize booking information arrays. */
 	private static function normalize_booking_information( $booking, $include_defaults = true ) {
 		$booking = is_array( $booking ) ? $booking : array();
-		$defaults = array( 'enabled' => '1', 'override' => '', 'source_language' => self::platform_fallback_language(), 'title' => '', 'intro' => '', 'group_booking' => '', 'multi_event_discount' => '', 'contact_email' => '', 'booking_process' => '', 'payment_methods' => '', 'cancellation_policy' => '', 'additional_notes' => '' );
+		$defaults = array( 'enabled' => '1', 'override' => '', 'source_language' => self::platform_fallback_language(), 'title' => '', 'intro' => '', 'group_booking' => '', 'multi_event_discount' => '', 'contact_email' => '', 'booking_process' => '', 'payment_methods' => '', 'cancellation_policy' => '', 'additional_notes' => '', 'show_group_booking' => '1', 'show_multi_event_discount' => '1', 'show_payment_methods' => '1', 'show_cancellation_policy' => '1' );
 		if ( $include_defaults ) {
 			$booking = array_merge( $defaults, $booking );
 		} else {
 			$booking = array_merge( array( 'override' => '' ), $booking );
 		}
-		foreach ( array( 'enabled', 'override' ) as $key ) {
+		foreach ( array( 'enabled', 'override', 'show_group_booking', 'show_multi_event_discount', 'show_payment_methods', 'show_cancellation_policy' ) as $key ) {
 			if ( isset( $booking[ $key ] ) ) { $booking[ $key ] = ! empty( $booking[ $key ] ) ? '1' : '0'; }
 		}
 		$booking['source_language'] = in_array( $booking['source_language'] ?? '', self::content_section_languages(), true ) ? sanitize_key( $booking['source_language'] ) : self::platform_fallback_language();
@@ -2187,6 +2193,10 @@ class TAKA_Platform_Data {
 			'payment_methods' => (string) get_post_meta( $post_id, '_taka_booking_info_payment_methods', true ),
 			'cancellation_policy' => (string) get_post_meta( $post_id, '_taka_booking_info_cancellation_policy', true ),
 			'additional_notes' => (string) get_post_meta( $post_id, '_taka_booking_info_additional_notes', true ),
+			'show_group_booking' => '' === (string) get_post_meta( $post_id, '_taka_booking_info_show_group_booking', true ) ? '1' : (string) get_post_meta( $post_id, '_taka_booking_info_show_group_booking', true ),
+			'show_multi_event_discount' => '' === (string) get_post_meta( $post_id, '_taka_booking_info_show_multi_event_discount', true ) ? '1' : (string) get_post_meta( $post_id, '_taka_booking_info_show_multi_event_discount', true ),
+			'show_payment_methods' => '' === (string) get_post_meta( $post_id, '_taka_booking_info_show_payment_methods', true ) ? '1' : (string) get_post_meta( $post_id, '_taka_booking_info_show_payment_methods', true ),
+			'show_cancellation_policy' => '' === (string) get_post_meta( $post_id, '_taka_booking_info_show_cancellation_policy', true ) ? '1' : (string) get_post_meta( $post_id, '_taka_booking_info_show_cancellation_policy', true ),
 		), false );
 	}
 
@@ -2838,7 +2848,9 @@ class TAKA_Platform_Data {
 		if ( is_array( $value ) ) {
 			$out = array();
 			foreach ( TAKA_Platform_I18n::instance()->get_all_languages() as $lang ) {
-				$out[ $lang ] = sanitize_textarea_field( $value[ $lang ] ?? '' );
+				$raw = (string) ( $value[ $lang ] ?? '' );
+				$clean = sanitize_textarea_field( $raw );
+				$out[ $lang ] = class_exists( 'TAKA_Platform_Translation_Packages' ) ? TAKA_Platform_Translation_Packages::preserve_boundary_whitespace( $raw, $clean ) : $clean;
 			}
 			return $out;
 		}

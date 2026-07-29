@@ -1352,9 +1352,9 @@ class TAKA_Platform_Admin {
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="taka_platform_save_translation_glossary">
 				<?php wp_nonce_field( 'taka_platform_save_translation_glossary', self::NONCE ); ?>
-				<table class="widefat striped"><thead><tr><th><?php echo esc_html__( 'Term', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Note', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Translate term', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Preferred website translations', 'taka-platform' ); ?></th></tr></thead><tbody>
+				<table class="widefat striped"><thead><tr><th><?php echo esc_html__( 'Term', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Note', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Translate term', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Preferred website translations', 'taka-platform' ); ?></th><th><?php echo esc_html__( 'Incorrect variants to restore', 'taka-platform' ); ?></th></tr></thead><tbody>
 					<?php foreach ( array_merge( TAKA_Platform_Translation_Packages::get_glossary(), array( array() ) ) as $index => $entry ) : ?>
-						<tr><td><input class="regular-text" type="text" name="glossary[<?php echo esc_attr( (string) $index ); ?>][term]" value="<?php echo esc_attr( $entry['term'] ?? '' ); ?>"></td><td><textarea name="glossary[<?php echo esc_attr( (string) $index ); ?>][note]" rows="2"><?php echo esc_textarea( $entry['note'] ?? '' ); ?></textarea></td><td><label><input type="checkbox" name="glossary[<?php echo esc_attr( (string) $index ); ?>][translate]" value="1" <?php checked( ! empty( $entry['translate'] ) ); ?>> <?php echo esc_html__( 'Yes', 'taka-platform' ); ?></label></td><td><textarea name="glossary[<?php echo esc_attr( (string) $index ); ?>][preferred_translations]" rows="2"><?php echo esc_textarea( implode( "\n", (array) ( $entry['preferred_translations'] ?? array() ) ) ); ?></textarea></td></tr>
+						<tr><td><input class="regular-text" type="text" name="glossary[<?php echo esc_attr( (string) $index ); ?>][term]" value="<?php echo esc_attr( $entry['term'] ?? '' ); ?>"></td><td><textarea name="glossary[<?php echo esc_attr( (string) $index ); ?>][note]" rows="2"><?php echo esc_textarea( $entry['note'] ?? '' ); ?></textarea></td><td><label><input type="checkbox" name="glossary[<?php echo esc_attr( (string) $index ); ?>][translate]" value="1" <?php checked( ! empty( $entry['translate'] ) ); ?>> <?php echo esc_html__( 'Yes', 'taka-platform' ); ?></label></td><td><textarea name="glossary[<?php echo esc_attr( (string) $index ); ?>][preferred_translations]" rows="2"><?php echo esc_textarea( implode( "\n", (array) ( $entry['preferred_translations'] ?? array() ) ) ); ?></textarea></td><td><textarea name="glossary[<?php echo esc_attr( (string) $index ); ?>][protected_variants]" rows="2"><?php echo esc_textarea( implode( "\n", (array) ( $entry['protected_variants'] ?? array() ) ) ); ?></textarea></td></tr>
 					<?php endforeach; ?>
 				</tbody></table>
 				<?php submit_button( __( 'Save glossary', 'taka-platform' ) ); ?>
@@ -2281,6 +2281,10 @@ class TAKA_Platform_Admin {
 			'_taka_languages' => implode( ',', ! empty( $item['languages'] ) ? TAKA_Platform_Data::normalize_language_codes( $item['languages'] ) : TAKA_Platform_Data::languages_for_country( $country_code ) ),
 			'_taka_booking_info_override' => $booking['override'] ?? '',
 			'_taka_booking_info_enabled' => $booking['enabled'] ?? '1',
+			'_taka_booking_info_show_group_booking' => $booking['show_group_booking'] ?? '1',
+			'_taka_booking_info_show_multi_event_discount' => $booking['show_multi_event_discount'] ?? '1',
+			'_taka_booking_info_show_payment_methods' => $booking['show_payment_methods'] ?? '1',
+			'_taka_booking_info_show_cancellation_policy' => $booking['show_cancellation_policy'] ?? '1',
 			'_taka_booking_info_title' => $booking['title'] ?? '',
 			'_taka_booking_info_intro' => $booking['intro'] ?? '',
 			'_taka_booking_info_group_booking' => $booking['group_booking'] ?? '',
@@ -2428,7 +2432,7 @@ class TAKA_Platform_Admin {
 		self::text( $post->ID, 'ticket_door_price_reduced', __( 'Reduced door price', 'taka-platform' ) );
 		self::text( $post->ID, 'ticket_door_price_child', __( 'Child door price', 'taka-platform' ) );
 		self::text( $post->ID, 'ticket_door_price_member', __( 'Member door price', 'taka-platform' ) );
-		echo '<p class="description">' . esc_html__( 'Pay-at-door notes are edited in Source language & website translations so each website language can have its own text.', 'taka-platform' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'The optional Door price additional note (for example “Week-end Pass”) is edited in Source language & website translations and shown only when filled.', 'taka-platform' ) . '</p>';
 		self::render_event_booking_information_fields( $post->ID );
 		self::admin_section_close();
 		if ( class_exists( 'TAKA_Ticketing_Module' ) ) {
@@ -2575,7 +2579,7 @@ class TAKA_Platform_Admin {
 				$posted_relationships = TAKA_Platform_Data::normalize_event_organizer_relationships( get_post_meta( $post_id, '_taka_event_organizers', true ), $existing );
 			}
 		}
-		self::save( $post_id, array( 'country', 'country_code', 'flag', 'route_map_x', 'route_map_y', 'route_map_label', 'route_map_label_x', 'route_map_label_y', 'route_map_label_anchor', 'route_map_label_width', 'route_map_leader_line', 'tour_order', 'city', 'doors_open', 'timezone', 'currency', 'format', 'audience', 'level', 'ticket_mode', 'ticket_provider', 'ticket_status', 'ticket_door_price', 'ticket_door_price_reduced', 'ticket_door_price_child', 'ticket_door_price_member', 'photo_credit', 'languages', 'organizer_id', 'venue_id', 'venue_ids', 'ticket_location_detail', 'ticket_shop_url', 'image_id', 'image_url', 'group_image_id', 'group_image_url', 'gallery_image_ids', 'booking_info_override', 'booking_info_enabled', 'booking_info_title', 'booking_info_intro', 'booking_info_group_booking', 'booking_info_multi_event_discount', 'booking_info_contact_email', 'booking_info_booking_process', 'booking_info_payment_methods', 'booking_info_cancellation_policy', 'booking_info_additional_notes', 'sort_order' ) );
+		self::save( $post_id, array( 'country', 'country_code', 'flag', 'route_map_x', 'route_map_y', 'route_map_label', 'route_map_label_x', 'route_map_label_y', 'route_map_label_anchor', 'route_map_label_width', 'route_map_leader_line', 'tour_order', 'city', 'doors_open', 'timezone', 'currency', 'format', 'audience', 'level', 'ticket_mode', 'ticket_provider', 'ticket_status', 'ticket_door_price', 'ticket_door_price_reduced', 'ticket_door_price_child', 'ticket_door_price_member', 'photo_credit', 'languages', 'organizer_id', 'venue_id', 'venue_ids', 'ticket_location_detail', 'ticket_shop_url', 'image_id', 'image_url', 'group_image_id', 'group_image_url', 'gallery_image_ids', 'booking_info_override', 'booking_info_enabled', 'booking_info_show_group_booking', 'booking_info_show_multi_event_discount', 'booking_info_show_payment_methods', 'booking_info_show_cancellation_policy', 'booking_info_title', 'booking_info_intro', 'booking_info_group_booking', 'booking_info_multi_event_discount', 'booking_info_contact_email', 'booking_info_booking_process', 'booking_info_payment_methods', 'booking_info_cancellation_policy', 'booking_info_additional_notes', 'sort_order' ) );
 		self::save_content_reference_meta( $post_id, 'content_reference_event_description', 'event_description' );
 		self::save_object_text_translations( $post_id, 'event' );
 		self::save_event_organizer_relationships( $post_id, $posted_relationships );
@@ -3106,6 +3110,11 @@ class TAKA_Platform_Admin {
 			<p><label><input type="checkbox" name="<?php echo esc_attr( $prefix ); ?>override" value="1" <?php checked( (string) self::meta( $post_id, 'booking_info_override' ), '1' ); ?>> <?php echo esc_html__( 'Use custom booking information for this event', 'taka-platform' ); ?></label></p>
 			<input type="hidden" name="<?php echo esc_attr( $prefix ); ?>enabled" value="0">
 			<p><label><input type="checkbox" name="<?php echo esc_attr( $prefix ); ?>enabled" value="1" <?php checked( '' === (string) self::meta( $post_id, 'booking_info_enabled' ) || '1' === (string) self::meta( $post_id, 'booking_info_enabled' ) ); ?>> <?php echo esc_html__( 'Show booking information for this event', 'taka-platform' ); ?></label></p>
+			<p><strong><?php echo esc_html__( 'Visible booking topics', 'taka-platform' ); ?></strong></p>
+			<?php foreach ( array( 'show_group_booking' => __( 'Groups & clubs', 'taka-platform' ), 'show_multi_event_discount' => __( 'Multiple seminars', 'taka-platform' ), 'show_payment_methods' => __( 'Payment', 'taka-platform' ), 'show_cancellation_policy' => __( 'Cancellation', 'taka-platform' ) ) as $field => $label ) : ?>
+				<input type="hidden" name="<?php echo esc_attr( $prefix . $field ); ?>" value="0">
+				<p><label><input type="checkbox" name="<?php echo esc_attr( $prefix . $field ); ?>" value="1" <?php checked( '' === (string) self::meta( $post_id, 'booking_info_' . $field ) || '1' === (string) self::meta( $post_id, 'booking_info_' . $field ) ); ?>> <?php echo esc_html( $label ); ?></label></p>
+			<?php endforeach; ?>
 			<p class="description"><?php echo esc_html__( 'These override fields use the event’s original content language. Use the global Booking Information settings for multilingual default website text.', 'taka-platform' ); ?></p>
 			<?php self::text_source( $post_id, 'booking_info_title', __( 'Booking information title', 'taka-platform' ) ); ?>
 			<?php self::textarea_source( $post_id, 'booking_info_intro', __( 'Intro text', 'taka-platform' ) ); ?>

@@ -67,6 +67,7 @@ class TAKA_Platform_Translation_Packages {
 			array( 'term' => 'Okinawa', 'note' => 'Place name.', 'translate' => '0', 'preferred_translations' => array() ),
 			array( 'term' => 'Kata', 'note' => 'Martial art term; usually keep untranslated.', 'translate' => '0', 'preferred_translations' => array() ),
 			array( 'term' => 'Kumite', 'note' => 'Martial art term; usually keep untranslated.', 'translate' => '0', 'preferred_translations' => array() ),
+			array( 'term' => 'Kanade', 'note' => 'Personal name; keep this exact spelling in every language.', 'translate' => '0', 'preferred_translations' => array(), 'protected_variants' => array( 'Kanada' ) ),
 		);
 	}
 
@@ -74,7 +75,13 @@ class TAKA_Platform_Translation_Packages {
 	public static function get_glossary() {
 		$stored = function_exists( 'get_option' ) ? get_option( self::GLOSSARY_OPTION, array() ) : array();
 		$stored = is_array( $stored ) ? $stored : array();
-		return empty( $stored ) ? self::default_glossary() : self::sanitize_glossary( $stored );
+		$stored = self::sanitize_glossary( $stored );
+		$by_term = array();
+		foreach ( $stored as $item ) { $by_term[ strtolower( $item['term'] ) ] = $item; }
+		foreach ( self::default_glossary() as $default ) {
+			if ( ! isset( $by_term[ strtolower( $default['term'] ) ] ) ) { $stored[] = $default; }
+		}
+		return $stored;
 	}
 
 	/** Sanitize glossary entries. */
@@ -86,11 +93,14 @@ class TAKA_Platform_Translation_Packages {
 			if ( '' === $term ) { continue; }
 			$preferred = $item['preferred_translations'] ?? array();
 			if ( is_string( $preferred ) ) { $preferred = self::lines_to_array( $preferred ); }
+			$protected_variants = $item['protected_variants'] ?? array();
+			if ( is_string( $protected_variants ) ) { $protected_variants = self::lines_to_array( $protected_variants ); }
 			$clean[] = array(
 				'term' => $term,
 				'note' => sanitize_textarea_field( $item['note'] ?? '' ),
 				'translate' => ! empty( $item['translate'] ) ? '1' : '0',
 				'preferred_translations' => array_values( array_filter( array_map( 'sanitize_text_field', (array) $preferred ) ) ),
+				'protected_variants' => array_values( array_filter( array_map( 'sanitize_text_field', (array) $protected_variants ) ) ),
 			);
 		}
 		return $clean;
@@ -98,7 +108,31 @@ class TAKA_Platform_Translation_Packages {
 
 	/** Translator prompt embedded in every package. */
 	public static function translator_prompt() {
-		return "Please translate this TAKA Translation Package.\nRules:\n- Preserve JSON structure.\n- Preserve all IDs.\n- Fill only the translations object.\n- Do not change source_text.\n- Preserve HTML tags.\n- Preserve placeholders such as {event}, %s, {{name}}.\n- Keep glossary terms untranslated unless the target language requires an accepted local form.\n- Return valid JSON only.";
+		return "Please translate this TAKA Translation Package.\nRules:\n- Preserve JSON structure.\n- Preserve all IDs.\n- Fill only the translations object.\n- Do not change source_text.\n- Preserve leading and trailing whitespace in every individual text block exactly.\n- Preserve HTML tags.\n- Preserve placeholders such as {event}, %s, {{name}}.\n- Keep protected glossary terms exactly unchanged.\n- Return valid JSON only.";
+	}
+
+	/** Restore source boundary whitespace without duplicating whitespace returned by a provider. */
+	public static function preserve_boundary_whitespace( $source, $translation ) {
+		$source = (string) $source;
+		$translation = (string) $translation;
+		preg_match( '/^\s*/u', $source, $leading );
+		preg_match( '/\s*$/u', $source, $trailing );
+		$core = preg_replace( '/^\s+|\s+$/u', '', $translation );
+		return (string) ( $leading[0] ?? '' ) . (string) $core . (string) ( $trailing[0] ?? '' );
+	}
+
+	/** Restore protected glossary spellings when a known translated variant was returned. */
+	public static function protect_glossary_terms( $source, $translation ) {
+		$translation = (string) $translation;
+		foreach ( self::get_glossary() as $item ) {
+			$term = (string) ( $item['term'] ?? '' );
+			if ( ! empty( $item['translate'] ) || '' === $term || false === strpos( (string) $source, $term ) ) { continue; }
+			if ( false !== strpos( $translation, $term ) ) { continue; }
+			foreach ( (array) ( $item['protected_variants'] ?? array() ) as $variant ) {
+				$translation = str_replace( (string) $variant, $term, $translation );
+			}
+		}
+		return $translation;
 	}
 
 	/** Export a downloadable package array. */
@@ -318,7 +352,9 @@ class TAKA_Platform_Translation_Packages {
 					$summary['report'][] = self::import_report_row( $item, $lang, 'skipped_existing' );
 					continue;
 				}
-				$changes[ $current['object_type'] ][ $current['object_id'] ][ $current['field'] ][ $lang ] = function_exists( 'wp_kses_post' ) ? wp_kses_post( $translation ) : sanitize_textarea_field( $translation );
+				$translation = self::protect_glossary_terms( $current_source, $translation );
+				$translation = self::preserve_boundary_whitespace( $current_source, $translation );
+				$changes[ $current['object_type'] ][ $current['object_id'] ][ $current['field'] ][ $lang ] = function_exists( 'wp_kses_post' ) ? wp_kses_post( $translation ) : $translation;
 				$source_hash_updates[ $current['object_type'] ][ $current['object_id'] ][ $current['field'] ] = array(
 					'source_language' => $source_language,
 					'source_hash' => self::hash( $current_source ),

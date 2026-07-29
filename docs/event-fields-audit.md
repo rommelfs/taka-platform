@@ -58,6 +58,7 @@ The largest potentially confusing fields are `short_description`, `long_descript
 | Payment methods | `_taka_booking_info_payment_methods` | multi-line | yes | yes, booking info panel if override applies | yes, config import/export | no package field for per-event overrides currently | keep |
 | Cancellation policy text | `_taka_booking_info_cancellation_policy` | multi-line | yes | yes, booking info panel if override applies | yes, config import/export | no package field for per-event overrides currently | keep |
 | Additional notes | `_taka_booking_info_additional_notes` | multi-line | yes | yes, booking info panel if override applies | yes, config import/export | no package field for per-event overrides currently | keep |
+| Booking panel/topic visibility | `_taka_booking_info_enabled`, `_taka_booking_info_show_group_booking`, `_taka_booking_info_show_multi_event_discount`, `_taka_booking_info_show_payment_methods`, `_taka_booking_info_show_cancellation_policy` | checkboxes | no | controls the complete panel and four optional topics | yes, config import/export | not applicable | missing metadata defaults to enabled for backwards compatibility |
 
 ## Confusing Or Redundant Fields
 

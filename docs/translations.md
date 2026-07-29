@@ -37,7 +37,9 @@ The import summary reports imported translations, created translations, updated 
 
 ## Glossary
 
-The glossary stores terms that should be preserved or translated consistently. Default entries include TAKA, Sensei, Dojo, Karate-Do, Kobujutsu, Soft Blocking, Shorin-Ryu, Okinawa, Kata and Kumite.
+The glossary stores terms that should be preserved or translated consistently. Default entries include TAKA, Sensei, Dojo, Karate-Do, Kobujutsu, Soft Blocking, Shorin-Ryu, Okinawa, Kata, Kumite and the protected personal name Kanade. Protected entries may define known incorrect variants that are restored to the canonical spelling during automated translation and package import.
+
+Individual translation blocks preserve their source block’s leading and trailing whitespace. This keeps separately translated sentence fragments joinable without introducing duplicate spaces.
 
 Glossary entries are included in exported packages when enabled.
 

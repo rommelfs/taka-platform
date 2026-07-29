@@ -999,6 +999,10 @@ class TAKA_Platform_Admin_Event_Assistant {
 	public static function render_booking_section( $context ) {
 		self::checkbox_field( $context, 'booking_info_override', __( 'Use custom booking information for this event', 'taka-platform' ) );
 		self::checkbox_field( $context, 'booking_info_enabled', __( 'Show booking information for this event', 'taka-platform' ), true );
+		self::checkbox_field( $context, 'booking_info_show_group_booking', __( 'Show Groups & clubs', 'taka-platform' ), true );
+		self::checkbox_field( $context, 'booking_info_show_multi_event_discount', __( 'Show Multiple seminars', 'taka-platform' ), true );
+		self::checkbox_field( $context, 'booking_info_show_payment_methods', __( 'Show Payment', 'taka-platform' ), true );
+		self::checkbox_field( $context, 'booking_info_show_cancellation_policy', __( 'Show Cancellation', 'taka-platform' ), true );
 		self::text_field( $context, 'booking_info_title', __( 'Booking information title', 'taka-platform' ) );
 		foreach ( array(
 			'booking_info_intro' => __( 'Intro text', 'taka-platform' ),
@@ -1186,8 +1190,10 @@ class TAKA_Platform_Admin_Event_Assistant {
 		foreach ( self::event_meta_fields() as $field ) {
 			$values[ $field ] = $event_id ? get_post_meta( $event_id, '_taka_' . $field, true ) : '';
 		}
-		if ( ! $event_id ) {
-			$values['booking_info_enabled'] = '1';
+		foreach ( array( 'booking_info_enabled', 'booking_info_show_group_booking', 'booking_info_show_multi_event_discount', 'booking_info_show_payment_methods', 'booking_info_show_cancellation_policy' ) as $default_enabled_field ) {
+			if ( '' === (string) ( $values[ $default_enabled_field ] ?? '' ) ) {
+				$values[ $default_enabled_field ] = '1';
+			}
 		}
 
 		$recent = self::recent_settings();
@@ -1236,7 +1242,7 @@ class TAKA_Platform_Admin_Event_Assistant {
 	}
 
 	private static function event_meta_fields() {
-		return array( 'country', 'country_code', 'flag', 'route_map_x', 'route_map_y', 'route_map_label', 'route_map_label_x', 'route_map_label_y', 'route_map_label_anchor', 'route_map_label_width', 'route_map_leader_line', 'tour_order', 'city', 'doors_open', 'timezone', 'currency', 'format', 'audience', 'level', 'ticket_mode', 'ticket_provider', 'ticket_status', 'ticket_door_price', 'ticket_door_price_reduced', 'ticket_door_price_child', 'ticket_door_price_member', 'photo_credit', 'languages', 'organizer_id', 'venue_id', 'venue_ids', 'ticket_shop_url', 'image_id', 'image_url', 'group_image_id', 'group_image_url', 'gallery_image_ids', 'booking_info_override', 'booking_info_enabled', 'booking_info_title', 'booking_info_intro', 'booking_info_group_booking', 'booking_info_multi_event_discount', 'booking_info_contact_email', 'booking_info_booking_process', 'booking_info_payment_methods', 'booking_info_cancellation_policy', 'booking_info_additional_notes', 'sort_order', 'short_description', 'subtitle', 'long_description', 'ticket_card_text', 'ticket_tab_label', 'ticket_door_note', 'accessibility', 'notes', 'parking' );
+		return array( 'country', 'country_code', 'flag', 'route_map_x', 'route_map_y', 'route_map_label', 'route_map_label_x', 'route_map_label_y', 'route_map_label_anchor', 'route_map_label_width', 'route_map_leader_line', 'tour_order', 'city', 'doors_open', 'timezone', 'currency', 'format', 'audience', 'level', 'ticket_mode', 'ticket_provider', 'ticket_status', 'ticket_door_price', 'ticket_door_price_reduced', 'ticket_door_price_child', 'ticket_door_price_member', 'photo_credit', 'languages', 'organizer_id', 'venue_id', 'venue_ids', 'ticket_shop_url', 'image_id', 'image_url', 'group_image_id', 'group_image_url', 'gallery_image_ids', 'booking_info_override', 'booking_info_enabled', 'booking_info_show_group_booking', 'booking_info_show_multi_event_discount', 'booking_info_show_payment_methods', 'booking_info_show_cancellation_policy', 'booking_info_title', 'booking_info_intro', 'booking_info_group_booking', 'booking_info_multi_event_discount', 'booking_info_contact_email', 'booking_info_booking_process', 'booking_info_payment_methods', 'booking_info_cancellation_policy', 'booking_info_additional_notes', 'sort_order', 'short_description', 'subtitle', 'long_description', 'ticket_card_text', 'ticket_tab_label', 'ticket_door_note', 'accessibility', 'notes', 'parking' );
 	}
 
 	private static function render_hidden_preserved_fields( $context ) {

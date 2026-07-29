@@ -8,7 +8,12 @@ defined( 'ABSPATH' ) || exit;
 class TAKA_Platform_Manual_Translation_Service implements TAKA_Platform_Translation_Service_Interface {
 	public function translate_text( $text, $source_lang, $target_lang ) {
 		$translated = (string) $text;
-		return apply_filters( 'taka_platform_translate_text', $translated, $text, $source_lang, $target_lang );
+		$translated = apply_filters( 'taka_platform_translate_text', $translated, $text, $source_lang, $target_lang );
+		if ( class_exists( 'TAKA_Platform_Translation_Packages' ) ) {
+			$translated = TAKA_Platform_Translation_Packages::protect_glossary_terms( $text, $translated );
+			$translated = TAKA_Platform_Translation_Packages::preserve_boundary_whitespace( $text, $translated );
+		}
+		return $translated;
 	}
 
 	public function translate_fields( $fields, $source_lang, $target_langs ) {
