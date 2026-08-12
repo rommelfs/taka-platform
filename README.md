@@ -145,7 +145,7 @@ Native TAKA Ticketing lives under `includes/Ticketing/`. Phase 1 added event tic
 
 ## Multilingual frontend
 
-Supported query-parameter languages: `?taka_lang=de`, `en`, `nl`, `fr`, `lb`, `fi`, `ja`. Static JSON translations in `translations/` are used for frontend labels. Missing keys fall back to German and then to the supplied template fallback.
+Public query-parameter languages use `?taka_lang=CODE` and are selected by administrators under **TAKA Platform -> Settings -> General**. Existing installations default to `de`, `en`, `nl`, `fr`, `lb`, `fi`, `it` and `ja`; all ISO 639-1 languages can be enabled. Static JSON translations in `translations/` are used for frontend labels, with English/German and template fallbacks for missing keys.
 
 The compact selector remains:
 
@@ -184,6 +184,12 @@ The script checks PHP syntax for all `*.php` files with `php -l` and scans the r
 Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `taka_organizer`, `taka_venue`) continue to work. Existing constants such as `TAKA_TOUR_VERSION` map to the new platform constants. Existing class names such as `Taka_Tour_Data` are aliased to the new `TAKA_Platform_*` classes.
 
 ## Changelog
+
+### v2.3.0
+
+- Added Italian as a default website language with an Italian static translation bundle.
+- Added configurable website languages backed by the full ISO 639-1 language registry.
+- Expanded Event country and spoken-language fields to the full ISO country/language sets while preserving disabled-language translations.
 
 ### v2.2.13
 

@@ -1,5 +1,8 @@
 <?php
 /** Legacy compatibility shim for TAKA Platform data. */
 defined( 'ABSPATH' ) || exit;
+if ( ! class_exists( 'TAKA_Platform_Locale_Registry' ) ) { require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/I18n/class-locale-registry.php'; }
+if ( ! class_exists( 'TAKA_Platform_I18n' ) ) { require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/I18n/class-i18n.php'; }
+if ( ! class_exists( 'TAKA_Platform_Translation_Packages' ) ) { require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/ImportExport/class-translation-packages.php'; }
 if ( ! class_exists( 'TAKA_Platform_Data' ) ) { require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Data/class-repository.php'; }
 if ( ! class_exists( 'Taka_Tour_Data' ) ) { class_alias( 'TAKA_Platform_Data', 'Taka_Tour_Data' ); }

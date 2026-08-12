@@ -14,15 +14,23 @@ class TAKA_Platform_Translation_Packages {
 
 	/** Supported language labels for admin controls. */
 	public static function language_labels() {
-		return array(
-			'de' => 'Deutsch',
-			'en' => 'English',
-			'fr' => 'Français',
-			'nl' => 'Nederlands',
-			'lb' => 'Lëtzebuergesch',
-			'fi' => 'Suomi',
-			'ja' => '日本語',
-		);
+		return array_intersect_key( TAKA_Platform_Locale_Registry::language_labels(), array_flip( TAKA_Platform_I18n::instance()->get_all_languages() ) );
+	}
+
+	/** Every ISO language available as an original content language. */
+	public static function source_language_labels() {
+		return TAKA_Platform_Locale_Registry::language_labels();
+	}
+
+	/** Active website languages plus an object's original language when needed. */
+	public static function translation_language_labels( $source_language = '' ) {
+		$labels = self::language_labels();
+		$source_language = self::sanitize_language( $source_language, '' );
+		$available = self::source_language_labels();
+		if ( '' !== $source_language && isset( $available[ $source_language ] ) && ! isset( $labels[ $source_language ] ) ) {
+			$labels = array( $source_language => $available[ $source_language ] ) + $labels;
+		}
+		return $labels;
 	}
 
 	/** Default platform source language for objects without an override. */
@@ -33,7 +41,7 @@ class TAKA_Platform_Translation_Packages {
 	/** Sanitize one language code against supported languages. */
 	public static function sanitize_language( $lang, $fallback = 'de' ) {
 		$lang = sanitize_key( (string) $lang );
-		return in_array( $lang, TAKA_Platform_I18n::instance()->get_all_languages(), true ) ? $lang : $fallback;
+		return isset( TAKA_Platform_Locale_Registry::language_labels()[ $lang ] ) ? $lang : $fallback;
 	}
 
 	/** Normalize target language list. */

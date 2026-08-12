@@ -76,11 +76,13 @@ if ( ! class_exists( 'TAKA_Platform_I18n' ) ) {
 		}
 
 		public function get_all_languages() {
-			return array( 'de', 'en', 'fr', 'nl', 'lb', 'fi', 'ja' );
+			return array( 'de', 'en', 'fr', 'nl', 'lb', 'fi', 'it', 'ja' );
 		}
 	}
 }
 
+require_once dirname( __DIR__ ) . '/includes/I18n/class-locale-registry.php';
+require_once dirname( __DIR__ ) . '/includes/ImportExport/class-translation-packages.php';
 require_once dirname( __DIR__ ) . '/includes/Data/class-repository.php';
 
 $expected = "Tweedaags seminar in Nederland met Takafumi 'Taka' Nakayama";

@@ -14,6 +14,19 @@ Reusable Content Blocks are exported once as `content_block` items. If a block i
 
 Each translatable object can define its own `source_language`. This allows a Finnish event, Japanese guest text or English international block to be translated from its real original language instead of assuming German.
 
+## Languages and Countries
+
+Language handling has two separate scopes:
+
+- **Available languages:** all ISO 639-1 languages are available for original-content and spoken/teaching-language fields.
+- **Enabled website languages:** administrators select the public languages under **TAKA Platform -> Settings -> General**. Only these languages appear as translation targets and in the public language switcher.
+
+The default website-language set remains backwards compatible and now includes Italian: German, English, Dutch, French, Luxembourgish, Finnish, Italian and Japanese. Enabling another language does not require a code change. If no static JSON file exists for it yet, static interface strings use the established English/German fallback while editors can already maintain dynamic website translations.
+
+Event, venue, participant and buyer country selectors use the full ISO 3166-1 alpha-2 country list. Configured option-list labels can override the generic English country label. Italy has built-in `IT`, `Italia`/`Italien`, `Europe/Rome`, `EUR` and Italian/English event-language suggestions.
+
+Disabling a website language is non-destructive: existing translations in that language remain stored and become available again when the language is re-enabled. An object's original language also remains editable when it is not an enabled public website language.
+
 ## ChatGPT Workflow
 
 Copy or upload the exported JSON and use the included `translator_prompt`.
