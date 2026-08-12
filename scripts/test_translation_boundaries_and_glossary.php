@@ -12,9 +12,10 @@ function get_option() { return array(); }
 
 class TAKA_Platform_I18n {
 	public static function instance() { return new self(); }
-	public function get_all_languages() { return array( 'de', 'en', 'fr', 'nl', 'lb', 'fi', 'ja' ); }
+	public function get_all_languages() { return array( 'de', 'en', 'fr', 'nl', 'lb', 'fi', 'it', 'ja' ); }
 }
 
+require_once dirname( __DIR__ ) . '/includes/I18n/class-locale-registry.php';
 require_once dirname( __DIR__ ) . '/includes/ImportExport/class-translation-packages.php';
 
 $first = TAKA_Platform_Translation_Packages::preserve_boundary_whitespace( 'Erster Satz. ', 'First sentence.' );

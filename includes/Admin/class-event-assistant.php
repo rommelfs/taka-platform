@@ -1361,7 +1361,7 @@ class TAKA_Platform_Admin_Event_Assistant {
 	}
 
 	private static function inline_language_select( $name, $label, $current ) {
-		self::select_field( $name, $label, $current, TAKA_Platform_Translation_Packages::language_labels() );
+		self::select_field( $name, $label, $current, TAKA_Platform_Translation_Packages::source_language_labels() );
 	}
 
 	private static function inline_option_select( $name, $label, $field, $current ) {
@@ -1504,7 +1504,7 @@ class TAKA_Platform_Admin_Event_Assistant {
 	}
 
 	private static function source_language_select( $context ) {
-		self::select_field( '_taka_source_language', __( 'Original content language', 'taka-platform' ), $context['source_language'], TAKA_Platform_Translation_Packages::language_labels(), array( 'data-taka-source-language-select' => '1' ) );
+		self::select_field( '_taka_source_language', __( 'Original content language', 'taka-platform' ), $context['source_language'], TAKA_Platform_Translation_Packages::source_language_labels(), array( 'data-taka-source-language-select' => '1' ) );
 		echo '<p class="description">' . esc_html__( 'Select the language used by original text fields. Website translations are edited in the translation section.', 'taka-platform' ) . '</p>';
 	}
 
@@ -1664,7 +1664,7 @@ class TAKA_Platform_Admin_Event_Assistant {
 
 	private static function translation_textareas( $context, $fields, $description_only = false, $advanced_fields = array() ) {
 		$source_language = (string) $context['source_language'];
-		$languages = TAKA_Platform_Translation_Packages::language_labels();
+		$languages = TAKA_Platform_Translation_Packages::translation_language_labels( $source_language );
 		$translations = (array) $context['translations'];
 		$advanced = array_fill_keys( (array) $advanced_fields, true );
 		$tab_group = 'taka_event_assistant_text_' . ( $context['post_id'] ?: 'new' ) . ( $description_only ? '_description' : '_translations' );

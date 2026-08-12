@@ -15,9 +15,10 @@ function taka_tour_translate( $key, $fallback ) { return $fallback; }
 
 class TAKA_Platform_I18n {
 	public static function instance() { return new self(); }
-	public function get_all_languages() { return array( 'de', 'en', 'fr', 'nl', 'lb', 'fi', 'ja' ); }
+	public function get_all_languages() { return array( 'de', 'en', 'fr', 'nl', 'lb', 'fi', 'it', 'ja' ); }
 }
 
+require_once dirname( __DIR__ ) . '/includes/I18n/class-locale-registry.php';
 require_once dirname( __DIR__ ) . '/includes/ImportExport/class-translation-packages.php';
 require_once dirname( __DIR__ ) . '/includes/Data/class-repository.php';
 

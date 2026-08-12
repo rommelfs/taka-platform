@@ -1,0 +1,173 @@
+{
+  "language": {
+    "code": "it",
+    "name": "Italiano",
+    "switcher_label": "Scegli la lingua"
+  },
+  "navigation": {
+    "primary": "Navigazione principale",
+    "home": "Home"
+  },
+  "hero": {
+    "kicker": "TAKA European Tour 2026",
+    "headline": "Armonia in movimento",
+    "intro": "Un viaggio europeo di seminari con il Sensei Takafumi 'Taka' Nakayama.",
+    "primary_button": "Vedi i seminari",
+    "secondary_button": "Biglietti",
+    "stations_label": "Tappe del tour",
+    "show_tickets_for": "Mostra i biglietti per %s",
+    "event_locations": "Luoghi degli eventi",
+    "map_view": "Vista mappa",
+    "list_view": "Vista elenco"
+  },
+  "tour": {
+    "kicker": "Tour europeo",
+    "headline": "Seminari in Europa"
+  },
+  "seminar": {
+    "format_label": "Formato",
+    "host_label": "Organizzatore",
+    "ticketshop_soon": "Biglietteria disponibile a breve",
+    "ticketshop_direct": "Apri direttamente la biglietteria",
+    "ticketshop_open_pretix": "Apri i biglietti su Pretix"
+  },
+  "sections": {
+    "sensei": {
+      "kicker": "Sensei",
+      "headline": "Takafumi 'Taka' Nakayama",
+      "text": "Precisione, calma e qualità del movimento radicate nella tradizione di Okinawa."
+    },
+    "training": {
+      "kicker": "Allenamento",
+      "headline": "Karate-Do, Kobujutsu e Soft Blocking",
+      "text": "I seminari uniscono fondamentali, lavoro in coppia, tempismo, distanza e struttura del corpo."
+    },
+    "community": {
+      "kicker": "Comunità",
+      "headline": "Allenarsi insieme",
+      "text": "Un incontro europeo dedicato alla pratica seria e allo scambio rispettoso."
+    },
+    "sponsor": {
+      "kicker": "Sponsor",
+      "headline": "kanso",
+      "text": "Un centro per corpo, mente e anima a Konz.",
+      "link_text": "kan.so"
+    }
+  },
+  "footer": {
+    "text": "TAKA European Tour 2026"
+  },
+  "event": {
+    "date": "Data",
+    "time": "Ora",
+    "doors_open": "Apertura porte",
+    "start": "Inizio",
+    "end": "Fine",
+    "venue": "Sede",
+    "address": "Indirizzo",
+    "parking": "Parcheggio",
+    "organizer": "Organizzatore",
+    "audience": "Destinatari",
+    "level": "Livello",
+    "ticketshop_direct": "Apri la biglietteria",
+    "ticketshop_soon": "Biglietteria disponibile a breve",
+    "details_follow": "Dettagli in arrivo",
+    "practical_information": "Informazioni pratiche",
+    "accessibility": "Accessibilità",
+    "notes": "Note",
+    "title": "Titolo",
+    "subtitle": "Sottotitolo",
+    "description": "Descrizione",
+    "ticket_status": "Stato dei biglietti",
+    "ticket_provider": "Fornitore dei biglietti",
+    "ticket_url": "URL dei biglietti",
+    "ticket_mode": "Modalità biglietto",
+    "ticket_door_price": "Prezzo alla porta",
+    "ticket_pay_at_door": "Pagamento alla porta",
+    "ticket_pay_at_door_price": "Ingresso in loco: %s",
+    "ticket_door_price_reduced": "Prezzo ridotto: %s",
+    "ticket_door_price_child": "Prezzo bambini: %s",
+    "ticket_door_price_member": "Prezzo soci: %s",
+    "ticket_free_entry": "Ingresso gratuito",
+    "ticket_no_ticket_shop": "Nessuna biglietteria",
+    "legal_name": "Ragione sociale",
+    "website": "Sito web",
+    "email": "E-mail",
+    "contact": "Contatto",
+    "city": "Città",
+    "country": "Paese",
+    "google_maps": "Apri in Google Maps",
+    "schedule": "Programma",
+    "seminar_plan": "Programma del seminario",
+    "seminar_description": "Descrizione del seminario",
+    "share_actions": "Condividi evento",
+    "share_event": "Condividi",
+    "share_copied": "Link copiato",
+    "copy_link": "Copia link",
+    "qr_code": "Codice QR",
+    "videos": "Video"
+  },
+  "dashboard": {
+    "organizer_dashboard": "Dashboard organizzatore",
+    "my_events": "I miei eventi",
+    "create_event": "Crea evento",
+    "edit_event": "Modifica evento",
+    "duplicate": "Duplica",
+    "preview": "Anteprima",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "event_saved": "Evento salvato.",
+    "validation_error": "Controlla i dati inseriti e le autorizzazioni."
+  },
+  "drawer": {
+    "event_details": "Dettagli",
+    "organizer_info": "Organizzatore",
+    "venue_info": "Sede e informazioni",
+    "practical_information": "Informazioni pratiche"
+  },
+  "booking": {
+    "before_you_book": "Prima di prenotare",
+    "groups_clubs": "Gruppi e associazioni",
+    "multiple_seminars": "Più seminari",
+    "payment": "Pagamento",
+    "cancellation": "Cancellazione",
+    "contact_organizer": "Contatta l'organizzatore",
+    "contact_before_booking": "Contattaci prima di prenotare",
+    "refund": "Rimborso",
+    "days_before_event": "giorni prima dell'evento",
+    "booking_process": "Procedura di prenotazione"
+  },
+  "ticketing": {
+    "not_available": "La prenotazione nativa non è ancora disponibile.",
+    "book_tickets": "Prenota biglietti",
+    "select_ticket_type": "Seleziona il tipo di biglietto",
+    "buyer_information": "Dati dell'acquirente",
+    "first_name": "Nome",
+    "last_name": "Cognome",
+    "email": "E-mail",
+    "country": "Paese",
+    "select_country": "Seleziona il Paese",
+    "phone": "Telefono",
+    "participant_information": "Dati del partecipante",
+    "payment_method": "Metodo di pagamento",
+    "payment_bank_transfer": "Bonifico bancario",
+    "payment_pay_at_door": "Pagamento alla porta",
+    "quantity": "Quantità",
+    "price": "Prezzo",
+    "total": "Totale",
+    "submit_order": "Invia ordine",
+    "registration_received": "Registrazione ricevuta",
+    "order_number": "Numero d'ordine",
+    "download_invoice": "Scarica fattura",
+    "download_ticket": "Scarica biglietto",
+    "available": "Disponibile",
+    "sold_out": "Esaurito",
+    "unavailable": "Non disponibile"
+  },
+  "tickets": {
+    "kicker": "Biglietti",
+    "heading": "Prenota il tuo seminario",
+    "intro": "",
+    "select_event": "Seleziona evento"
+  }
+}

@@ -6,6 +6,7 @@
 defined( 'ABSPATH' ) || exit;
 
 class TAKA_Platform_I18n {
+	const ENABLED_LANGUAGES_OPTION = 'taka_platform_enabled_website_languages';
 	private static $instance = null;
 	private $translations = array();
 	private $current_language = null;
@@ -18,7 +19,18 @@ class TAKA_Platform_I18n {
 	}
 
 	public function get_all_languages() {
-		return array( 'de', 'en', 'nl', 'fr', 'lb', 'fi', 'ja' );
+		$stored = function_exists( 'get_option' ) ? get_option( self::ENABLED_LANGUAGES_OPTION, array() ) : array();
+		$languages = TAKA_Platform_Locale_Registry::sanitize_language_codes( is_array( $stored ) && ! empty( $stored ) ? $stored : TAKA_Platform_Locale_Registry::default_website_languages() );
+		return ! empty( $languages ) ? $languages : TAKA_Platform_Locale_Registry::default_website_languages();
+	}
+
+	/** All ISO 639-1 languages available to source/spoken-language fields. */
+	public function get_available_languages() {
+		return array_keys( TAKA_Platform_Locale_Registry::language_labels() );
+	}
+
+	public function get_available_language_labels() {
+		return TAKA_Platform_Locale_Registry::language_labels();
 	}
 
 	public function get_current_language() {
@@ -51,7 +63,7 @@ class TAKA_Platform_I18n {
 			}
 		}
 
-		$this->current_language = 'de';
+		$this->current_language = $this->default_enabled_language();
 		return $this->current_language;
 	}
 
@@ -67,7 +79,7 @@ class TAKA_Platform_I18n {
 	public function set_current_language( $lang ) {
 		$lang = sanitize_key( (string) $lang );
 		if ( ! in_array( $lang, $this->get_all_languages(), true ) ) {
-			$lang = 'de';
+			$lang = $this->default_enabled_language();
 		}
 		$this->current_language = $lang;
 		return $this->current_language;
@@ -90,7 +102,7 @@ class TAKA_Platform_I18n {
 	}
 
 	public function get_language_switcher_items() {
-		return array(
+		$items = array(
 			array( 'type' => 'link', 'code' => 'en', 'icon' => '🌍', 'label' => 'International – English' ),
 			array( 'type' => 'link', 'code' => 'de', 'icon' => '🇩🇪', 'label' => 'Deutschland – Deutsch' ),
 			array( 'type' => 'link', 'code' => 'fr', 'icon' => '🇫🇷', 'label' => 'France – Français' ),
@@ -116,8 +128,45 @@ class TAKA_Platform_I18n {
 				),
 			),
 			array( 'type' => 'link', 'code' => 'fi', 'icon' => '🇫🇮', 'label' => 'Suomi – Finnisch' ),
+			array( 'type' => 'link', 'code' => 'it', 'icon' => '🇮🇹', 'label' => 'Italia – Italiano' ),
 			array( 'type' => 'link', 'code' => 'ja', 'icon' => '🇯🇵', 'label' => '日本 – Japanese' ),
 		);
+		$enabled = $this->get_all_languages();
+		$filtered = array();
+		$represented = array();
+		foreach ( $items as $item ) {
+			if ( 'dropdown' === ( $item['type'] ?? '' ) ) {
+				$item['items'] = array_values( array_filter( (array) ( $item['items'] ?? array() ), static function ( $choice ) use ( $enabled ) {
+					return in_array( $choice['code'] ?? '', $enabled, true );
+				} ) );
+				if ( empty( $item['items'] ) ) { continue; }
+				foreach ( $item['items'] as $choice ) { $represented[] = $choice['code']; }
+				$filtered[] = $item;
+				continue;
+			}
+			if ( ! in_array( $item['code'] ?? '', $enabled, true ) ) { continue; }
+			$represented[] = $item['code'];
+			$filtered[] = $item;
+		}
+
+		$labels = TAKA_Platform_Locale_Registry::language_labels();
+		foreach ( array_diff( $enabled, array_unique( $represented ) ) as $code ) {
+			$filtered[] = array(
+				'type' => 'link',
+				'code' => $code,
+				'icon' => '🌐',
+				'label' => ( $labels[ $code ] ?? strtoupper( $code ) ) . ' (' . $code . ')',
+			);
+		}
+		return $filtered;
+	}
+
+	private function default_enabled_language() {
+		$enabled = $this->get_all_languages();
+		foreach ( array( 'de', 'en' ) as $preferred ) {
+			if ( in_array( $preferred, $enabled, true ) ) { return $preferred; }
+		}
+		return (string) reset( $enabled );
 	}
 
 

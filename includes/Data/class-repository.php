@@ -140,6 +140,7 @@ class TAKA_Platform_Data {
 					self::option( 'FR', 'France', 'en', array( 'de' => 'Frankreich' ), 60, self::flag_for_country_code( 'FR' ) ),
 					self::option( 'JP', 'Japan', 'en', array( 'de' => 'Japan' ), 70, self::flag_for_country_code( 'JP' ) ),
 					self::option( 'US', 'United States', 'en', array( 'de' => 'Vereinigte Staaten' ), 80, self::flag_for_country_code( 'US' ) ),
+					self::option( 'IT', 'Italy', 'en', array( 'de' => 'Italien', 'it' => 'Italia' ), 90, self::flag_for_country_code( 'IT' ) ),
 				),
 			),
 			'currency' => array(
@@ -181,9 +182,10 @@ class TAKA_Platform_Data {
 				$key = self::normalize_option_key( $list_key, $option['key'] ?? '' );
 				$label = sanitize_text_field( $option['label'] ?? '' );
 				if ( '' === $key || '' === $label ) { continue; }
-				$source_language = in_array( $option['source_language'] ?? '', self::content_section_languages(), true ) ? sanitize_key( $option['source_language'] ) : self::platform_fallback_language();
+				$source_language = TAKA_Platform_Translation_Packages::sanitize_language( $option['source_language'] ?? '', self::platform_fallback_language() );
 				$translations = array();
-				foreach ( self::content_section_languages() as $lang ) {
+				$translation_languages = self::valid_stored_translation_languages( $option['translations'] ?? array() );
+				foreach ( $translation_languages as $lang ) {
 					$translations[ $lang ] = sanitize_text_field( $option['translations'][ $lang ] ?? '' );
 				}
 				$icon = sanitize_text_field( $option['icon'] ?? '' );
@@ -278,12 +280,26 @@ class TAKA_Platform_Data {
 				return (string) ( $option['key'] ?? '' );
 			}
 		}
+		if ( 'country' === $list_key ) {
+			$code = strtoupper( preg_replace( '/[^A-Za-z]/', '', $value ) );
+			if ( 2 === strlen( $code ) && isset( self::default_country_choices()[ $code ] ) ) { return $code; }
+			foreach ( self::default_country_choices() as $country_code => $label ) {
+				if ( 0 === strcasecmp( $value, $label ) ) { return $country_code; }
+			}
+		}
 		return '';
 	}
 
 	/** Build admin choices for an event option-list field. */
 	public static function option_list_choices( $list_key, $lang = null ) {
 		$lang = $lang ?: self::platform_fallback_language();
+		if ( 'country' === $list_key ) {
+			$choices = array();
+			foreach ( self::country_choices( $lang ) as $code => $label ) {
+				$choices[ $code ] = self::flag_for_country_code( $code ) . ' ' . $label;
+			}
+			return $choices;
+		}
 		$choices = array();
 		foreach ( self::get_option_lists( false )[ $list_key ]['options'] ?? array() as $option ) {
 			$label = self::option_label_for_language( $option, $lang );
@@ -655,23 +671,12 @@ class TAKA_Platform_Data {
 	/** Normalize language code lists from legacy CSV or multiselect input. */
 	public static function normalize_language_codes( $value ) {
 		$items = is_array( $value ) ? $value : preg_split( '/\s*,\s*/', (string) $value );
-		$allowed = self::content_section_languages();
-		$out = array();
-		foreach ( (array) $items as $item ) {
-			$lang = sanitize_key( (string) $item );
-			if ( in_array( $lang, $allowed, true ) ) { $out[] = $lang; }
-		}
-		return array_values( array_unique( $out ) );
+		return TAKA_Platform_Locale_Registry::sanitize_language_codes( $items );
 	}
 
 	/** Labels for supported event language codes. */
 	public static function language_choices() {
-		$labels = array( 'de' => 'Deutsch', 'en' => 'English', 'fr' => 'Francais', 'nl' => 'Nederlands', 'lb' => 'Letzebuergesch', 'fi' => 'Suomi', 'ja' => 'Japanese' );
-		$out = array();
-		foreach ( self::content_section_languages() as $lang ) {
-			$out[ $lang ] = $labels[ $lang ] ?? strtoupper( $lang );
-		}
-		return $out;
+		return TAKA_Platform_Locale_Registry::language_labels();
 	}
 
 	/** Convert country labels or codes into ISO-3166 alpha-2 codes when possible. */
@@ -715,6 +720,7 @@ class TAKA_Platform_Data {
 			'NL' => array( 'nl', 'en', 'de' ),
 			'BE' => array( 'fr', 'nl', 'de', 'en' ),
 			'LU' => array( 'fr', 'de', 'lb', 'en' ),
+			'IT' => array( 'it', 'en' ),
 			'JP' => array( 'ja', 'en' ),
 		);
 		return $map[ $code ] ?? array( 'en' );
@@ -722,14 +728,14 @@ class TAKA_Platform_Data {
 
 	/** Suggested timezone for a country code or legacy country label. */
 	public static function timezone_for_country( $country ) {
-		$map = array( 'DE' => 'Europe/Berlin', 'LU' => 'Europe/Luxembourg', 'NL' => 'Europe/Amsterdam', 'BE' => 'Europe/Brussels', 'FI' => 'Europe/Helsinki', 'FR' => 'Europe/Paris', 'JP' => 'Asia/Tokyo', 'US' => 'America/New_York' );
+		$map = array( 'DE' => 'Europe/Berlin', 'LU' => 'Europe/Luxembourg', 'NL' => 'Europe/Amsterdam', 'BE' => 'Europe/Brussels', 'FI' => 'Europe/Helsinki', 'FR' => 'Europe/Paris', 'IT' => 'Europe/Rome', 'JP' => 'Asia/Tokyo', 'US' => 'America/New_York' );
 		$code = self::country_code_for_value( $country );
 		return $map[ $code ] ?? '';
 	}
 
 	/** Suggested currency for a country code or legacy country label. */
 	public static function currency_for_country( $country ) {
-		$map = array( 'DE' => 'EUR', 'LU' => 'EUR', 'NL' => 'EUR', 'BE' => 'EUR', 'FI' => 'EUR', 'FR' => 'EUR', 'JP' => 'JPY', 'US' => 'USD' );
+		$map = array( 'DE' => 'EUR', 'LU' => 'EUR', 'NL' => 'EUR', 'BE' => 'EUR', 'FI' => 'EUR', 'FR' => 'EUR', 'IT' => 'EUR', 'JP' => 'JPY', 'US' => 'USD' );
 		$code = self::country_code_for_value( $country );
 		return $map[ $code ] ?? '';
 	}
@@ -782,7 +788,7 @@ class TAKA_Platform_Data {
 	/** Normalize the source language stored on one translatable object. */
 	public static function object_source_language( $object ) {
 		$lang = sanitize_key( (string) ( is_array( $object ) ? ( $object['source_language'] ?? '' ) : '' ) );
-		return in_array( $lang, self::content_section_languages(), true ) ? $lang : self::platform_fallback_language();
+		return TAKA_Platform_Translation_Packages::sanitize_language( $lang, self::platform_fallback_language() );
 	}
 
 	/** Normalize field/language translation arrays for object-level text fields. */
@@ -793,7 +799,11 @@ class TAKA_Platform_Data {
 		$aliases = self::translation_aliases_for_fields( $field_map );
 		$clean = array();
 		foreach ( $fields as $field ) {
-			foreach ( self::content_section_languages() as $lang ) {
+			$stored_languages = array();
+			foreach ( array_merge( array( $field ), (array) ( $aliases[ $field ] ?? array() ) ) as $translation_field ) {
+				$stored_languages = array_merge( $stored_languages, array_keys( (array) ( $translations[ $translation_field ] ?? array() ) ) );
+			}
+			foreach ( self::valid_stored_translation_languages( array_fill_keys( $stored_languages, '' ) ) as $lang ) {
 				$value = $translations[ $field ][ $lang ] ?? '';
 				foreach ( (array) ( $aliases[ $field ] ?? array() ) as $alias ) {
 					if ( '' !== trim( (string) $value ) ) { break; }
@@ -803,6 +813,12 @@ class TAKA_Platform_Data {
 			}
 		}
 		return $clean;
+	}
+
+	/** Keep active and previously stored ISO language values so disabling a language is non-destructive. */
+	private static function valid_stored_translation_languages( $translations ) {
+		$candidates = array_merge( self::content_section_languages(), array_keys( (array) $translations ) );
+		return TAKA_Platform_Locale_Registry::sanitize_language_codes( $candidates );
 	}
 
 	/** Infer aliases for the field set being normalized without changing public field names. */
@@ -2172,7 +2188,7 @@ class TAKA_Platform_Data {
 		foreach ( array( 'enabled', 'override', 'show_group_booking', 'show_multi_event_discount', 'show_payment_methods', 'show_cancellation_policy' ) as $key ) {
 			if ( isset( $booking[ $key ] ) ) { $booking[ $key ] = ! empty( $booking[ $key ] ) ? '1' : '0'; }
 		}
-		$booking['source_language'] = in_array( $booking['source_language'] ?? '', self::content_section_languages(), true ) ? sanitize_key( $booking['source_language'] ) : self::platform_fallback_language();
+		$booking['source_language'] = TAKA_Platform_Translation_Packages::sanitize_language( $booking['source_language'] ?? '', self::platform_fallback_language() );
 		foreach ( array( 'title', 'intro', 'group_booking', 'multi_event_discount', 'booking_process', 'payment_methods', 'cancellation_policy', 'additional_notes' ) as $key ) {
 			if ( isset( $booking[ $key ] ) ) { $booking[ $key ] = self::normalize_dynamic_text_value( $booking[ $key ] ); }
 		}
@@ -2217,7 +2233,7 @@ class TAKA_Platform_Data {
 		$lang = $lang ?: taka_tour_current_language();
 		$stored = function_exists( 'get_option' ) ? get_option( self::TICKETS_OPTION, array() ) : array();
 		$settings = array_merge( self::default_ticket_section_settings( $lang ), is_array( $stored ) ? $stored : array() );
-		$settings['source_language'] = in_array( $settings['source_language'] ?? '', self::content_section_languages(), true ) ? sanitize_key( $settings['source_language'] ) : self::platform_fallback_language();
+		$settings['source_language'] = TAKA_Platform_Translation_Packages::sanitize_language( $settings['source_language'] ?? '', self::platform_fallback_language() );
 		if ( $resolve_translations ) {
 			$settings['kicker'] = self::translated_setting_value( $settings['kicker'] ?? '', 'tickets.kicker', 'Tickets', $lang, $settings['source_language'] );
 			$settings['heading'] = self::translated_setting_value( $settings['heading'] ?? '', 'tickets.heading', 'Book your seminar', $lang, $settings['source_language'] );
@@ -2311,7 +2327,7 @@ class TAKA_Platform_Data {
 		$settings = is_array( $settings ) ? $settings : array();
 		$merged   = array_merge( self::default_hero_settings(), $settings );
 		$lang = taka_tour_current_language();
-		$merged['source_language'] = in_array( $merged['source_language'] ?? '', self::content_section_languages(), true ) ? sanitize_key( $merged['source_language'] ) : self::platform_fallback_language();
+		$merged['source_language'] = TAKA_Platform_Translation_Packages::sanitize_language( $merged['source_language'] ?? '', self::platform_fallback_language() );
 		if ( $resolve_translations ) {
 			foreach ( array( 'kicker', 'title', 'description', 'primary_button_label', 'secondary_button_label' ) as $field ) {
 				$merged[ $field ] = self::resolve_dynamic_text( $merged[ $field ] ?? '', $lang, $merged['source_language'] );
@@ -2334,7 +2350,7 @@ class TAKA_Platform_Data {
 	private static function hero_route_cta_settings( $lang = null ) {
 		$lang = $lang ?: taka_tour_current_language();
 		$hero = self::get_hero_settings( false );
-		$source_language = in_array( $hero['source_language'] ?? '', self::content_section_languages(), true ) ? sanitize_key( $hero['source_language'] ) : self::platform_fallback_language();
+		$source_language = TAKA_Platform_Translation_Packages::sanitize_language( $hero['source_language'] ?? '', self::platform_fallback_language() );
 		$label = self::resolve_dynamic_text( $hero['route_cta_label'] ?? self::default_route_cta_labels(), $lang, $source_language );
 		$sublabel = self::resolve_dynamic_text( $hero['route_cta_sublabel'] ?? self::default_route_cta_sublabels(), $lang, $source_language );
 		$target = trim( (string) ( $hero['route_cta_target'] ?? '#become-a-host' ) );
@@ -2425,7 +2441,7 @@ class TAKA_Platform_Data {
 	/** Normalize a frontend translation language code. */
 	private static function sanitize_translation_language( $lang, $fallback ) {
 		$lang = sanitize_key( (string) $lang );
-		return in_array( $lang, self::content_section_languages(), true ) ? $lang : $fallback;
+		return isset( TAKA_Platform_Locale_Registry::language_labels()[ $lang ] ) ? $lang : $fallback;
 	}
 
 	/** Resolve legacy static seminar translation keys with the same fallback chain as database fields. */
@@ -2790,7 +2806,10 @@ class TAKA_Platform_Data {
 
 	/** Normalize structured content section translations and seed them from legacy scalar fields. */
 	private static function normalize_content_section_translations( $section ) {
-		$languages = self::content_section_languages();
+		$stored_translations = is_array( $section['translations'] ?? null ) ? $section['translations'] : array();
+		$languages = self::valid_stored_translation_languages( $stored_translations );
+		$source_language = TAKA_Platform_Translation_Packages::sanitize_language( $section['source_language'] ?? '', '' );
+		if ( '' !== $source_language && ! in_array( $source_language, $languages, true ) ) { $languages[] = $source_language; }
 		$fields = array( 'kicker', 'title', 'subtitle', 'body', 'button_label', 'button_url' );
 		$translations = array();
 		foreach ( $languages as $lang ) {
@@ -2799,9 +2818,9 @@ class TAKA_Platform_Data {
 			}
 		}
 
-		if ( ! empty( $section['translations'] ) && is_array( $section['translations'] ) ) {
+		if ( ! empty( $stored_translations ) ) {
 			foreach ( $languages as $lang ) {
-				$item = isset( $section['translations'][ $lang ] ) && is_array( $section['translations'][ $lang ] ) ? $section['translations'][ $lang ] : array();
+				$item = isset( $stored_translations[ $lang ] ) && is_array( $stored_translations[ $lang ] ) ? $stored_translations[ $lang ] : array();
 				foreach ( $fields as $field ) {
 					$value = $item[ $field ] ?? '';
 					$translations[ $lang ][ $field ] = 'button_url' === $field ? esc_url_raw( $value ) : sanitize_textarea_field( $value );
@@ -2850,7 +2869,7 @@ class TAKA_Platform_Data {
 	private static function normalize_dynamic_text_value( $value ) {
 		if ( is_array( $value ) ) {
 			$out = array();
-			foreach ( TAKA_Platform_I18n::instance()->get_all_languages() as $lang ) {
+			foreach ( self::valid_stored_translation_languages( $value ) as $lang ) {
 				$raw = (string) ( $value[ $lang ] ?? '' );
 				$clean = sanitize_textarea_field( $raw );
 				$out[ $lang ] = class_exists( 'TAKA_Platform_Translation_Packages' ) ? TAKA_Platform_Translation_Packages::preserve_boundary_whitespace( $raw, $clean ) : $clean;
@@ -2892,7 +2911,9 @@ class TAKA_Platform_Data {
 		$translations = is_array( $translations ) ? $translations : array();
 		$source_language = self::sanitize_translation_language( $source_language, self::platform_fallback_language() );
 		$values = array();
-		foreach ( self::content_section_languages() as $language ) {
+		$languages = self::valid_stored_translation_languages( $translations );
+		if ( ! in_array( $source_language, $languages, true ) ) { $languages[] = $source_language; }
+		foreach ( $languages as $language ) {
 			$values[ $language ] = (string) ( $translations[ $language ][ $field ] ?? '' );
 		}
 		if ( '' !== trim( (string) $legacy_fallback ) && '' === trim( (string) ( $values[ $source_language ] ?? '' ) ) ) {
