@@ -70,8 +70,8 @@ if ( 'Seminar with ' . $canonical !== $GLOBALS['taka_test_post']->post_title ) {
 	fwrite( STDERR, 'The stored post title was not normalized.' . PHP_EOL );
 	exit( 1 );
 }
-if ( $canonical . ' teaches at kanso.' !== $GLOBALS['taka_test_post']->post_content ) {
-	fwrite( STDERR, 'The stored post content was not normalized.' . PHP_EOL );
+if ( 'Takafumi Nakayama teaches at kanso.' !== $GLOBALS['taka_test_post']->post_content ) {
+	fwrite( STDERR, 'The migration rewrote a valid personal-name form.' . PHP_EOL );
 	exit( 1 );
 }
 if ( 1 !== (int) get_option( TAKA_Platform_Translation_Packages::PROTECTED_NAMES_MIGRATION_OPTION, 0 ) ) {

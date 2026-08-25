@@ -76,8 +76,8 @@ foreach ( $switcher as $item ) {
 		$switcher_codes[] = $item['code'] ?? '';
 	}
 }
-if ( ! in_array( 'it', $switcher_codes, true ) || ! in_array( 'ar', $switcher_codes, true ) || in_array( 'de', $switcher_codes, true ) ) {
-	fwrite( STDERR, 'The public language switcher does not follow the enabled website languages.' . PHP_EOL );
+if ( ! in_array( 'it', $switcher_codes, true ) || in_array( 'ar', $switcher_codes, true ) || in_array( 'de', $switcher_codes, true ) ) {
+	fwrite( STDERR, 'The public language switcher exposed a language without a bundled catalogue.' . PHP_EOL );
 	exit( 1 );
 }
 if ( 'it' !== TAKA_Platform_I18n::instance()->set_current_language( 'de' ) ) {

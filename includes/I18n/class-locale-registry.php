@@ -54,6 +54,21 @@ class TAKA_Platform_Locale_Registry {
 		return array( 'de', 'en', 'nl', 'fr', 'lb', 'fi', 'it', 'ja' );
 	}
 
+	/** Languages with a bundled static frontend catalogue. */
+	public static function website_language_labels() {
+		$labels = self::language_labels();
+		$out = array();
+		foreach ( self::default_website_languages() as $code ) {
+			if ( isset( $labels[ $code ] ) ) { $out[ $code ] = $labels[ $code ]; }
+		}
+		return $out;
+	}
+
+	/** Text direction for semantic frontend markup and future catalogues. */
+	public static function language_direction( $language ) {
+		return in_array( sanitize_key( (string) $language ), array( 'ar', 'dv', 'fa', 'he', 'ps', 'sd', 'ug', 'ur', 'yi' ), true ) ? 'rtl' : 'ltr';
+	}
+
 	public static function sanitize_language_codes( $languages ) {
 		$available = self::language_labels();
 		$out = array();

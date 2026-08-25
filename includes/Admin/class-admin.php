@@ -49,6 +49,8 @@ class TAKA_Platform_Admin {
 		add_action( 'admin_post_taka_platform_save_hero', array( __CLASS__, 'handle_save_hero' ) );
 		add_action( 'admin_post_taka_platform_save_sections', array( __CLASS__, 'handle_save_sections' ) );
 		add_action( 'admin_post_taka_platform_save_dashboard_settings', array( __CLASS__, 'handle_save_dashboard_settings' ) );
+		add_action( 'admin_post_taka_platform_save_language_settings', array( __CLASS__, 'handle_save_language_settings' ) );
+		add_action( 'admin_post_taka_platform_repair_protected_names', array( __CLASS__, 'handle_repair_protected_names' ) );
 		add_action( 'admin_post_taka_platform_save_booking_information', array( __CLASS__, 'handle_save_booking_information' ) );
 		add_action( 'admin_post_taka_platform_save_ticket_section', array( __CLASS__, 'handle_save_ticket_section' ) );
 		add_action( 'admin_post_taka_platform_save_option_lists', array( __CLASS__, 'handle_save_option_lists' ) );
@@ -1303,6 +1305,11 @@ class TAKA_Platform_Admin {
 				<?php wp_nonce_field( 'taka_platform_export_translation_audit', self::NONCE ); ?>
 				<?php submit_button( __( 'Export audit JSON', 'taka-platform' ), 'secondary', 'submit', false ); ?>
 			</form>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline-block;margin-left:8px;">
+				<input type="hidden" name="action" value="taka_platform_repair_protected_names">
+				<?php wp_nonce_field( 'taka_platform_repair_protected_names', self::NONCE ); ?>
+				<?php submit_button( __( 'Repair protected names', 'taka-platform' ), 'secondary', 'submit', false, array( 'onclick' => "return confirm('" . esc_js( __( 'This scans and may update stored translatable content. Continue?', 'taka-platform' ) ) . "');" ) ); ?>
+			</form>
 			<?php self::admin_section_close(); ?>
 			<?php self::admin_section_open( __( 'Website translation status', 'taka-platform' ), __( 'Current dynamic website translation coverage by language.', 'taka-platform' ), true, 'taka-admin-section--essential', 'translations-status' ); ?>
 			<p><strong><?php echo esc_html__( 'Dynamic translatable items', 'taka-platform' ); ?>:</strong> <?php echo esc_html( (string) ( $status['total_items'] ?? 0 ) ); ?></p>
@@ -1570,16 +1577,19 @@ class TAKA_Platform_Admin {
 					<?php wp_nonce_field( TAKA_Platform_Organizer_Dashboard::DASHBOARD_PAGE_OPTION, self::NONCE ); ?>
 					<table class="form-table" role="presentation"><tbody>
 						<tr><th scope="row"><?php echo esc_html__( 'Organizer dashboard page', 'taka-platform' ); ?></th><td><?php wp_dropdown_pages( array( 'name' => 'organizer_dashboard_page_id', 'selected' => absint( get_option( TAKA_Platform_Organizer_Dashboard::DASHBOARD_PAGE_OPTION, 0 ) ), 'show_option_none' => __( '— Select —', 'taka-platform' ) ) ); ?><p class="description"><?php echo esc_html__( 'Select the page containing [taka_platform_organizer_dashboard].', 'taka-platform' ); ?></p></td></tr>
-						<tr><th scope="row"><?php echo esc_html__( 'Enabled website languages', 'taka-platform' ); ?></th><td>
-							<select class="regular-text" name="enabled_website_languages[]" multiple size="10">
-								<?php foreach ( TAKA_Platform_Locale_Registry::language_labels() as $code => $label ) : ?>
-									<option value="<?php echo esc_attr( $code ); ?>" <?php selected( in_array( $code, TAKA_Platform_I18n::instance()->get_all_languages(), true ) ); ?>><?php echo esc_html( $label . ' (' . $code . ')' ); ?></option>
-								<?php endforeach; ?>
-							</select>
-							<p class="description"><?php echo esc_html__( 'Controls public website translations and the language switcher. All ISO languages remain available for event and original-content language fields.', 'taka-platform' ); ?></p>
-						</td></tr>
 					</tbody></table>
 					<?php submit_button( __( 'Save dashboard settings', 'taka-platform' ) ); ?>
+				</form>
+				<?php self::admin_section_close(); ?>
+				<?php self::admin_section_open( __( 'Website languages', 'taka-platform' ), __( 'Choose public languages that have a bundled frontend translation catalogue.', 'taka-platform' ), true, 'taka-admin-section--essential', 'settings-languages' ); ?>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<input type="hidden" name="action" value="taka_platform_save_language_settings">
+					<?php wp_nonce_field( TAKA_Platform_I18n::ENABLED_LANGUAGES_OPTION, self::NONCE ); ?>
+					<select class="regular-text" name="enabled_website_languages[]" multiple size="8">
+						<?php foreach ( TAKA_Platform_Locale_Registry::website_language_labels() as $code => $label ) : ?><option value="<?php echo esc_attr( $code ); ?>" <?php selected( in_array( $code, TAKA_Platform_I18n::instance()->get_all_languages(), true ) ); ?>><?php echo esc_html( $label . ' (' . $code . ')' ); ?></option><?php endforeach; ?>
+					</select>
+					<p class="description"><?php echo esc_html__( 'Event spoken-language and original-content fields continue to support all ISO 639-1 languages.', 'taka-platform' ); ?></p>
+					<?php submit_button( __( 'Save website languages', 'taka-platform' ) ); ?>
 				</form>
 				<?php self::admin_section_close(); ?>
 				<?php self::admin_section_open( __( 'Homepage hero', 'taka-platform' ), __( 'Visible hero copy, media and presentation settings for the homepage.', 'taka-platform' ), true, 'taka-admin-section--essential', 'settings-homepage-hero' ); ?>
@@ -1986,9 +1996,27 @@ class TAKA_Platform_Admin {
 		if ( ! current_user_can( 'manage_options' ) ) { wp_die( esc_html__( 'Insufficient permissions.', 'taka-platform' ) ); }
 		check_admin_referer( TAKA_Platform_Organizer_Dashboard::DASHBOARD_PAGE_OPTION, self::NONCE );
 		update_option( TAKA_Platform_Organizer_Dashboard::DASHBOARD_PAGE_OPTION, absint( $_POST['organizer_dashboard_page_id'] ?? 0 ), false );
-		$languages = TAKA_Platform_Locale_Registry::sanitize_language_codes( wp_unslash( $_POST['enabled_website_languages'] ?? array() ) );
+		wp_safe_redirect( add_query_arg( 'updated', '1', admin_url( 'admin.php?page=taka-tour-settings' ) ) );
+		exit;
+	}
+
+	/** Save public languages independently from organizer-dashboard settings. */
+	public static function handle_save_language_settings() {
+		if ( ! current_user_can( 'manage_options' ) ) { wp_die( esc_html__( 'Insufficient permissions.', 'taka-platform' ) ); }
+		check_admin_referer( TAKA_Platform_I18n::ENABLED_LANGUAGES_OPTION, self::NONCE );
+		$languages = array_values( array_intersect( TAKA_Platform_Locale_Registry::sanitize_language_codes( wp_unslash( $_POST['enabled_website_languages'] ?? array() ) ), array_keys( TAKA_Platform_Locale_Registry::website_language_labels() ) ) );
 		update_option( TAKA_Platform_I18n::ENABLED_LANGUAGES_OPTION, ! empty( $languages ) ? $languages : TAKA_Platform_Locale_Registry::default_website_languages(), false );
 		wp_safe_redirect( add_query_arg( 'updated', '1', admin_url( 'admin.php?page=taka-tour-settings' ) ) );
+		exit;
+	}
+
+	/** Run the potentially expensive legacy name repair only after explicit confirmation. */
+	public static function handle_repair_protected_names() {
+		if ( ! current_user_can( 'manage_options' ) ) { wp_die( esc_html__( 'Insufficient permissions.', 'taka-platform' ) ); }
+		check_admin_referer( 'taka_platform_repair_protected_names', self::NONCE );
+		delete_option( TAKA_Platform_Translation_Packages::PROTECTED_NAMES_MIGRATION_OPTION );
+		TAKA_Platform_Translation_Packages::maybe_normalize_stored_protected_names();
+		wp_safe_redirect( add_query_arg( 'updated', '1', admin_url( 'admin.php?page=taka-platform-translations' ) ) );
 		exit;
 	}
 

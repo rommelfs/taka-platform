@@ -38,8 +38,8 @@ $protected_case = TAKA_Platform_Translation_Packages::protect_glossary_terms(
 	'KANADE leitet das Seminar.',
 	'Canada leads the seminar with KANADE.'
 );
-if ( 'Kanade leads the seminar with Kanade.' !== $protected_case ) {
-	fwrite( STDERR, 'The personal name Kanade was not normalized independently of case or translated variant.' . PHP_EOL );
+if ( 'Kanade leads the seminar with KANADE.' !== $protected_case ) {
+	fwrite( STDERR, 'The personal-name repair changed more occurrences than appear in the source.' . PHP_EOL );
 	exit( 1 );
 }
 
@@ -65,8 +65,8 @@ $person_plain = TAKA_Platform_Translation_Packages::protect_glossary_terms(
 	'Takafumi Nakayama leitet das Seminar.',
 	'Nakayama Takafumi leads the seminar.'
 );
-if ( "Takafumi 'Taka' Nakayama leads the seminar." !== $person_plain ) {
-	fwrite( STDERR, 'A known full-name variant was not canonicalized.' . PHP_EOL );
+if ( 'Nakayama Takafumi leads the seminar.' !== $person_plain ) {
+	fwrite( STDERR, 'A valid personal-name ordering was unexpectedly rewritten.' . PHP_EOL );
 	exit( 1 );
 }
 
