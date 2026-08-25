@@ -20,7 +20,7 @@ class TAKA_Platform_I18n {
 
 	public function get_all_languages() {
 		$stored = function_exists( 'get_option' ) ? get_option( self::ENABLED_LANGUAGES_OPTION, array() ) : array();
-		$languages = TAKA_Platform_Locale_Registry::sanitize_language_codes( is_array( $stored ) && ! empty( $stored ) ? $stored : TAKA_Platform_Locale_Registry::default_website_languages() );
+		$languages = array_values( array_intersect( TAKA_Platform_Locale_Registry::sanitize_language_codes( is_array( $stored ) && ! empty( $stored ) ? $stored : TAKA_Platform_Locale_Registry::default_website_languages() ), array_keys( TAKA_Platform_Locale_Registry::website_language_labels() ) ) );
 		return ! empty( $languages ) ? $languages : TAKA_Platform_Locale_Registry::default_website_languages();
 	}
 
@@ -55,12 +55,15 @@ class TAKA_Platform_I18n {
 		}
 
 		$accepted = isset( $_SERVER['HTTP_ACCEPT_LANGUAGE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ACCEPT_LANGUAGE'] ) ) : '';
-		foreach ( explode( ',', $accepted ) as $part ) {
-			$lang = strtolower( substr( trim( $part ), 0, 2 ) );
-			if ( in_array( $lang, $this->get_all_languages(), true ) ) {
-				$this->current_language = $lang;
-				return $this->current_language;
-			}
+		$preferences = array();
+		foreach ( explode( ',', $accepted ) as $index => $part ) {
+			if ( ! preg_match( '/^\s*([a-z]{2})(?:-[a-z0-9]+)?(?:\s*;\s*q=(0(?:\.\d+)?|1(?:\.0+)?))?/i', $part, $match ) ) { continue; }
+			$quality = isset( $match[2] ) ? (float) $match[2] : 1.0;
+			if ( $quality > 0 ) { $preferences[] = array( 'lang' => strtolower( $match[1] ), 'quality' => $quality, 'index' => $index ); }
+		}
+		usort( $preferences, static function ( $a, $b ) { return ( $b['quality'] <=> $a['quality'] ) ?: ( $a['index'] <=> $b['index'] ); } );
+		foreach ( $preferences as $preference ) {
+			if ( in_array( $preference['lang'], $this->get_all_languages(), true ) ) { $this->current_language = $preference['lang']; return $this->current_language; }
 		}
 
 		$this->current_language = $this->default_enabled_language();

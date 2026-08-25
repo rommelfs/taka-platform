@@ -9,7 +9,7 @@ $current = taka_tour_current_language();
 $items   = TAKA_Platform_I18n::instance()->get_language_switcher_items();
 $context = sanitize_html_class( $context ?? 'inline' );
 ?>
-<nav class="taka-language-menu taka-language-menu--<?php echo esc_attr( $context ); ?>" aria-label="<?php echo esc_attr( taka_tour_translate( 'language.switcher_label', 'Sprache wählen' ) ); ?>">
+<nav class="taka-language-menu taka-language-menu--<?php echo esc_attr( $context ); ?>" dir="<?php echo esc_attr( TAKA_Platform_Locale_Registry::language_direction( $current ) ); ?>" aria-label="<?php echo esc_attr( taka_tour_translate( 'language.switcher_label', 'Sprache wählen' ) ); ?>">
 	<?php foreach ( $items as $index => $item ) : ?>
 		<?php if ( 'dropdown' === $item['type'] ) : ?>
 			<?php $active = in_array( $current, wp_list_pluck( $item['items'], 'code' ), true ); ?>

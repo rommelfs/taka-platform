@@ -145,7 +145,7 @@ Native TAKA Ticketing lives under `includes/Ticketing/`. Phase 1 added event tic
 
 ## Multilingual frontend
 
-Public query-parameter languages use `?taka_lang=CODE` and are selected by administrators under **TAKA Platform -> Settings -> General**. Existing installations default to `de`, `en`, `nl`, `fr`, `lb`, `fi`, `it` and `ja`; all ISO 639-1 languages can be enabled. Static JSON translations in `translations/` are used for frontend labels, with English/German and template fallbacks for missing keys.
+Public query-parameter languages use `?taka_lang=CODE` and are selected by administrators under **TAKA Platform -> Settings -> Website languages**. Public choices are limited to languages with a bundled static catalogue (`de`, `en`, `nl`, `fr`, `lb`, `fi`, `it` and `ja`) so the switcher never advertises an untranslated interface. All ISO 639-1 languages remain available for original-content and spoken-language metadata.
 
 The compact selector remains:
 

@@ -19,9 +19,9 @@ Each translatable object can define its own `source_language`. This allows a Fin
 Language handling has two separate scopes:
 
 - **Available languages:** all ISO 639-1 languages are available for original-content and spoken/teaching-language fields.
-- **Enabled website languages:** administrators select the public languages under **TAKA Platform -> Settings -> General**. Only these languages appear as translation targets and in the public language switcher.
+- **Enabled website languages:** administrators select the public languages under **TAKA Platform -> Settings -> Website languages**. Only languages with a bundled static JSON catalogue can be enabled, and only enabled languages appear as translation targets and in the public language switcher.
 
-The default website-language set remains backwards compatible and now includes Italian: German, English, Dutch, French, Luxembourgish, Finnish, Italian and Japanese. Enabling another language does not require a code change. If no static JSON file exists for it yet, static interface strings use the established English/German fallback while editors can already maintain dynamic website translations.
+The default website-language set remains backwards compatible and now includes Italian: German, English, Dutch, French, Luxembourgish, Finnish, Italian and Japanese. Adding another public language requires its canonical `translations/CODE.json` catalogue; dynamic translations in disabled languages remain preserved until that catalogue is available.
 
 Event, venue, participant and buyer country selectors use the full ISO 3166-1 alpha-2 country list. Configured option-list labels can override the generic English country label. Italy has built-in `IT`, `Italia`/`Italien`, `Europe/Rome`, `EUR` and Italian/English event-language suggestions.
 
@@ -55,6 +55,10 @@ The glossary stores terms that should be preserved or translated consistently. D
 Individual translation blocks preserve their source block’s leading and trailing whitespace. This keeps separately translated sentence fragments joinable without introducing duplicate spaces.
 
 Glossary entries are included in exported packages when enabled.
+
+Legacy protected-name repair is deliberately not run during ordinary admin requests. An administrator can start it explicitly from **TAKA Platform -> Translations -> Website translation overview** after reviewing the confirmation prompt.
+
+Dated translation-package exports are workflow artifacts and are ignored by Git. Canonical runtime catalogues remain in `translations/CODE.json`.
 
 ## Source Hash Protection
 

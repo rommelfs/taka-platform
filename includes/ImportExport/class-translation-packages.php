@@ -77,7 +77,7 @@ class TAKA_Platform_Translation_Packages {
 			array( 'term' => 'Okinawa', 'note' => 'Place name.', 'translate' => '0', 'preferred_translations' => array() ),
 			array( 'term' => 'Kata', 'note' => 'Martial art term; usually keep untranslated.', 'translate' => '0', 'preferred_translations' => array() ),
 			array( 'term' => 'Kumite', 'note' => 'Martial art term; usually keep untranslated.', 'translate' => '0', 'preferred_translations' => array() ),
-			array( 'term' => 'Kanade', 'note' => 'Personal name; keep this exact spelling in every language.', 'translate' => '0', 'preferred_translations' => array(), 'protected_variants' => array( 'Kanada', 'Canada' ) ),
+			array( 'term' => 'Kanade', 'note' => 'Personal name; keep this exact spelling in every language.', 'translate' => '0', 'preferred_translations' => array(), 'protected_variants' => array( 'Kanada', 'Canada' ), 'limit_to_source_occurrences' => '1' ),
 			array(
 				'term' => "Takafumi 'Taka' Nakayama",
 				'note' => 'Full personal name; preserve this spelling and apostrophe style in every language.',
@@ -85,8 +85,6 @@ class TAKA_Platform_Translation_Packages {
 				'preferred_translations' => array(),
 				'match_source_variants' => '1',
 				'protected_variants' => array(
-					'Takafumi Nakayama',
-					'Nakayama Takafumi',
 					'Takafumi "Taka" Nakayama',
 					'Takafumi “Taka” Nakayama',
 					'Takafumi ‘Taka’ Nakayama',
@@ -180,7 +178,8 @@ class TAKA_Platform_Translation_Packages {
 		$translation = (string) $translation;
 		foreach ( self::get_glossary() as $item ) {
 			$term = (string) ( $item['term'] ?? '' );
-			$variants = array_merge( array( $term ), (array) ( $item['protected_variants'] ?? array() ) );
+			// Repair known mistranslations before normalizing case on an already-correct term.
+			$variants = array_merge( (array) ( $item['protected_variants'] ?? array() ), array( $term ) );
 			$variants = array_values( array_unique( array_filter( array_map( 'strval', $variants ) ) ) );
 			if ( ! empty( $item['translate'] ) || '' === $term ) { continue; }
 
@@ -220,8 +219,6 @@ class TAKA_Platform_Translation_Packages {
 		$canonical = "Takafumi 'Taka' Nakayama";
 		$variants = array(
 			$canonical,
-			'Takafumi Nakayama',
-			'Nakayama Takafumi',
 			'Takafumi "Taka" Nakayama',
 			'Takafumi “Taka” Nakayama',
 			'Takafumi ‘Taka’ Nakayama',
