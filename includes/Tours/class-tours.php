@@ -149,8 +149,8 @@ class TAKA_Platform_Tours {
 		return array( TAKA_Platform_Data::HERO_OPTION, TAKA_Platform_Data::SECTIONS_OPTION, TAKA_Platform_Data::MEDIA_OPTION, TAKA_Platform_Data::BOOKING_OPTION, TAKA_Platform_Data::TICKETS_OPTION );
 	}
 
-	public static function navigation() {
-		return '<nav class="taka-tour-navigation" aria-label="' . esc_attr( taka_tour_translate( 'tours.navigation', 'Tour and seminar selection' ) ) . '"><a href="' . esc_url( self::url() ) . '">' . esc_html( taka_tour_translate( 'tours.current', 'Current and upcoming tours & seminars' ) ) . '</a><a href="' . esc_url( self::url( 0, true ) ) . '">' . esc_html( taka_tour_translate( 'tours.archive', 'Tour and seminar archive' ) ) . '</a></nav>';
+	public static function navigation( $archive = null ) {
+		return '<nav class="taka-tour-navigation" aria-label="' . esc_attr( taka_tour_translate( 'tours.navigation', 'Tour and seminar selection' ) ) . '"><a' . ( false === $archive ? ' aria-current="page"' : '' ) . ' href="' . esc_url( self::url() ) . '">' . esc_html( taka_tour_translate( 'tours.current', 'Current and upcoming tours & seminars' ) ) . '</a><a' . ( true === $archive ? ' aria-current="page"' : '' ) . ' href="' . esc_url( self::url( 0, true ) ) . '">' . esc_html( taka_tour_translate( 'tours.archive', 'Tour and seminar archive' ) ) . '</a></nav>';
 	}
 
 	private static function directory( $tours, $archive ) {
@@ -162,7 +162,7 @@ class TAKA_Platform_Tours {
 			$event_links[ $key ] = self::url( $tour_id );
 		}
 		ob_start();
-		echo '<section class="taka-tour-directory" style="' . esc_attr( TAKA_Platform_Overview::style() ) . '" data-taka-tour-event-links="' . esc_attr( wp_json_encode( $event_links ) ) . '">' . self::navigation(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<section class="taka-tour-directory" style="' . esc_attr( TAKA_Platform_Overview::style() ) . '" data-taka-tour-event-links="' . esc_attr( wp_json_encode( $event_links ) ) . '">' . self::navigation( $archive ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo taka_tour_render_template( 'partials/language-switcher.php' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo TAKA_Platform_Overview::header( $archive ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo '<div class="taka-tour-directory__grid">';

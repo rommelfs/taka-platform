@@ -1424,7 +1424,7 @@ body.admin-bar {
 .taka-tour-directory .taka-tour-navigation {
 	background: transparent;
 	color: inherit;
-	border-bottom: 1px solid var(--taka-directory-accent, #9e292b);
+	border: 0;
 	padding-inline: 0;
 }
 .taka-tour-directory__header {
@@ -1442,7 +1442,7 @@ body.admin-bar {
 	overflow-wrap: anywhere;
 }
 .taka-tour-directory__header p { margin: .75rem 0 0; white-space: normal; line-height: 1.7; }
-.taka-tour-directory__header > img { width: 30%; height: auto; max-height: 10rem; object-fit: contain; border-radius: .75rem; }
+.taka-tour-directory__header > img { width: 34%; height: auto; max-height: 13rem; object-fit: contain; border-radius: .75rem; }
 .taka-tour-directory__grid { grid-template-columns: repeat(var(--taka-directory-columns, 2), minmax(0, 1fr)); }
 .taka-tour-directory__card {
 	background: var(--taka-directory-card, #f7f3ec);
@@ -1489,8 +1489,34 @@ body.admin-bar {
 @media (max-width: 767px) {
 	.taka-tour-directory__grid { grid-template-columns: minmax(0, 1fr); }
 	.taka-tour-directory__header { flex-direction: column; align-items: stretch; }
-	.taka-tour-directory__header > img { width: min(100%, 16rem); height: auto; max-height: 8rem; align-self: center; }
+	.taka-tour-directory__header > img { width: min(100%, 18rem); height: auto; max-height: 10rem; align-self: center; }
 	.taka-hero--split .taka-hero-content { grid-template-columns: minmax(0, 1fr); }
 	.taka-hero--split .taka-hero__photo img { height: min(110vw, 32rem); }
 }
 .taka-hero--split .taka-hero-content__copy:first-child { grid-column: 1 / -1; }
+
+/* Navigation remains recognizable as interactive without permanent underlines. */
+.taka-tour-navigation { gap: .5rem; }
+.taka-tour-navigation a {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
+	padding: .65rem 1.1rem;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	background: var(--taka-directory-card, #f7f3ec);
+	font-weight: 600;
+	line-height: 1.4;
+	text-decoration: none;
+}
+.taka-tour-navigation a[aria-current="page"] {
+	border-color: var(--taka-directory-accent, #9e292b);
+}
+.taka-tour-navigation a:hover,
+.taka-tour-navigation a:focus-visible {
+	border-color: currentColor;
+	text-decoration: none;
+}
+.taka-tour-directory__card h2 a { text-decoration: none; }
+.taka-tour-directory__card h2 a:hover,
+.taka-tour-directory__card h2 a:focus-visible { text-decoration: underline; text-underline-offset: .15em; }
