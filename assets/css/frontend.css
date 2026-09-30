@@ -1406,7 +1406,8 @@ body.admin-bar {
 .taka-tour-directory { max-width: 1200px; margin: auto; padding: clamp(1rem, 4vw, 3rem); color: #111; }
 .taka-tour-directory__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 1.5rem; }
 .taka-tour-directory__card { min-width: 0; padding: 1.5rem; border: 1px solid #ddd5c8; border-radius: .75rem; background: #f7f3ec; overflow-wrap: anywhere; }
-.taka-tour-directory__card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: .35rem; }
+/* Preserve the complete photo; portrait images expand the card vertically. */
+.taka-tour-directory__card img { display: block; width: 100%; height: auto; aspect-ratio: auto; object-fit: contain; border-radius: .35rem; }
 .taka-tour-directory__card a { color: inherit; }
 .taka-tour-collection .taka-hero { border-bottom: 6px solid var(--taka-tour-accent); }
 .taka-tour-collection .taka-kicker { color: var(--taka-tour-accent); }
