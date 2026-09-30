@@ -33,6 +33,7 @@ includes/
   Rendering/      frontend rendering helpers
   Support/        shared helper functions
   Tickets/        ticket provider interface and registry
+  Tours/          public tour collections, scoped rendering and tour administration
 templates/        frontend template partials
 assets/           frontend/admin CSS and JavaScript
 config/           bundled seed/fallback configuration
@@ -99,6 +100,18 @@ classDiagram
       enabled
     }
 ```
+
+## Public Tour Collections
+
+The managed `taka_public_tour` CPT groups Events through `_taka_public_tour` metadata.
+Several collections can exist in the same year. Lifecycle (current/archive) is
+independent of WordPress publication status. Tour-specific content and design reuse
+the existing renderer, translation resolver and Content Blocks. Rendering scopes
+event filters and preserved option settings with `try/finally` cleanup. Archived
+Event booking is also blocked at the ticket-mode and native order boundaries.
+Public collections never include private Tour Agenda data.
+
+See [public tours](docs/public-tours.md) for migration and storage details.
 
 ## Events
 

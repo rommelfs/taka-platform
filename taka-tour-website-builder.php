@@ -2,14 +2,14 @@
 /**
  * Plugin Name: TAKA Platform
  * Description: Ticketing, Attendance, Knowledge & Administration for reusable event and seminar tours.
- * Version: 2.3.0
+ * Version: 2.4.0
  * Author: TAKA Platform
  * Text Domain: taka-platform
  */
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'TAKA_PLATFORM_VERSION', '2.3.0' );
+define( 'TAKA_PLATFORM_VERSION', '2.4.0' );
 define( 'TAKA_PLATFORM_PLUGIN_FILE', __FILE__ );
 define( 'TAKA_PLATFORM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TAKA_PLATFORM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -88,6 +88,8 @@ require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Integrations/EventsManager/cla
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Integrations/EventsManager/class-events-manager-csv-provider.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Integrations/EventsManager/class-events-manager-integration.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Frontend/class-organizer-dashboard.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Tours/class-tours.php';
+require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Tours/class-tours-admin.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Frontend/class-renderer.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Core/class-plugin.php';
 require_once TAKA_PLATFORM_PLUGIN_DIR . 'includes/Admin/class-collapsible-section.php';
@@ -148,6 +150,7 @@ add_action(
 	static function () {
 		TAKA_Platform_Events_Manager_Integration::init();
 		TAKA_Platform_Plugin::instance();
+		TAKA_Platform_Tours::init();
 		TAKA_People_Module::init();
 		TAKA_Ticketing_Module::init();
 		if ( is_admin() ) {

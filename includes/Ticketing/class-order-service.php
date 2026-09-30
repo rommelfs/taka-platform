@@ -63,6 +63,9 @@ class TAKA_Ticketing_Order_Service {
 			}
 		}
 
+		if ( $event_id && class_exists( 'TAKA_Platform_Tours' ) && TAKA_Platform_Tours::event_archived( $event_id ) ) {
+			return new WP_Error( 'taka_tour_archived', TAKA_Ticketing_Module::text( 'archive.booking_unavailable', 'This event is archived. Booking is no longer available.', $lang ) );
+		}
 		$buyer = self::buyer_from_post( $posted );
 		$collect_dietary = $event_id ? TAKA_Ticketing_Module::event_collects_dietary_preferences( $event_id ) : false;
 		$participant_posted = self::participant_post_data( $posted, $standalone_product_id, $ticket_quantity );

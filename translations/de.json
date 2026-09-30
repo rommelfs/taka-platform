@@ -1,4 +1,12 @@
 {
+  "tours": {
+    "navigation": "Tourauswahl",
+    "current": "Aktuelle und kommende Touren",
+    "archive": "Tourarchiv",
+    "empty": "Hier wurden noch keine Touren veröffentlicht.",
+    "unavailable": "Diese Tour ist nicht verfügbar.",
+    "no_events": "Termine und Ticketinformationen folgen."
+  },
   "language": {
     "code": "de",
     "name": "Deutsch",

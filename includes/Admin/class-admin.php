@@ -41,6 +41,7 @@ class TAKA_Platform_Admin {
 		add_action( 'save_post_taka_venue', array( __CLASS__, 'save_venue' ) );
 		add_action( 'save_post_taka_event', array( __CLASS__, 'save_event' ) );
 		add_action( 'save_post_taka_content_block', array( __CLASS__, 'save_content_block' ) );
+		add_action( 'save_post_taka_public_tour', array( __CLASS__, 'save_tour_access' ) );
 		add_action( 'admin_post_taka_tour_save_media', array( __CLASS__, 'handle_save_media' ) );
 		add_action( 'admin_post_taka_tour_import_config', array( __CLASS__, 'handle_import_config' ) );
 		if ( class_exists( 'TAKA_Static_Archive_Exporter' ) ) {
@@ -224,6 +225,7 @@ class TAKA_Platform_Admin {
 
 	/** Register admin CPTs. */
 	public static function register_post_types() {
+		self::register_post_type( 'taka_public_tour', __( 'Tours', 'taka-platform' ), __( 'Add tour', 'taka-platform' ), 'dashicons-location-alt' );
 		self::register_post_type( TAKA_PLATFORM_CPT_EVENT, __( 'Events', 'taka-platform' ), __( 'Event hinzufügen', 'taka-platform' ), 'dashicons-calendar-alt' );
 		self::register_post_type( TAKA_PLATFORM_CPT_ORGANIZER, __( 'Organizers', 'taka-platform' ), __( 'Organizer hinzufügen', 'taka-platform' ), 'dashicons-groups' );
 		self::register_post_type( TAKA_PLATFORM_CPT_VENUE, __( 'Venues', 'taka-platform' ), __( 'Venue hinzufügen', 'taka-platform' ), 'dashicons-location-alt' );
@@ -811,6 +813,7 @@ class TAKA_Platform_Admin {
 	/** Managed object types and their capability bases. */
 	private static function managed_post_types() {
 		return array(
+			'taka_public_tour' => array( 'singular' => 'taka_public_tour', 'plural' => 'taka_public_tours' ),
 			TAKA_PLATFORM_CPT_EVENT => array( 'singular' => 'taka_event', 'plural' => 'taka_events' ),
 			TAKA_PLATFORM_CPT_VENUE => array( 'singular' => 'taka_venue', 'plural' => 'taka_venues' ),
 			TAKA_PLATFORM_CPT_ORGANIZER => array( 'singular' => 'taka_organizer', 'plural' => 'taka_organizers' ),
@@ -2097,6 +2100,22 @@ class TAKA_Platform_Admin {
 	}
 
 	/** Import config data idempotently. */
+	/** Materialize a fallback-only installation before assigning editable public tours. */
+	public static function import_fallback_events_for_tours() {
+		if ( ! current_user_can( 'manage_options' ) ) { return new WP_Error( 'taka_tour_import_forbidden', __( 'Access denied.', 'taka-platform' ) ); }
+		$config = array_intersect_key( TAKA_Platform_Data::load_config(), array_flip( array( 'organizers', 'venues', 'events' ) ) );
+		self::import_config( 'missing', false, false, $config );
+		foreach ( array( 'organizers' => TAKA_PLATFORM_CPT_ORGANIZER, 'venues' => TAKA_PLATFORM_CPT_VENUE, 'events' => TAKA_PLATFORM_CPT_EVENT ) as $group => $post_type ) {
+			foreach ( $config[ $group ] ?? array() as $key => $item ) {
+				$config_id = 'events' === $group ? ( $item['id'] ?? $item['slug'] ?? '' ) : $key;
+				if ( ! self::find_post_id_by_config_id( $post_type, $config_id ) ) {
+					return new WP_Error( 'taka_tour_import_failed', __( 'The existing events could not be fully imported. Run tour setup again to retry the missing records.', 'taka-platform' ) );
+				}
+			}
+		}
+		return true;
+	}
+
 	private static function import_config( $mode, $dry_run, $delete_existing, $config = null ) {
 		self::register_post_types();
 		$config = is_array( $config ) ? $config : TAKA_Platform_Data::load_config();
@@ -2654,6 +2673,8 @@ class TAKA_Platform_Admin {
 		$primary['sort_order'] = 0;
 		return array_merge( array( $primary ), array_values( $relationships ) );
 	}
+
+	public static function save_tour_access( $post_id ) { self::save_access_fields( $post_id ); }
 
 	private static function save_access_fields( $post_id ) {
 		if ( ! self::can_save_post_meta( $post_id ) ) { return; }

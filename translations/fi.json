@@ -1,4 +1,12 @@
 {
+  "tours": {
+    "navigation": "Kiertueen valinta",
+    "current": "Nykyiset ja tulevat kiertueet",
+    "archive": "Kiertuearkisto",
+    "empty": "Täällä ei ole vielä julkaistu kiertueita.",
+    "unavailable": "Tämä kiertue ei ole saatavilla.",
+    "no_events": "Päivämäärät ja lipputiedot julkaistaan myöhemmin."
+  },
   "language": {
     "code": "fi",
     "name": "Suomi",

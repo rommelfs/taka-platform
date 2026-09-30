@@ -9,6 +9,12 @@ Core architecture uses the `TAKA_Platform_*` namespace, the `taka-platform` text
 
 See [docs/branding-migration.md](docs/branding-migration.md) for the compatibility rules that guide the migration from the original TAKA Tour plugin identity to the generic TAKA Platform.
 
+## Multiple tours and archives
+
+Tours can have separate events, themes, hero images, translations and shared content.
+Use **TAKA Platform → Tour setup** to prepare the 2026 archive and draft tours for June and September 2027.
+See [public tours and migration](docs/public-tours.md) for setup, shortcodes and compatibility details.
+
 ## Public shortcodes
 
 Backward-compatible shortcodes:

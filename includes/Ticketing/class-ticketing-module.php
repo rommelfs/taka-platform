@@ -303,6 +303,7 @@ class TAKA_Ticketing_Module {
 	}
 
 	public static function event_uses_native_ticketing( $event_or_id ) {
+		if ( class_exists( 'TAKA_Platform_Tours' ) && TAKA_Platform_Tours::event_archived( $event_or_id ) ) { return false; }
 		if ( is_array( $event_or_id ) ) {
 			return self::MODE === TAKA_Platform_Data::ticket_mode_for_event( $event_or_id );
 		}
@@ -1115,6 +1116,9 @@ class TAKA_Ticketing_Module {
 	}
 
 	private static function render_standalone_product_form( $product, $prefill_order = null ) {
+		if ( ! empty( $product['related_event_id'] ) && class_exists( 'TAKA_Platform_Tours' ) && TAKA_Platform_Tours::event_archived( absint( $product['related_event_id'] ) ) ) {
+			return '<p class="taka-ticket-status--archive">' . esc_html( self::text( 'archive.booking_unavailable', 'This event is archived. Booking is no longer available.' ) ) . '</p>';
+		}
 		$lang = taka_tour_current_language();
 		$product = TAKA_Ticketing_Product::resolve_for_language( $product, $lang, ! empty( $product['related_event_id'] ) ? (string) get_post_meta( absint( $product['related_event_id'] ), '_taka_source_language', true ) : TAKA_Platform_Data::platform_fallback_language() );
 		$settings = self::ticketing_settings();

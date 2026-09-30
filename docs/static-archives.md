@@ -3,6 +3,10 @@
 TAKA Platform can export public tour/event pages as a static ZIP archive for
 hosting after a tour has ended.
 
+For browsable online tour archives and multiple tours per year, see
+[Public tours and archives](public-tours.md). The online archive keeps live records;
+this exporter creates a separate frozen snapshot.
+
 ## Purpose
 
 Static archives are read-only public snapshots. They are intended for domains

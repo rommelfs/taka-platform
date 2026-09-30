@@ -1,4 +1,12 @@
 {
+  "tours": {
+    "navigation": "Choix de la tournée",
+    "current": "Tournées actuelles et à venir",
+    "archive": "Archives des tournées",
+    "empty": "Aucune tournée n’a encore été publiée ici.",
+    "unavailable": "Cette tournée n’est pas disponible.",
+    "no_events": "Les dates et les informations de billetterie suivront."
+  },
   "language": {
     "code": "fr",
     "name": "Français",

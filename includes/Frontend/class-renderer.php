@@ -27,13 +27,23 @@ class TAKA_Platform_Renderer {
 			. '</div>';
 	}
 
-	public function homepage() {
+	public function homepage( $atts = array() ) {
+		$this->enqueue_base();
+		return TAKA_Platform_Tours::render( $atts, function () { return $this->render_homepage(); } );
+	}
+
+	private function render_homepage() {
 		$this->enqueue_base();
 		$this->enqueue_pretix();
 		return taka_tour_render_template( 'homepage.php', array( 'seminars' => TAKA_Platform_Data::events_for_language() ) );
 	}
 
-	public function tour_schedule() {
+	public function tour_schedule( $atts = array() ) {
+		$this->enqueue_base();
+		return TAKA_Platform_Tours::render( $atts, function () { return $this->render_tour_schedule(); } );
+	}
+
+	private function render_tour_schedule() {
 		$this->enqueue_base();
 		$this->enqueue_pretix();
 		ob_start();
@@ -43,7 +53,12 @@ class TAKA_Platform_Renderer {
 		return ob_get_clean();
 	}
 
-	public function tickets() {
+	public function tickets( $atts = array() ) {
+		$this->enqueue_base();
+		return TAKA_Platform_Tours::render( $atts, function () { return $this->render_tickets(); } );
+	}
+
+	private function render_tickets() {
 		$this->enqueue_base();
 		$this->enqueue_pretix();
 		return $this->render_page_shell( 'tickets.php', array( 'seminars' => TAKA_Platform_Data::ticketed_seminars() ) );

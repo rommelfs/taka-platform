@@ -1,4 +1,12 @@
 {
+  "tours": {
+    "navigation": "ツアー選択",
+    "current": "開催中・開催予定のツアー",
+    "archive": "ツアーアーカイブ",
+    "empty": "公開されたツアーはまだありません。",
+    "unavailable": "このツアーは表示できません。",
+    "no_events": "日程とチケット情報は後日お知らせします。"
+  },
   "language": {
     "code": "ja",
     "name": "日本語",

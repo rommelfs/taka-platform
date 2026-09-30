@@ -1,4 +1,12 @@
 {
+  "tours": {
+    "navigation": "Tourauswiel",
+    "current": "Aktuell a kommend Touren",
+    "archive": "Tourarchiv",
+    "empty": "Hei goufen nach keng Toure publizéiert.",
+    "unavailable": "Dës Tour ass net disponibel.",
+    "no_events": "Datumer an Ticketinformatioune kommen nach."
+  },
   "language": {
     "code": "lb",
     "name": "Lëtzebuergesch",

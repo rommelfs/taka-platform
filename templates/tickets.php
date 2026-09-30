@@ -8,6 +8,10 @@ $ticket_settings = TAKA_Platform_Data::get_ticket_section_settings();
 $archive_mode = function_exists( 'taka_platform_is_archive_mode' ) && taka_platform_is_archive_mode();
 ?>
 <section class="taka-section taka-tickets" id="tickets">
+	<?php if ( empty( $seminars ) ) : ?>
+		<p><?php echo esc_html( taka_tour_translate( 'tours.no_events', 'Dates and ticket information will follow.' ) ); ?></p>
+	</section>
+	<?php return; endif; ?>
 	<?php if ( '' !== trim( (string) ( $ticket_settings['kicker'] ?? '' ) ) ) : ?>
 		<p class="taka-kicker"><?php echo esc_html( $ticket_settings['kicker'] ); ?></p>
 	<?php endif; ?>

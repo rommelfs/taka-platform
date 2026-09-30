@@ -511,6 +511,21 @@
 	});
 
 	document.addEventListener('DOMContentLoaded', function () {
+		var directory = document.querySelector('[data-taka-tour-event-links]');
+		if (directory && requestedTicketTab()) {
+			try {
+				var eventLinks = JSON.parse(directory.getAttribute('data-taka-tour-event-links'));
+				var target = eventLinks[requestedTicketTab()];
+				if (typeof target === 'string') {
+					var destination = new URL(target, window.location.href);
+					if (destination.origin === window.location.origin) {
+						destination.hash = 'tickets/' + encodeURIComponent(requestedTicketTab());
+						window.location.replace(destination.href);
+						return;
+					}
+				}
+			} catch (error) { /* Tour selection remains usable without deep-link routing. */ }
+		}
 		if (activateRequestedTicketTab(true)) {
 			scrollToTicketsFromHash();
 			return;

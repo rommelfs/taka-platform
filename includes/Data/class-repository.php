@@ -1205,6 +1205,13 @@ class TAKA_Platform_Data {
 			}
 			return taka_tour_render_template( $template, $context );
 		}
+		if ( 'tour_block' === $type ) {
+			return self::render_content_reference( array( 'block_id' => (string) ( $section['block_id'] ?? '' ), 'enabled' => '1' ), 'homepage_section' );
+		}
+		if ( 'footer' === $type && class_exists( 'TAKA_Platform_Tours' ) && TAKA_Platform_Tours::context() ) {
+			$id = TAKA_Platform_Tours::context();
+			return '<footer class="taka-footer">' . esc_html( TAKA_Platform_Tours::text( TAKA_Platform_Tours::settings( $id ), 'title', get_the_title( $id ) ) ) . '</footer>';
+		}
 		if ( 'footer' === $type ) {
 			return '<footer class="taka-footer">' . esc_html( taka_tour_translate( 'footer.text', 'TAKA European Tour 2026' ) ) . '</footer>';
 		}
@@ -1661,6 +1668,7 @@ class TAKA_Platform_Data {
 		if ( '' === $base_url ) { return '#tickets'; }
 		$lang = null === $lang && function_exists( 'taka_tour_current_language' ) ? taka_tour_current_language() : $lang;
 		$args = array();
+		if ( class_exists( 'TAKA_Platform_Tours' ) && TAKA_Platform_Tours::event_tour( $event ) ) { $args['taka_tour_id'] = TAKA_Platform_Tours::event_tour( $event ); }
 		if ( '' !== trim( (string) $lang ) ) { $args['taka_lang'] = sanitize_key( $lang ); }
 		if ( function_exists( 'remove_query_arg' ) ) { $base_url = remove_query_arg( array( 'taka_event', 'taka_ticket_event' ), $base_url ); }
 		$url = function_exists( 'add_query_arg' ) && ! empty( $args ) ? add_query_arg( $args, $base_url ) : $base_url;
@@ -2343,7 +2351,7 @@ class TAKA_Platform_Data {
 		$merged['route_cta_target'] = trim( (string) ( $merged['route_cta_target'] ?? '#become-a-host' ) ) ?: '#become-a-host';
 		$merged['route_cta_context'] = sanitize_text_field( $merged['route_cta_context'] ?? '2027' );
 		$merged['image'] = self::resolve_attachment_url( absint( $merged['image_id'] ?? 0 ), 'large', (string) ( $merged['image_url'] ?? '' ) );
-		return $merged;
+		return apply_filters( 'taka_platform_hero_settings', $merged );
 	}
 
 	/** Resolve the configurable virtual route CTA station for the current language. */
@@ -3775,6 +3783,7 @@ class TAKA_Platform_Data {
 
 	/** Resolve the stable ticket mode, inferring older provider/status-only events. */
 	public static function ticket_mode_for_event( $event ) {
+		if ( class_exists( 'TAKA_Platform_Tours' ) && TAKA_Platform_Tours::event_archived( $event ) ) { return 'none'; }
 		$mode = self::normalize_ticket_mode_alias( self::normalize_event_option_value( 'ticket_mode', $event['ticket_mode'] ?? '' ) );
 		if ( in_array( $mode, array( 'online_shop', 'external', 'coming_soon', 'sold_out', 'pay_at_door', 'free', 'none', 'native_taka_ticketing' ), true ) ) { return $mode; }
 		$status = self::normalize_ticket_mode_alias( self::normalize_event_option_value( 'ticket_status', $event['ticket_status'] ?? '' ) );
@@ -3817,6 +3826,9 @@ class TAKA_Platform_Data {
 
 	/** Build advisory ticket information shown instead of a booking button. */
 	public static function ticket_information_card( $event, $lang = null ) {
+		if ( class_exists( 'TAKA_Platform_Tours' ) && TAKA_Platform_Tours::event_archived( $event ) ) {
+			return array( 'mode' => 'archive', 'title' => taka_tour_translate( 'archive.booking_unavailable_title', 'Archived event', $lang ), 'body' => taka_tour_translate( 'archive.booking_unavailable', 'This event is archived. Booking is no longer available.', $lang ) );
+		}
 		$lang = $lang ?: taka_tour_current_language();
 		$mode = self::ticket_mode_for_event( $event );
 		if ( ! in_array( $mode, array( 'pay_at_door', 'free', 'none' ), true ) ) {
@@ -4274,7 +4286,8 @@ class TAKA_Platform_Data {
 	private static function export_venues() { $items = self::load_venues_from_wp(); $out = array(); foreach ( $items as $key => $item ) { if ( (string) $key !== (string) ( $item['id'] ?? '' ) ) { continue; } $out[ $item['config_id'] ?: $item['id'] ] = $item; } return $out; }
 
 	/** Helpers. */
-	private static function resolve_attachment_url( $attachment_id, $size = 'large', $fallback = '' ) { $url = $attachment_id && function_exists( 'wp_get_attachment_image_url' ) ? wp_get_attachment_image_url( $attachment_id, $size ) : ''; return $url ?: $fallback; }
+	/** Shared attachment-first media resolution for renderers and collections. */
+	public static function resolve_attachment_url( $attachment_id, $size = 'large', $fallback = '' ) { $url = $attachment_id && function_exists( 'wp_get_attachment_image_url' ) ? wp_get_attachment_image_url( $attachment_id, $size ) : ''; return $url ?: $fallback; }
 	private static function resolve_media_attachment_url( $attachment_id, $fallback = '' ) { $url = $attachment_id && function_exists( 'wp_get_attachment_url' ) ? wp_get_attachment_url( $attachment_id ) : ''; return $url ?: $fallback; }
 	private static function event_video_url_without_autoplay( $url ) { return '' !== (string) $url && function_exists( 'remove_query_arg' ) ? esc_url_raw( remove_query_arg( 'autoplay', (string) $url ) ) : (string) $url; }
 	private static function event_video_source_type( $url, $attachment_id = 0 ) { if ( $attachment_id ) { return 'local'; } $path = (string) wp_parse_url( (string) $url, PHP_URL_PATH ); $extension = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) ); return in_array( $extension, array( 'mp4', 'm4v', 'webm', 'ogv', 'ogg', 'mov' ), true ) ? 'local' : 'embed'; }

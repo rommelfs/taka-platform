@@ -1,4 +1,12 @@
 {
+  "tours": {
+    "navigation": "Tourselectie",
+    "current": "Huidige en komende tours",
+    "archive": "Tourarchief",
+    "empty": "Hier zijn nog geen tours gepubliceerd.",
+    "unavailable": "Deze tour is niet beschikbaar.",
+    "no_events": "Data en ticketinformatie volgen."
+  },
   "language": {
     "code": "nl",
     "name": "Nederlands",
