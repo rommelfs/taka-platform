@@ -2377,7 +2377,7 @@ class TAKA_Platform_Data {
 		$mode = sanitize_key( (string) $mode );
 		$legacy = array( 'map' => 'route_map', 'map_with_list' => 'route_map_with_list' );
 		if ( isset( $legacy[ $mode ] ) ) { return $legacy[ $mode ]; }
-		return in_array( $mode, array( 'list', 'flags', 'route_map', 'route_map_with_list' ), true ) ? $mode : 'route_map_with_list';
+		return in_array( $mode, array( 'hidden', 'list', 'flags', 'route_map', 'route_map_with_list' ), true ) ? $mode : 'route_map_with_list';
 	}
 
 	/** Languages supported by editable content section translations. */

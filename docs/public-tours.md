@@ -36,6 +36,39 @@ site administrator (`manage_options`). Version 2.4.1 fixes an admin-menu
 registration-order bug that could deny access even to administrators. Its menu
 entry is registered by the central admin menu after the TAKA parent menu exists.
 
+## Online seminars and equal card sizes (2.5.0)
+
+The overview lists both tours and online seminar collections. Existing records keep
+category **Tour**. In **TAKA Platform → Tours & seminars**, the category field can
+be changed to **Online seminars** for any collection. Publication, translations,
+shared Content Blocks, image selection, event assignment and ticket providers use
+the same existing workflow. An archived online collection also disables booking.
+
+For the initial online category, open **Tour setup → Create / edit Online seminars**.
+This creates a published **Online-Seminare** card with editable translated titles;
+it does not invent dates, prices, meeting links or events. Repeating the action
+reuses an existing online collection and preserves its content, archive state and
+publication status, including an intentionally trashed collection. Restore such a
+collection from Trash if it should be visible again. The action requires the same
+administrator permission and a separate nonce as the initial tour setup.
+
+Assign each online Event to that collection using **Tour / seminar series** in the
+Event editor. The online collection has no geographic hero route; its schedule
+uses online seminar headings. Meeting access or streaming itself is not provided
+by this collection feature. Do not put private attendee joining credentials into
+public descriptions.
+
+All directory cards reserve the same square image area, including image-free
+cards. Images use `object-fit: contain`: portrait and landscape images stay fully
+visible, with unused space where their aspect ratios differ. Grid rows have equal
+height, and the existing responsive grid stacks cards on narrow screens.
+
+Storage additions: `_taka_tour_settings.category` (`tour` or `online`) and the
+`taka_platform_online_seminars` setup option holding the default collection ID.
+Existing post types, assignment metadata, query parameters and shortcodes stay
+compatible. The global hero settings also expose a **Hidden** location display
+mode; online collections select that mode automatically.
+
 ## Public pages and editing
 
 `[taka_homepage]`, `[taka_tour_schedule]`, `[taka_tickets]` and their platform/event

@@ -1,4 +1,15 @@
 {
+  "tours": {
+    "navigation": "Selezione di tour e seminari",
+    "current": "Tour e seminari attuali e in programma",
+    "archive": "Archivio di tour e seminari",
+    "empty": "Non sono ancora stati pubblicati tour o seminari.",
+    "unavailable": "Questo tour o ciclo di seminari non è disponibile.",
+    "online": "Seminari online",
+    "tour": "Tour",
+    "online_schedule": "Date dei seminari online",
+    "no_events": "Le date e le informazioni sui biglietti saranno pubblicate in seguito."
+  },
   "language": {
     "code": "it",
     "name": "Italiano",

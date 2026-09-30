@@ -7,6 +7,7 @@ class TAKA_Platform_Tours_Admin {
 		add_action( 'add_meta_boxes', array( __CLASS__, 'boxes' ) );
 		add_action( 'save_post', array( __CLASS__, 'save' ) );
 		add_action( 'admin_post_taka_setup_tours', array( __CLASS__, 'setup' ) );
+		add_action( 'admin_post_taka_setup_online_seminars', array( __CLASS__, 'setup_online_seminars' ) );
 	}
 
 	public static function menu() {
@@ -14,13 +15,13 @@ class TAKA_Platform_Tours_Admin {
 	}
 
 	public static function boxes() {
-		add_meta_box( 'taka_public_tour', __( 'Tour', 'taka-platform' ), array( __CLASS__, 'event_box' ), TAKA_PLATFORM_CPT_EVENT, 'side' );
-		add_meta_box( 'taka_tour_settings', __( 'Tour content and design', 'taka-platform' ), array( __CLASS__, 'tour_box' ), TAKA_Platform_Tours::POST_TYPE );
+		add_meta_box( 'taka_public_tour', __( 'Tour / seminar series', 'taka-platform' ), array( __CLASS__, 'event_box' ), TAKA_PLATFORM_CPT_EVENT, 'side' );
+		add_meta_box( 'taka_tour_settings', __( 'Tour / seminar series content and design', 'taka-platform' ), array( __CLASS__, 'tour_box' ), TAKA_Platform_Tours::POST_TYPE );
 	}
 
 	public static function event_box( $post ) {
 		wp_nonce_field( 'taka_tour_event', 'taka_tour_event_nonce' );
-		echo '<label for="taka-public-tour">' . esc_html__( 'Tour assignment', 'taka-platform' ) . '</label><select id="taka-public-tour" name="taka_public_tour" style="width:100%"><option value="0">' . esc_html__( 'No tour', 'taka-platform' ) . '</option>';
+		echo '<label for="taka-public-tour">' . esc_html__( 'Tour / seminar series assignment', 'taka-platform' ) . '</label><select id="taka-public-tour" name="taka_public_tour" style="width:100%"><option value="0">' . esc_html__( 'No tour / seminar series', 'taka-platform' ) . '</option>';
 		foreach ( TAKA_Platform_Tours::all( array( 'publish', 'draft', 'private', 'pending', 'future' ) ) as $tour ) {
 			if ( ! current_user_can( 'edit_post', $tour->ID ) ) { continue; }
 			echo '<option value="' . esc_attr( $tour->ID ) . '" ' . selected( TAKA_Platform_Tours::event_tour( $post->ID ), $tour->ID, false ) . '>' . esc_html( $tour->post_title ) . '</option>';
@@ -36,6 +37,11 @@ class TAKA_Platform_Tours_Admin {
 		wp_nonce_field( 'taka_tour_settings', 'taka_tour_settings_nonce' );
 		wp_nonce_field( TAKA_Platform_Admin::NONCE, TAKA_Platform_Admin::NONCE );
 		$s = TAKA_Platform_Tours::settings( $post->ID );
+		echo '<p><label>' . esc_html__( 'Category', 'taka-platform' ) . ' <select name="tour_settings[category]">';
+		foreach ( array( 'tour' => __( 'Tour', 'taka-platform' ), 'online' => __( 'Online seminars', 'taka-platform' ) ) as $key => $label ) {
+			echo '<option value="' . esc_attr( $key ) . '" ' . selected( TAKA_Platform_Tours::category( $post->ID ), $key, false ) . '>' . esc_html( $label ) . '</option>';
+		}
+		echo '</select></label></p>';
 		echo '<p><label>' . esc_html__( 'Lifecycle', 'taka-platform' ) . ' <select name="tour_settings[state]">';
 		foreach ( array( 'current' => __( 'Current / upcoming', 'taka-platform' ), 'archive' => __( 'Archive (booking disabled)', 'taka-platform' ) ) as $key => $label ) {
 			echo '<option value="' . esc_attr( $key ) . '" ' . selected( $s['state'] ?? 'current', $key, false ) . '>' . esc_html( $label ) . '</option>';
@@ -54,7 +60,7 @@ class TAKA_Platform_Tours_Admin {
 		echo '</select></label></p>';
 		foreach ( TAKA_Platform_I18n::instance()->get_all_languages() as $lang ) {
 			echo '<details><summary>' . esc_html( strtoupper( $lang ) ) . '</summary>';
-			foreach ( array( 'title' => __( 'Public tour title', 'taka-platform' ), 'theme' => __( 'Theme / hero headline', 'taka-platform' ), 'description' => __( 'Description', 'taka-platform' ) ) as $field => $label ) {
+			foreach ( array( 'title' => __( 'Public title', 'taka-platform' ), 'theme' => __( 'Theme / hero headline', 'taka-platform' ), 'description' => __( 'Description', 'taka-platform' ) ) as $field => $label ) {
 				echo '<p><label>' . esc_html( $label ) . '<br><textarea class="widefat" rows="3" name="tour_settings[' . esc_attr( $field ) . '][' . esc_attr( $lang ) . ']">' . esc_textarea( $s[ $field ][ $lang ] ?? '' ) . '</textarea></label></p>';
 			}
 			echo '</details>';
@@ -83,6 +89,7 @@ class TAKA_Platform_Tours_Admin {
 		if ( TAKA_Platform_Tours::POST_TYPE !== get_post_type( $id ) || empty( $_POST['taka_tour_settings_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['taka_tour_settings_nonce'] ) ), 'taka_tour_settings' ) ) { return; }
 		$raw = isset( $_POST['tour_settings'] ) && is_array( $_POST['tour_settings'] ) ? wp_unslash( $_POST['tour_settings'] ) : array();
 		$s = array(
+			'category' => 'online' === ( $raw['category'] ?? '' ) ? 'online' : 'tour',
 			'state' => 'archive' === ( $raw['state'] ?? '' ) ? 'archive' : 'current',
 			'period' => sanitize_text_field( $raw['period'] ?? '' ),
 			'accent' => sanitize_hex_color( $raw['accent'] ?? '' ),
@@ -104,6 +111,9 @@ class TAKA_Platform_Tours_Admin {
 		echo '<div class="wrap"><h1>' . esc_html__( 'Tour setup', 'taka-platform' ) . '</h1><p>' . esc_html__( 'Create the 2026 archive and draft tours for June and September 2027. Only unassigned events dated in 2026 are assigned to the archive. Existing events, tickets and shared content are retained. Review and publish the 2027 tours when ready.', 'taka-platform' ) . '</p><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="taka_setup_tours">';
 		wp_nonce_field( 'taka_setup_tours' );
 		submit_button( __( 'Set up 2026 archive and 2027 tours', 'taka-platform' ) );
+		echo '</form><hr><h2>' . esc_html__( 'Online seminars', 'taka-platform' ) . '</h2><p>' . esc_html__( 'Create a published Online seminars collection in the same overview. Add events, an image and translated text in Tours & seminars. Repeating this action preserves existing content and publication status.', 'taka-platform' ) . '</p><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="taka_setup_online_seminars">';
+		wp_nonce_field( 'taka_setup_online_seminars' );
+		submit_button( __( 'Create / edit Online seminars', 'taka-platform' ) );
 		echo '</form></div>';
 	}
 
@@ -120,6 +130,36 @@ class TAKA_Platform_Tours_Admin {
 		self::provision_initial_tours();
 		wp_safe_redirect( admin_url( 'edit.php?post_type=' . TAKA_Platform_Tours::POST_TYPE ) );
 		exit;
+	}
+
+	public static function setup_online_seminars() {
+		if ( ! current_user_can( 'manage_options' ) ) { wp_die( esc_html__( 'Access denied.', 'taka-platform' ) ); }
+		check_admin_referer( 'taka_setup_online_seminars' );
+		$id = self::provision_online_seminars();
+		if ( is_wp_error( $id ) ) { wp_die( esc_html( $id->get_error_message() ) ); }
+		wp_safe_redirect( admin_url( 'post.php?post=' . absint( $id ) . '&action=edit' ) );
+		exit;
+	}
+
+	/** Create the requested category once; never republish or overwrite an edited collection. */
+	public static function provision_online_seminars() {
+		$id = absint( get_option( 'taka_platform_online_seminars', 0 ) );
+		if ( $id && TAKA_Platform_Tours::POST_TYPE === get_post_type( $id ) ) { return $id; }
+		foreach ( TAKA_Platform_Tours::all( array( 'publish', 'draft', 'pending', 'private', 'future', 'trash' ) ) as $tour ) {
+			if ( 'online' === TAKA_Platform_Tours::category( $tour->ID ) ) {
+				update_option( 'taka_platform_online_seminars', $tour->ID, false );
+				return $tour->ID;
+			}
+		}
+		$id = wp_insert_post( array( 'post_type' => TAKA_Platform_Tours::POST_TYPE, 'post_title' => __( 'Online seminars', 'taka-platform' ), 'post_status' => 'publish' ), true );
+		if ( is_wp_error( $id ) ) { return $id; }
+		update_post_meta( $id, '_taka_tour_settings', array(
+			'category' => 'online', 'state' => 'current', 'source_language' => 'en',
+			'title' => array( 'de' => 'Online-Seminare', 'en' => 'Online seminars', 'fr' => 'Séminaires en ligne', 'nl' => 'Online seminars', 'lb' => 'Online-Seminairen', 'fi' => 'Verkkoseminaarit', 'it' => 'Seminari online', 'ja' => 'オンラインセミナー' ),
+			'legacy_design' => '0', 'sections' => array( 'hero', 'tour_schedule', 'tickets', 'footer' ),
+		) );
+		update_option( 'taka_platform_online_seminars', $id, false );
+		return $id;
 	}
 
 	/** Called only by the authorized setup action; safe to repeat after partial completion. */

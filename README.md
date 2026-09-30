@@ -11,7 +11,10 @@ See [docs/branding-migration.md](docs/branding-migration.md) for the compatibili
 
 ## Multiple tours and archives
 
-Tours can have separate events, themes, hero images, translations and shared content.
+Tours and online seminar series can have separate events, themes, hero images, translations and shared content.
+The shared overview uses equal card/image areas without cropping photos.
+Create the initial Online seminars card under **Tour setup → Create / edit Online seminars**,
+then assign its Events in **Tours & seminars**.
 Use **TAKA Platform → Tour setup** to prepare the 2026 archive and draft tours for June and September 2027.
 See [public tours and migration](docs/public-tours.md) for setup, shortcodes and compatibility details.
 

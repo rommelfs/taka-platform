@@ -38,3 +38,21 @@ $GLOBALS['test_submenus'] = array();
 TAKA_Platform_Tours_Admin::menu();
 if ( isset( $GLOBALS['test_submenus']['taka-tour-setup'] ) ) { throw new RuntimeException( 'Setup permissions were weakened.' ); }
 echo "Tour admin menu regression checks passed.\n";
+
+function esc_html__( $text, $domain = '' ) { return $text; }
+function wp_die( $text ) { throw new LogicException( $text ); }
+function check_admin_referer( $action ) { throw new RuntimeException( 'nonce:' . $action ); }
+try {
+	TAKA_Platform_Tours_Admin::setup_online_seminars();
+	throw new RuntimeException( 'Non-administrator reached online setup.' );
+} catch ( LogicException $error ) {
+	if ( 'Access denied.' !== $error->getMessage() ) { throw $error; }
+}
+$GLOBALS['test_manage_options'] = true;
+try {
+	TAKA_Platform_Tours_Admin::setup_online_seminars();
+	throw new RuntimeException( 'Online setup omitted nonce validation.' );
+} catch ( RuntimeException $error ) {
+	if ( 'nonce:taka_setup_online_seminars' !== $error->getMessage() ) { throw $error; }
+}
+echo "Online setup access checks passed.\n";

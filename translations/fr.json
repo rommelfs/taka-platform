@@ -1,11 +1,14 @@
 {
   "tours": {
-    "navigation": "Choix de la tournée",
-    "current": "Tournées actuelles et à venir",
-    "archive": "Archives des tournées",
-    "empty": "Aucune tournée n’a encore été publiée ici.",
-    "unavailable": "Cette tournée n’est pas disponible.",
-    "no_events": "Les dates et les informations de billetterie suivront."
+    "navigation": "Choix des tournées et séminaires",
+    "current": "Tournées et séminaires actuels et à venir",
+    "archive": "Archives des tournées et séminaires",
+    "empty": "Aucune tournée ni aucun séminaire n’a encore été publié ici.",
+    "unavailable": "Cette tournée ou série de séminaires n’est pas disponible.",
+    "no_events": "Les dates et les informations de billetterie suivront.",
+    "online": "Séminaires en ligne",
+    "tour": "Tournée",
+    "online_schedule": "Dates des séminaires en ligne"
   },
   "language": {
     "code": "fr",

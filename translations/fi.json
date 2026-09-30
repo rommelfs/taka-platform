@@ -1,11 +1,14 @@
 {
   "tours": {
-    "navigation": "Kiertueen valinta",
-    "current": "Nykyiset ja tulevat kiertueet",
-    "archive": "Kiertuearkisto",
-    "empty": "Täällä ei ole vielä julkaistu kiertueita.",
-    "unavailable": "Tämä kiertue ei ole saatavilla.",
-    "no_events": "Päivämäärät ja lipputiedot julkaistaan myöhemmin."
+    "navigation": "Kiertueen ja seminaarin valinta",
+    "current": "Nykyiset ja tulevat kiertueet ja seminaarit",
+    "archive": "Kiertue- ja seminaariarkisto",
+    "empty": "Täällä ei ole vielä julkaistu kiertueita tai seminaareja.",
+    "unavailable": "Tämä kiertue tai seminaarisarja ei ole saatavilla.",
+    "no_events": "Päivämäärät ja lipputiedot julkaistaan myöhemmin.",
+    "online": "Verkkoseminaarit",
+    "tour": "Kiertue",
+    "online_schedule": "Verkkoseminaarien päivämäärät"
   },
   "language": {
     "code": "fi",

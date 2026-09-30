@@ -25,6 +25,17 @@ class TAKA_Platform_Tours {
 		return is_array( $value ) ? $value : array();
 	}
 
+	/** Existing collections remain tours when no category is stored. */
+	public static function category( $id ) {
+		return 'online' === ( self::settings( $id )['category'] ?? 'tour' ) ? 'online' : 'tour';
+	}
+
+	public static function category_label( $id ) {
+		return 'online' === self::category( $id )
+			? taka_tour_translate( 'tours.online', 'Online seminars' )
+			: taka_tour_translate( 'tours.tour', 'Tour' );
+	}
+
 	public static function archived( $id ) {
 		return 'archive' === ( self::settings( $id )['state'] ?? 'current' );
 	}
@@ -63,6 +74,7 @@ class TAKA_Platform_Tours {
 	public static function hero( $hero ) {
 		if ( ! self::$context ) { return $hero; }
 		$settings = self::settings( self::$context );
+		if ( 'online' === self::category( self::$context ) ) { $hero['location_display_mode'] = 'hidden'; }
 		if ( ! empty( $settings['legacy_design'] ) ) { return $hero; }
 		$hero['kicker'] = self::text( $settings, 'title', get_the_title( self::$context ) );
 		$hero['title'] = self::text( $settings, 'theme', $hero['kicker'] );
@@ -96,7 +108,7 @@ class TAKA_Platform_Tours {
 			if ( 'publish' !== get_post_status( $id ) ) { nocache_headers(); }
 		}
 		if ( ! in_array( $id, array_map( static function ( $tour ) { return (int) $tour->ID; }, $tours ), true ) ) {
-			return '<p>' . esc_html( taka_tour_translate( 'tours.unavailable', 'This tour is not available.' ) ) . '</p>';
+			return '<p>' . esc_html( taka_tour_translate( 'tours.unavailable', 'This tour or seminar series is not available.' ) ) . '</p>';
 		}
 		$previous = self::$context;
 		self::$context = $id;
@@ -137,7 +149,7 @@ class TAKA_Platform_Tours {
 	}
 
 	public static function navigation() {
-		return '<nav class="taka-tour-navigation" aria-label="' . esc_attr( taka_tour_translate( 'tours.navigation', 'Tour selection' ) ) . '"><a href="' . esc_url( self::url() ) . '">' . esc_html( taka_tour_translate( 'tours.current', 'Current and upcoming tours' ) ) . '</a><a href="' . esc_url( self::url( 0, true ) ) . '">' . esc_html( taka_tour_translate( 'tours.archive', 'Tour archive' ) ) . '</a></nav>';
+		return '<nav class="taka-tour-navigation" aria-label="' . esc_attr( taka_tour_translate( 'tours.navigation', 'Tour and seminar selection' ) ) . '"><a href="' . esc_url( self::url() ) . '">' . esc_html( taka_tour_translate( 'tours.current', 'Current and upcoming tours & seminars' ) ) . '</a><a href="' . esc_url( self::url( 0, true ) ) . '">' . esc_html( taka_tour_translate( 'tours.archive', 'Tour and seminar archive' ) ) . '</a></nav>';
 	}
 
 	private static function directory( $tours, $archive ) {
@@ -151,7 +163,7 @@ class TAKA_Platform_Tours {
 		ob_start();
 		echo '<section class="taka-tour-directory" data-taka-tour-event-links="' . esc_attr( wp_json_encode( $event_links ) ) . '">' . self::navigation(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo taka_tour_render_template( 'partials/language-switcher.php' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '<h1>' . esc_html( taka_tour_translate( $archive ? 'tours.archive' : 'tours.current', $archive ? 'Tour archive' : 'Current and upcoming tours' ) ) . '</h1><div class="taka-tour-directory__grid">';
+		echo '<h1>' . esc_html( taka_tour_translate( $archive ? 'tours.archive' : 'tours.current', $archive ? 'Tour and seminar archive' : 'Current and upcoming tours & seminars' ) ) . '</h1><div class="taka-tour-directory__grid">';
 		$count = 0;
 		foreach ( $tours as $tour ) {
 			if ( self::archived( $tour->ID ) !== $archive ) { continue; }
@@ -159,11 +171,13 @@ class TAKA_Platform_Tours {
 			$settings = self::settings( $tour->ID );
 			$image = TAKA_Platform_Data::resolve_attachment_url( absint( $settings['image_id'] ?? 0 ), 'large', $settings['image_url'] ?? '' );
 			echo '<article class="taka-tour-directory__card">';
+			echo '<div class="taka-tour-directory__media" aria-hidden="true">';
 			if ( $image ) { echo '<img src="' . esc_url( $image ) . '" alt="" loading="lazy">'; }
+			echo '</div><p class="taka-tour-directory__category">' . esc_html( self::category_label( $tour->ID ) ) . '</p>';
 			echo '<h2><a href="' . esc_url( self::url( $tour->ID ) ) . '">' . esc_html( self::text( $settings, 'title', $tour->post_title ) ) . '</a></h2>';
 			echo '<p>' . esc_html( $settings['period'] ?? '' ) . '</p><p>' . esc_html( self::text( $settings, 'description' ) ) . '</p></article>';
 		}
-		if ( ! $count ) { echo '<p>' . esc_html( taka_tour_translate( 'tours.empty', 'No tours have been published here yet.' ) ) . '</p>'; }
+		if ( ! $count ) { echo '<p>' . esc_html( taka_tour_translate( 'tours.empty', 'No tours or seminars have been published here yet.' ) ) . '</p>'; }
 		echo '</div></section>';
 		return ob_get_clean();
 	}

@@ -102,3 +102,34 @@ check( TAKA_Platform_Tours_Admin::provision_initial_tours() === $ids, 'Repeated 
 check( count( $GLOBALS['tour_posts'] ) === $count, 'Repeated setup created duplicates.' );
 check( TAKA_Platform_Tours::settings( $ids['2027-06'] )['theme']['en'] === 'Edited', 'Repeated setup overwrote editorial changes.' );
 echo "Tour migration regression checks passed.\n";
+
+// Online seminars share the collection pipeline, but never mix in tour events.
+function __( $text, $domain = '' ) { return $text; }
+$online_id = TAKA_Platform_Tours_Admin::provision_online_seminars();
+check( 'online' === TAKA_Platform_Tours::category( $online_id ), 'Online category missing.' );
+check( 'publish' === get_post_status( $online_id ), 'Requested online collection not published.' );
+check( 'tour' === TAKA_Platform_Tours::category( 2 ), 'Legacy tours changed category.' );
+$GLOBALS['tour_meta'][70]['_taka_public_tour'] = $online_id;
+unset( $_GET['taka_tours'] );
+$directory = TAKA_Platform_Tours::render( array(), static function () { return ''; } );
+check( strpos( $directory, 'Online seminars' ) !== false && strpos( $directory, 'June 2027' ) !== false, 'Online collection missing from the shared overview.' );
+check( substr_count( $directory, 'taka-tour-directory__media' ) === substr_count( $directory, '<article' ), 'Image-free cards need the same reserved media slot.' );
+TAKA_Platform_Tours::render( array( 'tour' => $online_id ), static function () use ( $events ) {
+	$online_events = TAKA_Platform_Tours::filter_events( array_merge( $events, array( array( 'wp_post_id' => 70 ) ) ) );
+	check( array_column( $online_events, 'wp_post_id' ) === array( 70 ), 'Online collection contains unrelated events.' );
+	check( TAKA_Platform_Tours::hero( array() )['location_display_mode'] === 'hidden', 'Online collection must not show a geographic route.' );
+	return '';
+} );
+$count = count( $GLOBALS['tour_posts'] );
+$settings = TAKA_Platform_Tours::settings( $online_id );
+$settings['title']['en'] = 'Edited online series';
+$settings['state'] = 'archive';
+update_post_meta( $online_id, '_taka_tour_settings', $settings );
+$GLOBALS['tour_posts'][$online_id]->post_status = 'draft';
+check( TAKA_Platform_Tours_Admin::provision_online_seminars() === $online_id && count( $GLOBALS['tour_posts'] ) === $count, 'Online setup duplicated the collection.' );
+check( 'draft' === get_post_status( $online_id ) && 'Edited online series' === TAKA_Platform_Tours::settings( $online_id )['title']['en'], 'Online setup overwrote saved content or publication state.' );
+check( TAKA_Platform_Tours::event_archived( 70 ), 'Online seminars must obey archive booking policy.' );
+// Clearing the setup pointer must still find a manually created/previous collection.
+update_option( 'taka_platform_online_seminars', 0 );
+check( TAKA_Platform_Tours_Admin::provision_online_seminars() === $online_id, 'Existing online collection not reused.' );
+echo "Online seminar regression checks passed.\n";

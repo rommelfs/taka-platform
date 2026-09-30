@@ -104,7 +104,9 @@ classDiagram
 ## Public Tour Collections
 
 The managed `taka_public_tour` CPT groups Events through `_taka_public_tour` metadata.
-Several collections can exist in the same year. Lifecycle (current/archive) is
+Several collections can exist in the same year. The collection category distinguishes
+physical tours (the backwards-compatible default) from online seminar series.
+Both reuse the same Event relationships and ticket lifecycle. Lifecycle (current/archive) is
 independent of WordPress publication status. Tour-specific content and design reuse
 the existing renderer, translation resolver and Content Blocks. Rendering scopes
 event filters and preserved option settings with `try/finally` cleanup. Archived

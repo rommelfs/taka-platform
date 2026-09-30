@@ -1,11 +1,14 @@
 {
   "tours": {
-    "navigation": "Tourselectie",
-    "current": "Huidige en komende tours",
-    "archive": "Tourarchief",
-    "empty": "Hier zijn nog geen tours gepubliceerd.",
-    "unavailable": "Deze tour is niet beschikbaar.",
-    "no_events": "Data en ticketinformatie volgen."
+    "navigation": "Tours en seminars kiezen",
+    "current": "Huidige en komende tours en seminars",
+    "archive": "Tour- en seminararchief",
+    "empty": "Hier zijn nog geen tours of seminars gepubliceerd.",
+    "unavailable": "Deze tour of seminarreeks is niet beschikbaar.",
+    "no_events": "Data en ticketinformatie volgen.",
+    "online": "Online seminars",
+    "tour": "Tour",
+    "online_schedule": "Data van online seminars"
   },
   "language": {
     "code": "nl",

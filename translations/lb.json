@@ -1,11 +1,14 @@
 {
   "tours": {
-    "navigation": "Tourauswiel",
-    "current": "Aktuell a kommend Touren",
-    "archive": "Tourarchiv",
-    "empty": "Hei goufen nach keng Toure publizéiert.",
-    "unavailable": "Dës Tour ass net disponibel.",
-    "no_events": "Datumer an Ticketinformatioune kommen nach."
+    "navigation": "Touren a Seminairen auswielen",
+    "current": "Aktuell a kommend Touren a Seminairen",
+    "archive": "Tour- a Seminararchiv",
+    "empty": "Hei goufen nach keng Touren oder Seminairë publizéiert.",
+    "unavailable": "Dës Tour oder Seminarrei ass net disponibel.",
+    "no_events": "Datumer an Ticketinformatioune kommen nach.",
+    "online": "Online-Seminairen",
+    "tour": "Tour",
+    "online_schedule": "Datumer vun den Online-Seminairen"
   },
   "language": {
     "code": "lb",

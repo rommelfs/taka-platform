@@ -225,7 +225,7 @@ class TAKA_Platform_Admin {
 
 	/** Register admin CPTs. */
 	public static function register_post_types() {
-		self::register_post_type( 'taka_public_tour', __( 'Tours', 'taka-platform' ), __( 'Add tour', 'taka-platform' ), 'dashicons-location-alt' );
+		self::register_post_type( 'taka_public_tour', __( 'Tours & seminars', 'taka-platform' ), __( 'Add tour / seminar series', 'taka-platform' ), 'dashicons-location-alt' );
 		self::register_post_type( TAKA_PLATFORM_CPT_EVENT, __( 'Events', 'taka-platform' ), __( 'Event hinzufügen', 'taka-platform' ), 'dashicons-calendar-alt' );
 		self::register_post_type( TAKA_PLATFORM_CPT_ORGANIZER, __( 'Organizers', 'taka-platform' ), __( 'Organizer hinzufügen', 'taka-platform' ), 'dashicons-groups' );
 		self::register_post_type( TAKA_PLATFORM_CPT_VENUE, __( 'Venues', 'taka-platform' ), __( 'Venue hinzufügen', 'taka-platform' ), 'dashicons-location-alt' );
@@ -1572,7 +1572,7 @@ class TAKA_Platform_Admin {
 		$option_lists = TAKA_Platform_Data::get_option_lists( true );
 		$positions = array( 'left' => __( 'Left', 'taka-platform' ), 'center' => __( 'Center', 'taka-platform' ), 'right' => __( 'Right', 'taka-platform' ) );
 		$verticals = array( 'top' => __( 'Top', 'taka-platform' ), 'center' => __( 'Center', 'taka-platform' ), 'bottom' => __( 'Bottom', 'taka-platform' ) );
-		$location_modes = array( 'list' => __( 'List', 'taka-platform' ), 'flags' => __( 'Flags', 'taka-platform' ), 'route_map' => __( 'Map view', 'taka-platform' ), 'route_map_with_list' => __( 'Map with list', 'taka-platform' ) );
+		$location_modes = array( 'hidden' => __( 'Hidden', 'taka-platform' ), 'list' => __( 'List', 'taka-platform' ), 'flags' => __( 'Flags', 'taka-platform' ), 'route_map' => __( 'Map view', 'taka-platform' ), 'route_map_with_list' => __( 'Map with list', 'taka-platform' ) );
 		$language_options = TAKA_Platform_Translation_Packages::source_language_labels();
 		?>
 			<div class="wrap">

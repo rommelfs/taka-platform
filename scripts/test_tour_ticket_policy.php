@@ -43,4 +43,5 @@ check( ( new ReflectionMethod( 'TAKA_Platform_Data', 'resolve_attachment_url' ) 
 $form = new ReflectionMethod( 'TAKA_Ticketing_Module', 'render_standalone_product_form' );
 if ( PHP_VERSION_ID < 80100 ) { $form->setAccessible( true ); }
 check( strpos( $form->invoke( null, array( 'related_event_id' => 10 ) ), 'Booking is no longer available' ) !== false, 'Archived related product exposed a checkout form.' );
+check( TAKA_Platform_Data::normalize_hero_location_display_mode( 'hidden' ) === 'hidden', 'Online hero hidden mode must survive template normalization.' );
 echo "Tour ticket policy regression checks passed.\n";

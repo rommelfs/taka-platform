@@ -1,11 +1,14 @@
 {
   "tours": {
-    "navigation": "Tourauswahl",
-    "current": "Aktuelle und kommende Touren",
-    "archive": "Tourarchiv",
-    "empty": "Hier wurden noch keine Touren veröffentlicht.",
-    "unavailable": "Diese Tour ist nicht verfügbar.",
-    "no_events": "Termine und Ticketinformationen folgen."
+    "navigation": "Touren und Seminare",
+    "current": "Aktuelle und kommende Touren & Seminare",
+    "archive": "Tour- und Seminararchiv",
+    "empty": "Hier wurden noch keine Touren oder Seminare veröffentlicht.",
+    "unavailable": "Diese Tour oder Seminarreihe ist nicht verfügbar.",
+    "no_events": "Termine und Ticketinformationen folgen.",
+    "online": "Online-Seminare",
+    "tour": "Tour",
+    "online_schedule": "Termine der Online-Seminare"
   },
   "language": {
     "code": "de",
