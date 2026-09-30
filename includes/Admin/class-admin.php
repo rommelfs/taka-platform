@@ -278,6 +278,10 @@ class TAKA_Platform_Admin {
 	/** Register menu pages. */
 	public static function register_menu() {
 		add_menu_page( __( 'TAKA Platform', 'taka-platform' ), __( 'TAKA Platform', 'taka-platform' ), self::PLATFORM_ADMIN_CAP, 'taka-platform', array( __CLASS__, 'render_dashboard' ), 'dashicons-tickets-alt', 28 );
+		// Register tour setup after its parent so WordPress derives the correct page hook.
+		if ( class_exists( 'TAKA_Platform_Tours_Admin' ) ) {
+			TAKA_Platform_Tours_Admin::menu();
+		}
 		add_submenu_page( 'taka-platform', __( 'Dashboard', 'taka-platform' ), __( 'Dashboard', 'taka-platform' ), 'edit_taka_events', 'taka-platform', array( __CLASS__, 'render_dashboard' ) );
 		if ( class_exists( 'TAKA_Platform_Admin_Event_Assistant' ) ) {
 			TAKA_Platform_Admin_Event_Assistant::register_menu();

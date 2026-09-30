@@ -31,6 +31,11 @@ rendering the original single-tour site. No database migration runs simply by
 updating the plugin. A backup and staging check are appropriate before deploying
 any database migration.
 
+The setup page is `/wp-admin/admin.php?page=taka-tour-setup` and requires a
+site administrator (`manage_options`). Version 2.4.1 fixes an admin-menu
+registration-order bug that could deny access even to administrators. Its menu
+entry is registered by the central admin menu after the TAKA parent menu exists.
+
 ## Public pages and editing
 
 `[taka_homepage]`, `[taka_tour_schedule]`, `[taka_tickets]` and their platform/event

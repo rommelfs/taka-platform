@@ -6,7 +6,6 @@ class TAKA_Platform_Tours_Admin {
 	public static function init() {
 		add_action( 'add_meta_boxes', array( __CLASS__, 'boxes' ) );
 		add_action( 'save_post', array( __CLASS__, 'save' ) );
-		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
 		add_action( 'admin_post_taka_setup_tours', array( __CLASS__, 'setup' ) );
 	}
 
