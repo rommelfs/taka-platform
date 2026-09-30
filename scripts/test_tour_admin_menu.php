@@ -18,6 +18,7 @@ function add_submenu_page( $parent, $title, $label, $cap, $slug, $callback ) {
 	}
 	$GLOBALS['test_submenus'][ $slug ][] = array( 'parent' => $parent, 'capability' => $cap, 'callback' => $callback );
 }
+require_once dirname( __DIR__ ) . '/includes/Tours/class-overview.php';
 require_once dirname( __DIR__ ) . '/includes/Tours/class-tours-admin.php';
 require_once dirname( __DIR__ ) . '/includes/Admin/class-admin.php';
 // Same initialization order as plugins_loaded in the plugin bootstrap.
@@ -56,3 +57,11 @@ try {
 	if ( 'nonce:taka_setup_online_seminars' !== $error->getMessage() ) { throw $error; }
 }
 echo "Online setup access checks passed.\n";
+
+$GLOBALS['test_manage_options'] = false;
+try { TAKA_Platform_Overview::save(); throw new RuntimeException( 'Overview save permitted non-admin.' ); }
+catch ( LogicException $error ) { if ( 'Access denied.' !== $error->getMessage() ) { throw $error; } }
+$GLOBALS['test_manage_options'] = true;
+try { TAKA_Platform_Overview::save(); throw new LogicException( 'Overview save omitted nonce.' ); }
+catch ( RuntimeException $error ) { if ( 'nonce:taka_overview' !== $error->getMessage() ) { throw $error; } }
+echo "Overview access checks passed.\n";

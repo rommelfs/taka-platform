@@ -133,3 +133,20 @@ archive gates, and
 run the other `scripts/test_*.php` regression checks. Deployment QA should also
 exercise the setup action twice, assigned editor permissions, tour publication,
 real Event ticket widgets and native checkout in a WordPress staging instance.
+
+## Overview design (v2.6.0)
+
+Open **TAKA Platform → Overview design** (`/wp-admin/admin.php?page=taka-platform-overview`).
+The directory now has independent settings for:
+
+- Multilingual headings and introductions, separately for current collections and the archive; empty headings retain the standard translated labels.
+- A header image selected from the Media Library, with an optional fallback URL. Images remain fully visible.
+- Background, card, text and accent colors; two or three desktop columns, automatically one on mobile.
+- Published Content Blocks below the cards. Enter an order number to include a block; leave the field empty to hide it. Edit block content and translations in Content Blocks.
+
+Save with the form button. These settings apply to the directory rendered by `[taka_homepage]`, not individual collection pages. Card content remains editable in **Tours & seminars**.
+
+Individual collections now default to **Hero layout → Full photo beside text (no cropping)**.
+On mobile, the photo sits above the text. **Full-width background (cropped)** remains selectable in each collection's content/design box. Collections using **Use preserved legacy hero and sections**, including the initial 2026 archive, retain their original presentation.
+
+The independent `taka_platform_overview` option is managed by `TAKA_Platform_Overview`, with capability and nonce protection. Existing Content Block rendering and dynamic translation resolution are reused. Collection metadata adds the optional `hero_layout` field; missing values use `split` for nonlegacy collections. No data migration or changes to ticket-provider integration are required.

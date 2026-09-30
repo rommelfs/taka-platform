@@ -80,6 +80,7 @@ class TAKA_Platform_Tours {
 		$hero['title'] = self::text( $settings, 'theme', $hero['kicker'] );
 		$hero['description'] = self::text( $settings, 'description' );
 		$hero['image'] = TAKA_Platform_Data::resolve_attachment_url( absint( $settings['image_id'] ?? 0 ), 'full', $settings['image_url'] ?? '' );
+		$hero['layout'] = 'background' === ( $settings['hero_layout'] ?? '' ) ? 'background' : 'split';
 		$hero['secondary_button_label'] = '';
 		$hero['route_cta_enabled'] = '0';
 		return $hero;
@@ -161,9 +162,10 @@ class TAKA_Platform_Tours {
 			$event_links[ $key ] = self::url( $tour_id );
 		}
 		ob_start();
-		echo '<section class="taka-tour-directory" data-taka-tour-event-links="' . esc_attr( wp_json_encode( $event_links ) ) . '">' . self::navigation(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<section class="taka-tour-directory" style="' . esc_attr( TAKA_Platform_Overview::style() ) . '" data-taka-tour-event-links="' . esc_attr( wp_json_encode( $event_links ) ) . '">' . self::navigation(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo taka_tour_render_template( 'partials/language-switcher.php' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '<h1>' . esc_html( taka_tour_translate( $archive ? 'tours.archive' : 'tours.current', $archive ? 'Tour and seminar archive' : 'Current and upcoming tours & seminars' ) ) . '</h1><div class="taka-tour-directory__grid">';
+		echo TAKA_Platform_Overview::header( $archive ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<div class="taka-tour-directory__grid">';
 		$count = 0;
 		foreach ( $tours as $tour ) {
 			if ( self::archived( $tour->ID ) !== $archive ) { continue; }
@@ -178,7 +180,7 @@ class TAKA_Platform_Tours {
 			echo '<p>' . esc_html( $settings['period'] ?? '' ) . '</p><p>' . esc_html( self::text( $settings, 'description' ) ) . '</p></article>';
 		}
 		if ( ! $count ) { echo '<p>' . esc_html( taka_tour_translate( 'tours.empty', 'No tours or seminars have been published here yet.' ) ) . '</p>'; }
-		echo '</div></section>';
+		echo '</div>' . TAKA_Platform_Overview::blocks() . '</section>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		return ob_get_clean();
 	}
 }

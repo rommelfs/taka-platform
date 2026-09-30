@@ -6,6 +6,7 @@
 defined( 'ABSPATH' ) || exit;
 
 $hero          = TAKA_Platform_Data::get_hero_settings();
+$split         = 'split' === ( $hero['layout'] ?? '' );
 $hero_image    = $hero['image'] ?? '';
 $hero_lang     = taka_tour_current_language();
 $hero_events   = TAKA_Platform_Data::events_for_language( $hero_lang );
@@ -25,8 +26,11 @@ if ( '' !== $hero_image ) {
 	$style .= "--taka-hero-image:url('" . esc_url( $hero_image ) . "');";
 }
 ?>
-<section class="taka-hero taka-hero--text-<?php echo esc_attr( $text_position ); ?> taka-hero--vertical-<?php echo esc_attr( $vertical ); ?>" style="<?php echo esc_attr( $style ); ?>">
+<section class="taka-hero <?php echo $split ? 'taka-hero--split' : ''; ?> taka-hero--text-<?php echo esc_attr( $text_position ); ?> taka-hero--vertical-<?php echo esc_attr( $vertical ); ?>" style="<?php echo esc_attr( $style ); ?>">
 	<div class="taka-hero-content <?php echo $box_enabled ? 'taka-hero-content--boxed' : ''; ?> <?php echo $show_map ? 'taka-hero-content--with-map' : ''; ?>">
+		<?php if ( $split && $hero_image ) : ?>
+			<figure class="taka-hero__photo"><img src="<?php echo esc_url( $hero_image ); ?>" alt="" fetchpriority="high"></figure>
+		<?php endif; ?>
 		<div class="taka-hero-content__copy">
 			<?php if ( '' !== trim( (string) ( $hero['kicker'] ?? '' ) ) ) : ?>
 				<p class="taka-kicker"><?php echo esc_html( $hero['kicker'] ); ?></p>

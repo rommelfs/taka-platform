@@ -1415,3 +1415,81 @@ body.admin-bar {
 .taka-tour-collection .taka-kicker { color: var(--taka-tour-accent); }
 .taka-tour-collection .taka-hero .taka-kicker { color: inherit; }
 .taka-tour-collection .taka-tour-page { width: 100%; margin-left: 0; }
+
+/* Directory presentation is independent of individual collection designs. */
+.taka-tour-directory {
+	background: var(--taka-directory-background, #fff);
+	color: var(--taka-directory-text, #111);
+}
+.taka-tour-directory .taka-tour-navigation {
+	background: transparent;
+	color: inherit;
+	border-bottom: 1px solid var(--taka-directory-accent, #9e292b);
+	padding-inline: 0;
+}
+.taka-tour-directory__header {
+	display: flex;
+	align-items: center;
+	gap: clamp(1.5rem, 4vw, 3rem);
+	padding-block: clamp(2rem, 5vw, 4rem);
+}
+.taka-tour-directory__header > div { flex: 1; min-width: 0; }
+.taka-tour-directory__header h1 {
+	font-size: clamp(2rem, 4vw, 3.5rem);
+	line-height: 1.1;
+	color: inherit;
+	overflow-wrap: anywhere;
+}
+.taka-tour-directory__header p { white-space: normal; line-height: 1.7; }
+.taka-tour-directory__header > img { width: 40%; height: 22rem; object-fit: contain; border-radius: .75rem; }
+.taka-tour-directory__grid { grid-template-columns: repeat(var(--taka-directory-columns, 2), minmax(0, 1fr)); }
+.taka-tour-directory__card {
+	background: var(--taka-directory-card, #f7f3ec);
+	color: inherit;
+	border-top: 3px solid var(--taka-directory-accent, #9e292b);
+	box-shadow: 0 .5rem 1.5rem rgb(0 0 0 / 5%);
+}
+.taka-tour-directory__card h2 { color: inherit; }
+.taka-tour-directory__card a:focus-visible { outline-color: var(--taka-directory-accent, #9e292b); }
+
+/* Portraits retain their full composition; route maps get a separate row. */
+.taka-tour-collection .taka-hero--split {
+	min-height: 0;
+	padding: clamp(1.25rem, 4vw, 4rem);
+	background: #f7f3ec;
+	color: #111;
+}
+.taka-tour-collection .taka-hero--split::before { display: none; }
+.taka-hero--split .taka-hero-content {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: clamp(1.5rem, 4vw, 4rem);
+	align-items: center;
+	padding: 0;
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+	backdrop-filter: none;
+}
+.taka-hero--split .taka-hero__photo { margin: 0; min-width: 0; }
+.taka-hero--split .taka-hero__photo img {
+	display: block;
+	width: 100%;
+	height: clamp(20rem, 48vw, 42rem);
+	object-fit: contain;
+	border-radius: .75rem;
+}
+.taka-hero--split .taka-hero-content__copy { max-width: none; }
+.taka-hero--split .taka-hero-content__copy:only-child { grid-column: 1 / -1; }
+.taka-hero--split h1 { color: #111; font-size: clamp(2.5rem, 5vw, 5rem); overflow-wrap: anywhere; }
+.taka-hero--split p { color: #333; }
+.taka-tour-collection .taka-hero--split .taka-kicker { color: var(--taka-tour-accent); }
+.taka-hero--split .taka-hero-route-map { grid-column: 1 / -1; width: 100%; }
+@media (max-width: 767px) {
+	.taka-tour-directory__grid { grid-template-columns: minmax(0, 1fr); }
+	.taka-tour-directory__header { flex-direction: column; align-items: stretch; }
+	.taka-tour-directory__header > img { width: 100%; height: 18rem; }
+	.taka-hero--split .taka-hero-content { grid-template-columns: minmax(0, 1fr); }
+	.taka-hero--split .taka-hero__photo img { height: min(110vw, 32rem); }
+}
+.taka-hero--split .taka-hero-content__copy:first-child { grid-column: 1 / -1; }

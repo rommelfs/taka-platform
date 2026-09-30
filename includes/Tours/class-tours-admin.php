@@ -4,6 +4,7 @@ defined( 'ABSPATH' ) || exit;
 
 class TAKA_Platform_Tours_Admin {
 	public static function init() {
+		add_action( 'admin_post_taka_overview', array( 'TAKA_Platform_Overview', 'save' ) );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'boxes' ) );
 		add_action( 'save_post', array( __CLASS__, 'save' ) );
 		add_action( 'admin_post_taka_setup_tours', array( __CLASS__, 'setup' ) );
@@ -11,6 +12,7 @@ class TAKA_Platform_Tours_Admin {
 	}
 
 	public static function menu() {
+		add_submenu_page( 'taka-platform', __( 'Overview design', 'taka-platform' ), __( 'Overview design', 'taka-platform' ), 'manage_options', 'taka-platform-overview', array( 'TAKA_Platform_Overview', 'page' ) );
 		add_submenu_page( 'taka-platform', __( 'Tour setup', 'taka-platform' ), __( 'Tour setup', 'taka-platform' ), 'manage_options', 'taka-tour-setup', array( __CLASS__, 'setup_page' ) );
 	}
 
@@ -52,6 +54,11 @@ class TAKA_Platform_Tours_Admin {
 		echo '<p><label for="taka-tour-image">' . esc_html__( 'Hero image', 'taka-platform' ) . '</label></p><input id="taka-tour-image" type="hidden" name="tour_settings[image_id]" value="' . esc_attr( $s['image_id'] ?? 0 ) . '">';
 		echo '<button type="button" class="button" data-taka-media-pick data-multiple="0" data-target="taka-tour-image" data-preview="taka-tour-image-preview">' . esc_html__( 'Select image', 'taka-platform' ) . '</button> <button type="button" class="button" data-taka-media-remove data-target="taka-tour-image" data-preview="taka-tour-image-preview">' . esc_html__( 'Remove image', 'taka-platform' ) . '</button>';
 		echo '<div id="taka-tour-image-preview">' . wp_get_attachment_image( absint( $s['image_id'] ?? 0 ), 'thumbnail' ) . '</div>';
+		echo '<p><label>' . esc_html__( 'Hero layout', 'taka-platform' ) . ' <select name="tour_settings[hero_layout]">';
+		foreach ( array( 'split' => __( 'Full photo beside text (no cropping)', 'taka-platform' ), 'background' => __( 'Full-width background (cropped)', 'taka-platform' ) ) as $key => $label ) {
+			echo '<option value="' . esc_attr( $key ) . '" ' . selected( $s['hero_layout'] ?? 'split', $key, false ) . '>' . esc_html( $label ) . '</option>';
+		}
+		echo '</select></label></p>';
 		self::input( 'image_url', __( 'Hero image: fallback URL', 'taka-platform' ), $s['image_url'] ?? '', 'url' );
 		echo '<p><label>' . esc_html__( 'Original content language', 'taka-platform' ) . ' <select name="tour_settings[source_language]">';
 		foreach ( TAKA_Platform_I18n::instance()->get_all_languages() as $lang ) {
@@ -95,6 +102,7 @@ class TAKA_Platform_Tours_Admin {
 			'accent' => sanitize_hex_color( $raw['accent'] ?? '' ),
 			'image_id' => absint( $raw['image_id'] ?? 0 ), 'image_url' => esc_url_raw( $raw['image_url'] ?? '' ),
 			'source_language' => TAKA_Platform_Translation_Packages::sanitize_language( $raw['source_language'] ?? '', 'en' ),
+			'hero_layout' => 'background' === ( $raw['hero_layout'] ?? '' ) ? 'background' : 'split',
 			'legacy_design' => empty( $raw['legacy_design'] ) ? '0' : '1',
 			'sections' => array_values( array_unique( array_map( 'sanitize_key', (array) ( $raw['sections'] ?? array() ) ) ) ),
 			'blocks' => array_values( array_unique( array_filter( array_map( 'absint', explode( ',', (string) ( $raw['blocks'] ?? '' ) ) ) ) ) ),

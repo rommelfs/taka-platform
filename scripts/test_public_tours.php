@@ -47,6 +47,7 @@ class TAKA_Platform_Data {
 	public static function resolve_dynamic_text( $text ) { return is_array( $text ) ? ( $text['en'] ?? '' ) : $text; }
 	public static function resolve_attachment_url( $id, $size, $url ) { return $url; }
 }
+require_once dirname( __DIR__ ) . '/includes/Tours/class-overview.php';
 require_once dirname( __DIR__ ) . '/includes/Tours/class-tours.php';
 function check( $condition, $message ) { if ( ! $condition ) { throw new RuntimeException( $message ); } }
 $events = array_map( static function ( $id ) { return array( 'wp_post_id' => $id ); }, array( 10, 20, 30, 40 ) );
@@ -133,3 +134,26 @@ check( TAKA_Platform_Tours::event_archived( 70 ), 'Online seminars must obey arc
 update_option( 'taka_platform_online_seminars', 0 );
 check( TAKA_Platform_Tours_Admin::provision_online_seminars() === $online_id, 'Existing online collection not reused.' );
 echo "Online seminar regression checks passed.\n";
+
+// Layout defaults affect new collection designs only, including existing portrait uploads.
+$_GET = array( 'taka_tour_id' => 2 );
+TAKA_Platform_Tours::render( array(), static function () {
+	check( 'split' === TAKA_Platform_Tours::hero( array() )['layout'], 'New collection hero should show a complete photo.' );
+	return '';
+} );
+$GLOBALS['tour_meta'][2]['_taka_tour_settings']['hero_layout'] = 'background';
+TAKA_Platform_Tours::render( array(), static function () {
+	check( 'background' === TAKA_Platform_Tours::hero( array() )['layout'], 'Explicit background layout was lost.' );
+	return '';
+} );
+$_GET = array( 'taka_tour_id' => 1 );
+TAKA_Platform_Tours::render( array(), static function () {
+	check( array( 'title' => 'Original' ) === TAKA_Platform_Tours::hero( array( 'title' => 'Original' ) ), 'Legacy hero changed.' );
+	return '';
+} );
+$_GET = array();
+$GLOBALS['tour_options'][ TAKA_Platform_Overview::OPTION ] = array( 'heading' => array( 'en' => '<b>Custom overview</b>' ), 'archive_heading' => array( 'en' => 'Past events' ) );
+check( strpos( TAKA_Platform_Overview::header( false ), '&lt;b&gt;Custom overview&lt;/b&gt;' ) !== false, 'Overview heading is not escaped.' );
+check( strpos( TAKA_Platform_Overview::header( true ), 'Past events' ) !== false, 'Archive heading missing.' );
+unset( $GLOBALS['tour_options'][ TAKA_Platform_Overview::OPTION ] );
+echo "Overview and hero compatibility checks passed.\n";

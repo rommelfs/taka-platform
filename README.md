@@ -13,6 +13,8 @@ See [docs/branding-migration.md](docs/branding-migration.md) for the compatibili
 
 Tours and online seminar series can have separate events, themes, hero images, translations and shared content.
 The shared overview uses equal card/image areas without cropping photos.
+Customize its headings, introductory text, image, colors, columns and shared Content Blocks under **TAKA Platform → Overview design**.
+Individual collections default to a complete hero photo beside the text; the cropped background layout remains selectable.
 Create the initial Online seminars card under **Tour setup → Create / edit Online seminars**,
 then assign its Events in **Tours & seminars**.
 Use **TAKA Platform → Tour setup** to prepare the 2026 archive and draft tours for June and September 2027.
