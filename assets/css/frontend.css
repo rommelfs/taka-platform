@@ -1403,7 +1403,7 @@ body.admin-bar {
 .taka-tour-navigation a { color: inherit; text-underline-offset: .2em; }
 .taka-tour-navigation a:focus-visible,
 .taka-tour-directory a:focus-visible { outline: 3px solid #325d88; outline-offset: 4px; }
-.taka-tour-directory { max-width: 1200px; margin: auto; padding: clamp(1rem, 4vw, 3rem); color: #111; }
+.taka-tour-directory { max-width: 1200px; margin: auto; padding: 1rem clamp(1rem, 4vw, 3rem); color: #111; }
 .taka-tour-directory__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); grid-auto-rows: 1fr; gap: 1.5rem; }
 .taka-tour-directory__card { display: flex; flex-direction: column; min-width: 0; padding: 1.5rem; border: 1px solid #ddd5c8; border-radius: .75rem; background: #f7f3ec; overflow-wrap: anywhere; }
 /* Equal media slots, including cards without a photo; never crop the image. */
@@ -1430,18 +1430,19 @@ body.admin-bar {
 .taka-tour-directory__header {
 	display: flex;
 	align-items: center;
-	gap: clamp(1.5rem, 4vw, 3rem);
-	padding-block: clamp(2rem, 5vw, 4rem);
+	gap: clamp(1rem, 3vw, 2rem);
+	padding-block: clamp(1.25rem, 3vw, 2rem);
 }
 .taka-tour-directory__header > div { flex: 1; min-width: 0; }
 .taka-tour-directory__header h1 {
-	font-size: clamp(2rem, 4vw, 3.5rem);
+	margin: 0;
+	font-size: clamp(1.75rem, 3vw, 2.75rem);
 	line-height: 1.1;
 	color: inherit;
 	overflow-wrap: anywhere;
 }
-.taka-tour-directory__header p { white-space: normal; line-height: 1.7; }
-.taka-tour-directory__header > img { width: 40%; height: 22rem; object-fit: contain; border-radius: .75rem; }
+.taka-tour-directory__header p { margin: .75rem 0 0; white-space: normal; line-height: 1.7; }
+.taka-tour-directory__header > img { width: 30%; height: auto; max-height: 10rem; object-fit: contain; border-radius: .75rem; }
 .taka-tour-directory__grid { grid-template-columns: repeat(var(--taka-directory-columns, 2), minmax(0, 1fr)); }
 .taka-tour-directory__card {
 	background: var(--taka-directory-card, #f7f3ec);
@@ -1488,7 +1489,7 @@ body.admin-bar {
 @media (max-width: 767px) {
 	.taka-tour-directory__grid { grid-template-columns: minmax(0, 1fr); }
 	.taka-tour-directory__header { flex-direction: column; align-items: stretch; }
-	.taka-tour-directory__header > img { width: 100%; height: 18rem; }
+	.taka-tour-directory__header > img { width: min(100%, 16rem); height: auto; max-height: 8rem; align-self: center; }
 	.taka-hero--split .taka-hero-content { grid-template-columns: minmax(0, 1fr); }
 	.taka-hero--split .taka-hero__photo img { height: min(110vw, 32rem); }
 }
