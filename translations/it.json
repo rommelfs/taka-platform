@@ -69,6 +69,7 @@
     "text": "TAKA European Tour 2026"
   },
   "event": {
+    "search_timezones": "Cerca fusi orari",
     "timezone": "Fuso orario dell’evento",
     "view_timezone": "Mostra gli orari anche in",
     "original_timezone": "Solo il fuso orario dell’evento",

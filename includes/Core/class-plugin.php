@@ -75,7 +75,8 @@ class TAKA_Platform_Plugin {
 		wp_register_style( 'taka-platform', TAKA_PLATFORM_PLUGIN_URL . 'assets/css/frontend.css', array(), TAKA_PLATFORM_VERSION );
 		wp_register_style( 'taka-platform-language-switcher', TAKA_PLATFORM_PLUGIN_URL . 'assets/css/language-switcher.css', array( 'taka-platform' ), TAKA_PLATFORM_VERSION );
 		wp_register_style( 'taka-platform-tickets', TAKA_PLATFORM_PLUGIN_URL . 'assets/css/tickets.css', array( 'taka-platform' ), TAKA_PLATFORM_VERSION );
-		wp_register_script( 'taka-platform-timezones', TAKA_PLATFORM_PLUGIN_URL . 'assets/js/event-timezones.js', array(), TAKA_PLATFORM_VERSION, true );
+		wp_register_script( 'taka-platform-timezone-search', TAKA_PLATFORM_PLUGIN_URL . 'assets/js/timezone-search.js', array(), TAKA_PLATFORM_VERSION, true );
+		wp_register_script( 'taka-platform-timezones', TAKA_PLATFORM_PLUGIN_URL . 'assets/js/event-timezones.js', array( 'taka-platform-timezone-search' ), TAKA_PLATFORM_VERSION, true );
 		wp_register_script( 'taka-platform', TAKA_PLATFORM_PLUGIN_URL . 'assets/js/frontend.js', array( 'taka-platform-timezones' ), TAKA_PLATFORM_VERSION, true );
 		wp_register_script( 'taka-platform-language-switcher', TAKA_PLATFORM_PLUGIN_URL . 'assets/js/language-switcher.js', array( 'taka-platform' ), TAKA_PLATFORM_VERSION, true );
 		wp_register_script( 'taka-platform-tickets', TAKA_PLATFORM_PLUGIN_URL . 'assets/js/tickets.js', array( 'taka-platform' ), TAKA_PLATFORM_VERSION, true );

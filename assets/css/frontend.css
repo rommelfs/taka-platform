@@ -1537,3 +1537,6 @@ body.admin-bar {
 .taka-program-summary .taka-timezone-converted { display: block; margin-top: .25rem; font-weight: normal; }
 .taka-program-summary[data-taka-timezone-schedule] .taka-program-summary__item { grid-template-columns: minmax(0, 1fr); }
 .taka-program-summary[data-taka-timezone-schedule] .taka-program-summary__time { min-width: 0; }
+.taka-tour-page .taka-timezone-search { display: block; box-sizing: border-box; width: 100%; max-width: 32rem; padding: .5rem; margin-block: .5rem; }
+.taka-info-modal__row dd img { max-width: 100%; height: auto; }
+.taka-info-modal__row dd { overflow-wrap: anywhere; }

@@ -3,7 +3,8 @@
 Event wall times remain in the existing `_taka_timezone`, `_taka_date_*`,
 `_taka_time_*` and program-item fields. No automatic data migration or clock-time
 conversion runs. Editors choose an IANA timezone in the Event Assistant, classic
-Event editor, or organizer dashboard. The selector includes `Asia/Tokyo` for
+Event editor, or organizer dashboard. A search field filters timezone identifiers without changing the selected value.
+The selector includes `Asia/Tokyo` for
 Fukuoka; existing timezone aliases and numeric WordPress offsets remain visible.
 
 All program items and doors-open times use the event timezone. Events without an
@@ -22,7 +23,7 @@ authoritative.
 The shared `event-schedule.php` partial serves Event cards and ticket detail
 panels. Server-rendered original times include the timezone and date-specific UTC
 offset. A separate `event-timezones.js` enhancement adds a native timezone selector
-and a second date/time line, defaulting to the browser timezone. Original times
+with a timezone search field and a second date/time line, defaulting to the browser timezone. Original times
 remain visible, including with JavaScript disabled. Browser Intl supplies localized
 conversion and timezone options; older browsers without `supportedValuesOf` offer
 the browser zone, event zone and UTC. No browser choice changes stored event data.
@@ -47,7 +48,7 @@ at 21:00 in Japan is 14:00 in Berlin. The date of the event controls the offset.
 ## Verification
 
 Run `php scripts/test_event_timezones.php`, the existing `scripts/test_*.php`
-regressions, `node scripts/test_event_timezones.js`, `./scripts/lint.sh`, and `node --check assets/js/event-timezones.js`.
+regressions, `node scripts/test_event_timezones.js`, `node scripts/test_timezone_search.js`, `./scripts/lint.sh`, and `node --check assets/js/event-timezones.js`.
 The timezone regression covers seasonal offsets, date rollover, legacy fallbacks,
 invalid input, overnight sessions and UTC calendar output independent of the PHP
 server timezone.

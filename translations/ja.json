@@ -165,6 +165,7 @@
     }
   },
   "event": {
+    "search_timezones": "タイムゾーンを検索",
     "timezone": "イベントのタイムゾーン",
     "view_timezone": "次のタイムゾーンの時刻も表示",
     "original_timezone": "イベントのタイムゾーンのみ",

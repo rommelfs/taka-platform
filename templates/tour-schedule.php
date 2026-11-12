@@ -1,5 +1,9 @@
 <?php
 defined( 'ABSPATH' ) || exit;
+if ( 1 === count( $seminars ) ) {
+	if ( empty( $skip_single_event_overview ) ) { echo taka_tour_render_template( 'tickets.php', array( 'seminars' => array_values( $seminars ) ) ); } // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	return;
+}
 $online_collection = class_exists( 'TAKA_Platform_Tours' ) && TAKA_Platform_Tours::context() && 'online' === TAKA_Platform_Tours::category( TAKA_Platform_Tours::context() );
 ?>
 <section class="taka-section taka-tour-overview" id="tour">

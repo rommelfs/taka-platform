@@ -70,7 +70,7 @@ $native_checkout = ( ! $archive_mode && empty( $ticket_card ) && ! empty( $semin
 			<?php foreach ( $drawers as $drawer_key => $drawer ) : ?>
 				<?php $drawer_id = 'taka-info-modal-' . $event_key . '-' . sanitize_html_class( (string) $drawer_key ); ?>
 				<button type="button" class="taka-ticket-info-button" data-taka-info-modal-open="<?php echo esc_attr( $drawer_id ); ?>">
-					<?php echo esc_html( $drawer['label'] ?? $drawer['title'] ?? '' ); ?>
+					<?php echo esc_html( 'organizer' === ( $drawer['type'] ?? '' ) ? ( $drawer['title'] ?? $drawer['label'] ?? '' ) : ( $drawer['label'] ?? $drawer['title'] ?? '' ) ); ?>
 				</button>
 			<?php endforeach; ?>
 		</div>

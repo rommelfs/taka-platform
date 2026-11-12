@@ -165,6 +165,7 @@
     }
   },
   "event": {
+    "search_timezones": "Search timezones",
     "timezone": "Event timezone",
     "view_timezone": "Also show times in",
     "original_timezone": "Event timezone only",

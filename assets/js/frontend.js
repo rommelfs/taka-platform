@@ -124,7 +124,11 @@
 		var requested = requestedTicketTab();
 		var tab = ticketTabByName(requested);
 		if (!tab) {
-			return false;
+			var single = requested && document.querySelector('[data-taka-single-event="' + takaCssEscape(requested) + '"]');
+			if (!single) { return false; }
+			setActiveLocation(requested);
+			if (replaceUrl) { updateTicketUrl(requested, true); }
+			return true;
 		}
 		activateTab(tab, { updateUrl: !!replaceUrl, replaceUrl: !!replaceUrl });
 		return true;
@@ -534,6 +538,10 @@
 		if (activeTab) {
 			setActiveLocation(activeTab.getAttribute('data-tab'));
 		}
+	});
+
+	window.addEventListener('hashchange', function () {
+		if (activateRequestedTicketTab(false)) { scrollToTicketsFromHash(); }
 	});
 
 	window.addEventListener('popstate', function () {

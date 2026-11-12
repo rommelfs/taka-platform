@@ -50,7 +50,7 @@ class TAKA_Platform_Event_Time {
 	public static function select( $name, $value, $automatic = true ) {
 		$options = DateTimeZone::listIdentifiers();
 		if ( '' !== $value && ! in_array( $value, $options, true ) ) { array_unshift( $options, $value ); }
-		$html = '<select class="widefat" name="' . esc_attr( $name ) . '">';
+		$html = '<select data-taka-timezone-search data-search-label="' . esc_attr( taka_tour_translate( 'event.search_timezones', 'Search timezones' ) ) . '" class="widefat" name="' . esc_attr( $name ) . '">';
 		if ( $automatic ) { $html .= '<option value="">' . esc_html( taka_tour_translate( 'event.automatic_timezone', 'Automatic (event country, then website timezone)' ) ) . '</option>'; }
 		foreach ( $options as $zone ) {
 			$html .= '<option value="' . esc_attr( $zone ) . '"' . selected( $value, $zone, false ) . '>' . esc_html( $zone ) . '</option>';

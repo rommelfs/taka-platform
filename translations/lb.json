@@ -165,6 +165,7 @@
     }
   },
   "event": {
+    "search_timezones": "Zäitzone sichen",
     "timezone": "Zäitzon vum Evenement",
     "view_timezone": "Auerzäiten och weisen an",
     "original_timezone": "Nëmmen d’Zäitzon vum Evenement",

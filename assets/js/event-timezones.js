@@ -38,6 +38,7 @@
 			if (localZone && localZone !== eventZone) { select.value = localZone; }
 			select.parentElement.hidden = false;
 			update();
+			if (typeof window !== 'undefined' && window.TakaTimezoneSearch) { window.TakaTimezoneSearch.initialize(select); }
 		});
 	}
 	if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initialize); }
