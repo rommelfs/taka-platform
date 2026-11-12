@@ -165,6 +165,7 @@
     }
   },
   "event": {
+    "search_timezones": "Rechercher un fuseau horaire",
     "timezone": "Fuseau horaire de l’événement",
     "view_timezone": "Afficher aussi les horaires dans",
     "original_timezone": "Uniquement le fuseau de l’événement",

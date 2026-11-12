@@ -4,6 +4,8 @@
  */
 
 defined( 'ABSPATH' ) || exit;
+$seminars = array_values( $seminars );
+$single_event = 1 === count( $seminars );
 $ticket_settings = TAKA_Platform_Data::get_ticket_section_settings();
 $archive_mode = function_exists( 'taka_platform_is_archive_mode' ) && taka_platform_is_archive_mode();
 ?>
@@ -20,12 +22,14 @@ $archive_mode = function_exists( 'taka_platform_is_archive_mode' ) && taka_platf
 		<p class="taka-ticket-section-intro"><?php echo esc_html( $ticket_settings['intro'] ); ?></p>
 	<?php endif; ?>
 	<div class="taka-tabs taka-ticket-tabs" data-taka-tabs>
+		<?php if ( ! $single_event ) : ?>
 		<div class="taka-tab-buttons taka-ticket-tabs__buttons" role="tablist" aria-label="<?php echo esc_attr( taka_tour_translate( 'tickets.select_event', 'Select event' ) ); ?>">
 			<?php foreach ( $seminars as $index => $seminar ) : ?>
 				<?php $panel_key = TAKA_Platform_Data::event_panel_key( $seminar ) ?: (string) $index; ?>
 				<button class="<?php echo 0 === $index ? 'is-active' : ''; ?>" type="button" role="tab" data-tab="<?php echo esc_attr( $panel_key ); ?>" aria-selected="<?php echo 0 === $index ? 'true' : 'false'; ?>"><?php echo esc_html( $seminar['ticket_tab_label'] ?? $seminar['title'] ?? $seminar['city'] ?? '' ); ?></button>
 			<?php endforeach; ?>
 		</div>
+		<?php endif; ?>
 		<?php foreach ( $seminars as $index => $seminar ) : ?>
 			<?php
 			$panel_key        = TAKA_Platform_Data::event_panel_key( $seminar ) ?: (string) $index;
@@ -50,7 +54,7 @@ $archive_mode = function_exists( 'taka_platform_is_archive_mode' ) && taka_platf
 				array( 'label' => taka_tour_translate( 'event.level', 'Level' ), 'value' => $seminar['level'] ?? '' ),
 			);
 			?>
-			<div class="taka-tab-panel <?php echo 0 === $index ? 'is-active' : ''; ?>" data-panel="<?php echo esc_attr( $panel_key ); ?>" role="tabpanel"<?php echo 0 === $index ? '' : ' hidden'; ?>>
+			<div class="taka-tab-panel <?php echo 0 === $index ? 'is-active' : ''; ?>" data-panel="<?php echo esc_attr( $panel_key ); ?>" <?php echo $single_event ? 'data-taka-single-event="' . esc_attr( $panel_key ) . '" role="region" aria-label="' . esc_attr( $seminar['title'] ?? '' ) . '"' : 'role="tabpanel"'; ?><?php echo 0 === $index ? '' : ' hidden'; ?>>
 				<div class="taka-ticket-booking-panel">
 					<div class="taka-ticket-event-panel">
 						<div class="taka-ticket-event-panel__header">

@@ -4062,7 +4062,7 @@ class TAKA_Platform_Data {
 			'rows'  => self::clean_info_rows( array(
 				array( 'label' => taka_tour_translate( 'event.title', 'Title', $lang ), 'value' => $event['title'] ?? '' ),
 				array( 'label' => taka_tour_translate( 'event.subtitle', 'Subtitle', $lang ), 'value' => $event['subtitle'] ?? '' ),
-				array( 'label' => taka_tour_translate( 'event.description', 'Description', $lang ), 'value' => $event['description'] ?? '' ),
+				array( 'label' => taka_tour_translate( 'event.description', 'Description', $lang ), 'value' => $event['description'] ?? '', 'format' => 'html' ),
 				array( 'label' => taka_tour_translate( 'event.date', 'Date', $lang ), 'value' => $event['date'] ?? '' ),
 				array( 'label' => taka_tour_translate( 'event.schedule', 'Schedule', $lang ), 'value' => $schedule ?: $time ),
 				array( 'label' => taka_tour_translate( 'event.doors_open', 'Doors open', $lang ), 'value' => empty( $event['doors_open'] ) ? '' : $event['doors_open'] . ' (' . TAKA_Platform_Event_Time::timezone( $event ) . ')' ),
@@ -4077,7 +4077,7 @@ class TAKA_Platform_Data {
 			) ),
 		);
 
-		if ( is_array( $organizer ) ) {
+		if ( is_array( $organizer ) && empty( $event['ticket_organizers'] ?? $event['organizer_relationships'] ?? array() ) ) {
 			$social = $organizer['social_links'] ?? ( $organizer['social'] ?? array() );
 			$drawers['organizer'] = array(
 				'type'  => 'organizer',
@@ -4089,7 +4089,7 @@ class TAKA_Platform_Data {
 				'rows'  => self::clean_info_rows( array(
 					array( 'label' => taka_tour_translate( 'event.organizer', 'Organizer', $lang ), 'value' => $organizer['name'] ?? '' ),
 					array( 'label' => taka_tour_translate( 'event.legal_name', 'Legal name', $lang ), 'value' => $organizer['legal_name'] ?? '' ),
-					array( 'label' => taka_tour_translate( 'event.description', 'Description', $lang ), 'value' => $organizer['description'] ?? '' ),
+					array( 'label' => taka_tour_translate( 'event.description', 'Description', $lang ), 'value' => $organizer['description'] ?? '', 'format' => 'html' ),
 					array( 'label' => taka_tour_translate( 'event.website', 'Website', $lang ), 'value' => $organizer['website'] ?? '', 'url' => $organizer['website'] ?? '' ),
 					array( 'label' => taka_tour_translate( 'event.email', 'Email', $lang ), 'value' => self::list_to_string( $organizer['emails'] ?? array() ) ),
 					array( 'label' => taka_tour_translate( 'event.contact', 'Contact', $lang ), 'value' => self::list_to_string( $organizer['contact_persons'] ?? array() ) ),
@@ -4116,7 +4116,7 @@ class TAKA_Platform_Data {
 					array( 'label' => taka_tour_translate( 'event.relationship', 'Relationship', $lang ), 'value' => $relationship['label'] ?? '' ),
 					array( 'label' => taka_tour_translate( 'event.organizer', 'Organizer', $lang ), 'value' => $rel_organizer['name'] ?? '' ),
 					array( 'label' => taka_tour_translate( 'event.legal_name', 'Legal name', $lang ), 'value' => $rel_organizer['legal_name'] ?? '' ),
-					array( 'label' => taka_tour_translate( 'event.description', 'Description', $lang ), 'value' => $rel_organizer['description'] ?? '' ),
+					array( 'label' => taka_tour_translate( 'event.description', 'Description', $lang ), 'value' => $rel_organizer['description'] ?? '', 'format' => 'html' ),
 					array( 'label' => taka_tour_translate( 'event.website', 'Website', $lang ), 'value' => $rel_organizer['website'] ?? '', 'url' => $rel_organizer['website'] ?? '' ),
 					array( 'label' => taka_tour_translate( 'event.email', 'Email', $lang ), 'value' => self::list_to_string( $rel_organizer['emails'] ?? array() ) ),
 					array( 'label' => taka_tour_translate( 'event.contact', 'Contact', $lang ), 'value' => self::list_to_string( $rel_organizer['contact_persons'] ?? array() ) ),

@@ -43,6 +43,8 @@ if ( '' === $drawer_id || ( empty( $rows ) && empty( $cards ) ) ) {
 						<dd>
 							<?php if ( '' !== $url ) : ?>
 								<a href="<?php echo esc_url( $url ); ?>" rel="noopener noreferrer"><?php echo esc_html( $value ); ?></a>
+							<?php elseif ( 'html' === ( $row['format'] ?? '' ) ) : ?>
+								<?php echo wp_kses_post( wpautop( $value ) ); ?>
 							<?php else : ?>
 								<?php echo esc_html( $value ); ?>
 							<?php endif; ?>
@@ -70,7 +72,7 @@ if ( '' === $drawer_id || ( empty( $rows ) && empty( $cards ) ) ) {
 								<div class="taka-info-modal__card-body">
 									<h5><?php echo esc_html( $card_name ); ?></h5>
 									<?php if ( ! empty( $card['legal_name'] ) ) : ?><p class="taka-info-modal__card-legal"><?php echo esc_html( $card['legal_name'] ); ?></p><?php endif; ?>
-									<?php if ( ! empty( $card['description'] ) ) : ?><p><?php echo esc_html( $card['description'] ); ?></p><?php endif; ?>
+									<?php if ( ! empty( $card['description'] ) ) : ?><div><?php echo wp_kses_post( wpautop( $card['description'] ) ); ?></div><?php endif; ?>
 									<ul class="taka-info-modal__card-links">
 										<?php if ( ! empty( $card['website'] ) ) : ?><li><a href="<?php echo esc_url( $card['website'] ); ?>" rel="noopener noreferrer"><?php echo esc_html( $card['website_label'] ?? taka_tour_translate( 'event.website', 'Website' ) ); ?></a></li><?php endif; ?>
 										<?php if ( ! empty( $card['email'] ) ) : ?><li><a href="mailto:<?php echo esc_attr( $card['email'] ); ?>"><?php echo esc_html( $card['email'] ); ?></a></li><?php endif; ?>

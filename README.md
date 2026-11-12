@@ -211,6 +211,10 @@ Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `tak
 
 ## Changelog
 
+### v2.6.4
+
+- Added timezone search in event editors and public schedules, rendered formatted event descriptions safely in detail dialogs, removed duplicate legacy organizer dialogs, and displayed single events directly without redundant overview cards or tabs.
+
 ### v2.6.3
 
 - Added selectable event timezones, original and visitor timezone schedule displays, timezone details on native tickets, and timezone-aware UTC calendar exports.

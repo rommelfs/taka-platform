@@ -165,6 +165,7 @@
     }
   },
   "event": {
+    "search_timezones": "Tijdzones zoeken",
     "timezone": "Tijdzone van het evenement",
     "view_timezone": "Tijden ook weergeven in",
     "original_timezone": "Alleen de tijdzone van het evenement",

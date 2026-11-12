@@ -322,6 +322,7 @@ class TAKA_Platform_Admin {
 
 		wp_enqueue_media();
 		wp_enqueue_style( 'taka-platform-admin', TAKA_PLATFORM_PLUGIN_URL . 'assets/css/admin.css', array(), TAKA_PLATFORM_VERSION );
+		wp_enqueue_script( 'taka-platform-timezone-search', TAKA_PLATFORM_PLUGIN_URL . 'assets/js/timezone-search.js', array(), TAKA_PLATFORM_VERSION, true );
 		$admin_dependencies = array();
 		if ( false !== strpos( (string) $hook, 'taka-platform-event-operations' ) ) {
 			wp_enqueue_script( 'taka-platform-html5-qrcode', TAKA_PLATFORM_PLUGIN_URL . 'assets/vendor/html5-qrcode.min.js', array(), '2.3.8', true );
