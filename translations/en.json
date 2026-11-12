@@ -165,6 +165,11 @@
     }
   },
   "event": {
+    "timezone": "Event timezone",
+    "view_timezone": "Also show times in",
+    "original_timezone": "Event timezone only",
+    "automatic_timezone": "Automatic (event country, then website timezone)",
+
     "date": "Date",
     "time": "Time",
     "doors_open": "Doors open",

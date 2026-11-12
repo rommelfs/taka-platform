@@ -2450,7 +2450,6 @@ class TAKA_Platform_Admin {
 		self::event_option_select( $post->ID, 'country', __( 'Country', 'taka-platform' ) );
 		self::render_derived_country_fields( $post->ID );
 		self::text( $post->ID, 'city', __( 'City', 'taka-platform' ) );
-		self::text( $post->ID, 'timezone', __( 'Timezone override', 'taka-platform' ) );
 		self::event_option_select( $post->ID, 'format', __( 'Format', 'taka-platform' ) );
 		self::event_option_select( $post->ID, 'audience', __( 'Audience', 'taka-platform' ) );
 		self::event_option_select( $post->ID, 'level', __( 'Level', 'taka-platform' ) );
@@ -2458,6 +2457,8 @@ class TAKA_Platform_Admin {
 		self::admin_section_close();
 
 		self::admin_section_open( __( 'Dates & schedule', 'taka-platform' ), __( 'Program items are grouped by date on the frontend schedule.', 'taka-platform' ), true, 'taka-admin-section--essential', 'event-dates-schedule' );
+		self::field( __( 'Event timezone', 'taka-platform' ), TAKA_Platform_Event_Time::select( '_taka_timezone', (string) self::meta( $post->ID, 'timezone' ) ) );
+		echo '<p class="description">' . esc_html( TAKA_Platform_Event_Time::editor_help() ) . '</p>';
 		self::text( $post->ID, 'doors_open', __( 'Doors open', 'taka-platform' ) );
 		self::render_event_program_fields( $post->ID );
 		self::admin_section_close();
@@ -2989,6 +2990,7 @@ class TAKA_Platform_Admin {
 			$key = '_taka_' . $field;
 			if ( ! isset( $_POST[ $key ] ) ) { delete_post_meta( $post_id, $key ); continue; }
 			$value = wp_unslash( $_POST[ $key ] );
+			if ( 'timezone' === $field && '' !== $value && ! TAKA_Platform_Event_Time::valid_timezone( $value ) ) { continue; }
 			if ( in_array( $field, array( 'logo_id', 'image_id', 'group_image_id', 'parking_image_id', 'organizer_id', 'venue_id', 'sort_order', 'tour_order', 'route_order' ), true ) ) { $value = absint( $value ); }
 			elseif ( in_array( $field, array( 'route_map_x', 'route_map_y', 'route_map_label_x', 'route_map_label_y' ), true ) ) { $value = is_numeric( $value ) ? (string) max( 0, min( 100, (float) $value ) ) : ''; }
 			elseif ( 'route_map_label_anchor' === $field ) { $value = in_array( sanitize_key( $value ), array( 'left', 'right', 'center' ), true ) ? sanitize_key( $value ) : ''; }

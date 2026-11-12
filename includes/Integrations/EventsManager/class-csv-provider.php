@@ -34,6 +34,7 @@ class TAKA_Platform_CSV_Provider implements TAKA_Platform_Event_Export_Provider_
 			'ticket_door_note',
 			'event_url',
 			'image_url',
+			'timezone',
 		);
 		return self::csv_from_rows( $columns, $events );
 	}

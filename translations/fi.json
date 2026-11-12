@@ -165,6 +165,11 @@
     }
   },
   "event": {
+    "timezone": "Tapahtuman aikavyöhyke",
+    "view_timezone": "Näytä ajat myös aikavyöhykkeellä",
+    "original_timezone": "Vain tapahtuman aikavyöhyke",
+    "automatic_timezone": "Automaattinen (tapahtumamaa, sitten sivuston aikavyöhyke)",
+
     "date": "Päivä",
     "time": "Aika",
     "doors_open": "Ovet avataan",

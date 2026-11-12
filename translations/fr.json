@@ -165,6 +165,11 @@
     }
   },
   "event": {
+    "timezone": "Fuseau horaire de l’événement",
+    "view_timezone": "Afficher aussi les horaires dans",
+    "original_timezone": "Uniquement le fuseau de l’événement",
+    "automatic_timezone": "Automatique (pays de l’événement, puis fuseau du site)",
+
     "date": "Date",
     "time": "Horaire",
     "doors_open": "Ouverture des portes",

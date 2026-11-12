@@ -910,7 +910,6 @@ class TAKA_Platform_Admin_Event_Assistant {
 		self::option_select( $context, 'country', __( 'Country', 'taka-platform' ) );
 		self::derived_country_hint( $context );
 		self::text_field( $context, 'city', __( 'City', 'taka-platform' ) );
-		self::text_field( $context, 'timezone', __( 'Timezone override', 'taka-platform' ) );
 		self::option_select( $context, 'format', __( 'Format', 'taka-platform' ) );
 		self::option_select( $context, 'audience', __( 'Audience', 'taka-platform' ) );
 		self::option_select( $context, 'level', __( 'Level', 'taka-platform' ) );
@@ -918,6 +917,8 @@ class TAKA_Platform_Admin_Event_Assistant {
 	}
 
 	public static function render_dates_section( $context ) {
+		self::field( __( 'Event timezone', 'taka-platform' ), TAKA_Platform_Event_Time::select( '_taka_timezone', (string) self::value( $context, 'timezone' ) ) );
+		echo '<p class="description">' . esc_html( TAKA_Platform_Event_Time::editor_help() ) . '</p>';
 		self::text_field( $context, 'doors_open', __( 'Doors open', 'taka-platform' ) );
 		self::render_program_items( $context );
 	}

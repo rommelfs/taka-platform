@@ -165,6 +165,11 @@
     }
   },
   "event": {
+    "timezone": "イベントのタイムゾーン",
+    "view_timezone": "次のタイムゾーンの時刻も表示",
+    "original_timezone": "イベントのタイムゾーンのみ",
+    "automatic_timezone": "自動（開催国、次にサイトのタイムゾーン）",
+
     "date": "日付",
     "time": "時間",
     "doors_open": "開場",

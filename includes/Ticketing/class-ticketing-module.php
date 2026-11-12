@@ -694,6 +694,10 @@ class TAKA_Ticketing_Module {
 				'time_end'   => get_post_meta( $event_id, '_taka_time_end', true ),
 			)
 		);
+		$details['timezone'] = TAKA_Platform_Event_Time::timezone( array(
+			'timezone' => get_post_meta( $event_id, '_taka_timezone', true ),
+			'country' => get_post_meta( $event_id, '_taka_country', true ),
+		) );
 		$program_items = array_values( $program_items );
 		if ( ! empty( $program_items ) ) {
 			usort( $program_items, array( 'TAKA_Platform_Data', 'compare_program_items' ) );

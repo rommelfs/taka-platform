@@ -32,7 +32,7 @@ $archive_mode = function_exists( 'taka_platform_is_archive_mode' ) && taka_platf
 			$share_event      = array_merge( $seminar, array( 'slug' => $panel_key ) );
 			$share_url        = TAKA_Platform_Data::event_share_url( $share_event, taka_tour_current_language() );
 			$pretix_event_url = TAKA_Platform_Data::pretix_event_url( $seminar );
-			$time_display     = implode( '–', array_filter( array( $seminar['time_start'] ?? '', $seminar['time_end'] ?? '' ) ) );
+			$time_display     = TAKA_Platform_Event_Time::range_label( $seminar, $seminar );
 			$drawers          = is_array( $seminar['info_drawers'] ?? null ) ? $seminar['info_drawers'] : array();
 			$event_key        = sanitize_html_class( (string) $panel_key );
 			$organizer        = is_array( $seminar['organizer_full'] ?? null ) ? $seminar['organizer_full'] : array();
@@ -44,7 +44,7 @@ $archive_mode = function_exists( 'taka_platform_is_archive_mode' ) && taka_platf
 			$meta_items       = array(
 				array( 'label' => taka_tour_translate( 'event.date', 'Date' ), 'value' => $seminar['date'] ?? '' ),
 				array( 'label' => taka_tour_translate( 'event.time', 'Time' ), 'value' => empty( $seminar['program_groups'] ) ? $time_display : '' ),
-				array( 'label' => taka_tour_translate( 'event.doors_open', 'Doors open' ), 'value' => $seminar['doors_open'] ?? '' ),
+				array( 'label' => taka_tour_translate( 'event.doors_open', 'Doors open' ), 'value' => empty( $seminar['doors_open'] ) ? '' : $seminar['doors_open'] . ' (' . TAKA_Platform_Event_Time::timezone( $seminar ) . ')' ),
 				array( 'label' => taka_tour_translate( 'seminar.format_label', 'Format' ), 'value' => $seminar['format'] ?? '' ),
 				array( 'label' => taka_tour_translate( 'event.audience', 'Audience' ), 'value' => $seminar['audience'] ?? '' ),
 				array( 'label' => taka_tour_translate( 'event.level', 'Level' ), 'value' => $seminar['level'] ?? '' ),
@@ -108,24 +108,7 @@ $archive_mode = function_exists( 'taka_platform_is_archive_mode' ) && taka_platf
 									<?php endif; ?>
 								</dl>
 								<?php echo taka_tour_render_template( 'partials/event-videos.php', array( 'seminar' => $seminar, 'videos' => $seminar['promo_videos'] ?? array() ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-								<?php if ( ! empty( $seminar['program_groups'] ) ) : ?>
-									<div class="taka-program-summary" aria-label="<?php echo esc_attr( taka_tour_translate( 'event.schedule', 'Schedule' ) ); ?>">
-									<h4><?php echo esc_html( taka_tour_translate( 'event.seminar_plan', 'Seminar plan' ) ); ?></h4>
-									<?php foreach ( $seminar['program_groups'] as $program_group ) : ?>
-										<div class="taka-program-summary__day">
-											<div class="taka-program-summary__date-group">
-												<strong class="taka-program-summary__day-label"><?php echo esc_html( $program_group['label'] ?? '' ); ?></strong>
-												<?php if ( ! empty( $program_group['date_label'] ) ) : ?><span class="taka-program-summary__date"><?php echo esc_html( $program_group['date_label'] ); ?></span><?php endif; ?>
-											</div>
-											<div class="taka-program-summary__items">
-												<?php foreach ( $program_group['items'] as $program_item ) : ?>
-													<div class="taka-program-summary__item"><span class="taka-program-summary__time"><?php echo esc_html( implode( '–', array_filter( array( $program_item['time_start'] ?? '', $program_item['time_end'] ?? '' ) ) ) ); ?></span><span class="taka-program-summary__title"><?php echo esc_html( $program_item['title'] ?? '' ); ?></span></div>
-												<?php endforeach; ?>
-											</div>
-										</div>
-									<?php endforeach; ?>
-								</div>
-							<?php endif; ?>
+								<?php if ( ! empty( $seminar['program_groups'] ) ) { echo taka_tour_render_template( 'partials/event-schedule.php', array( 'seminar' => $seminar ) ); } // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 						</div>
 						<?php if ( '' !== trim( (string) ( $seminar['description'] ?? '' ) ) ) : ?>
 							<?php TAKA_Platform_Data::log_seminar_description_render( $seminar, $seminar['description'] ); ?>

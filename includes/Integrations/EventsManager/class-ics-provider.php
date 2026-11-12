@@ -20,9 +20,15 @@ class TAKA_Platform_ICS_Provider implements TAKA_Platform_Event_Export_Provider_
 			'METHOD:PUBLISH',
 		);
 		foreach ( $events as $event ) {
-			$start = $this->date_time( $event['start_date'] ?? '', $event['start_time'] ?? '' );
-			if ( '' === $start ) { continue; }
-			$end = $this->date_time( $event['end_date'] ?? ( $event['start_date'] ?? '' ), $event['end_time'] ?? '' );
+			list( $start_date, $end_date ) = TAKA_Platform_Event_Time::range( $event, array(
+				'date' => $event['start_date'] ?? '',
+				'end_date' => $event['end_date'] ?? ( $event['start_date'] ?? '' ),
+				'time_start' => ! empty( $event['start_time'] ) ? $event['start_time'] : '00:00',
+				'time_end' => ! empty( $event['end_time'] ) ? $event['end_time'] : '00:00',
+			) );
+			if ( ! $start_date ) { continue; }
+			$start = $start_date->setTimezone( new DateTimeZone( 'UTC' ) )->format( 'Ymd\THis\Z' );
+			$end = $end_date && ! empty( $event['end_time'] ) ? $end_date->setTimezone( new DateTimeZone( 'UTC' ) )->format( 'Ymd\THis\Z' ) : '';
 			$lines[] = 'BEGIN:VEVENT';
 			$lines[] = 'UID:' . $this->escape( ( $event['external_id'] ?? $event['taka_event_id'] ?? uniqid( 'taka-', true ) ) . '@taka-platform' );
 			$lines[] = 'DTSTAMP:' . gmdate( 'Ymd\THis\Z' );
@@ -36,14 +42,6 @@ class TAKA_Platform_ICS_Provider implements TAKA_Platform_Event_Export_Provider_
 		}
 		$lines[] = 'END:VCALENDAR';
 		return implode( "\r\n", $lines ) . "\r\n";
-	}
-
-	private function date_time( $date, $time ) {
-		$date = preg_replace( '/[^0-9-]/', '', (string) $date );
-		if ( '' === $date ) { return ''; }
-		$time = preg_replace( '/[^0-9:]/', '', (string) $time );
-		if ( '' === $time ) { $time = '00:00'; }
-		return gmdate( 'Ymd\THis\Z', strtotime( $date . ' ' . $time ) );
 	}
 
 	private function escape( $value ) {
