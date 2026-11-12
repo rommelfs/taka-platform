@@ -1520,3 +1520,20 @@ body.admin-bar {
 .taka-tour-directory__card h2 a { text-decoration: none; }
 .taka-tour-directory__card h2 a:hover,
 .taka-tour-directory__card h2 a:focus-visible { text-decoration: underline; text-underline-offset: .15em; }
+
+/* Timezone controls stay inside the event schedule, including on narrow cards. */
+.taka-program-summary .taka-timezone-picker {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: .5rem;
+	margin-block: .75rem;
+}
+.taka-program-summary .taka-timezone-picker[hidden],
+.taka-program-summary .taka-timezone-converted[hidden] { display: none; }
+.taka-program-summary .taka-timezone-picker select { max-width: 100%; min-width: 0; }
+.taka-program-summary .taka-timezone-original,
+.taka-program-summary .taka-program-summary__time { overflow-wrap: anywhere; white-space: normal; }
+.taka-program-summary .taka-timezone-converted { display: block; margin-top: .25rem; font-weight: normal; }
+.taka-program-summary[data-taka-timezone-schedule] .taka-program-summary__item { grid-template-columns: minmax(0, 1fr); }
+.taka-program-summary[data-taka-timezone-schedule] .taka-program-summary__time { min-width: 0; }

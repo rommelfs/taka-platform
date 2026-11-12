@@ -6,8 +6,7 @@
 defined( 'ABSPATH' ) || exit;
 
 $pretix_event_url = TAKA_Platform_Data::pretix_event_url( $seminar );
-$time_parts       = array_filter( array( $seminar['time_start'] ?? '', $seminar['time_end'] ?? '' ) );
-$time_display     = implode( '–', $time_parts );
+$time_display     = TAKA_Platform_Event_Time::range_label( $seminar, $seminar );
 $summary_details  = array(
 	array( 'label' => taka_tour_translate( 'event.date', 'Datum' ), 'value' => $seminar['date'] ?? '' ),
 	array( 'label' => taka_tour_translate( 'event.time', 'Zeit' ), 'value' => empty( $seminar['program_groups'] ) ? $time_display : '' ),
@@ -31,14 +30,7 @@ $summary_details  = array(
 			<div><dt><?php echo esc_html( $detail['label'] ); ?></dt><dd><?php echo esc_html( $detail['value'] ); ?></dd></div>
 		<?php endforeach; ?>
 	</dl>
-	<?php if ( ! empty( $seminar['program_groups'] ) ) : ?>
-		<div class="taka-program-summary taka-program-summary--card">
-			<h4><?php echo esc_html( taka_tour_translate( 'event.seminar_plan', 'Seminar plan' ) ); ?></h4>
-			<?php foreach ( $seminar['program_groups'] as $program_group ) : ?>
-				<div class="taka-program-summary__day"><div class="taka-program-summary__date-group"><strong class="taka-program-summary__day-label"><?php echo esc_html( $program_group['label'] ?? '' ); ?></strong><?php if ( ! empty( $program_group['date_label'] ) ) : ?><span class="taka-program-summary__date"><?php echo esc_html( $program_group['date_label'] ); ?></span><?php endif; ?></div><div class="taka-program-summary__items"><?php foreach ( $program_group['items'] as $program_item ) : ?><div class="taka-program-summary__item"><span class="taka-program-summary__time"><?php echo esc_html( implode( '–', array_filter( array( $program_item['time_start'] ?? '', $program_item['time_end'] ?? '' ) ) ) ); ?></span><span class="taka-program-summary__title"><?php echo esc_html( $program_item['title'] ?? '' ); ?></span></div><?php endforeach; ?></div></div>
-			<?php endforeach; ?>
-		</div>
-	<?php endif; ?>
+	<?php if ( ! empty( $seminar['program_groups'] ) ) { echo taka_tour_render_template( 'partials/event-schedule.php', array( 'seminar' => $seminar ) ); } // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 	<?php if ( '' !== $pretix_event_url ) : ?>
 		<div class="taka-seminar-pretix">
 			<?php echo taka_tour_render_template( 'partials/ticket-widget.php', array( 'event' => $pretix_event_url, 'label' => $seminar['title'] ?? '', 'seminar' => $seminar ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>

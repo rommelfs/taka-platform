@@ -109,6 +109,21 @@ Recurring fields such as ticket provider, ticket status, format, audience, level
 
 The Hero location overview supports configurable display modes: list, flags, route map and route map with list. The route map is a lightweight SVG/HTML tour infographic with clickable event stops derived from the same resolved event data used by tickets and event lists. It uses explicit `tour_order` / legacy `route_order` values when present, otherwise event start datetime, optional `route_map_x` / `route_map_y` event or venue marker coordinates, automatic route layout fallback, flags and accessible text links for keyboard, screen-reader and mobile users. Labels are placed by the reusable Rendering label-layout helper, which tries compact marker-adjacent placements, rejects clipped or colliding rectangles and keeps labels unwrapped without extra leader lines. Legacy route-label coordinate and leader-line fields remain stored for compatibility, but the frontend route map now controls label placement automatically. Legacy `map` and `map_with_list` display modes are normalized to the route map modes for backward compatibility.
 
+## Event timezones
+
+Choose **Event timezone** under **Dates & schedule** in the Event editor or Assistant.
+Enter all program dates, times and doors-open times in that timezone. Fukuoka uses
+`Asia/Tokyo`: a seminar at 21:00 in Fukuoka is entered as **21:00 + Asia/Tokyo**.
+The public schedule always shows original times and offers an additional timezone
+selector, initially showing the visitor’s timezone when different. Converted dates
+are shown explicitly to handle sessions crossing midnight.
+
+Existing clock values are preserved. Changing the event timezone does not convert
+those values: when changing a previously entered 13:00 Berlin time to Asia/Tokyo,
+change the program time to 21:00 as well (winter dates). European summer time is
+automatically accounted for. ICS feeds export UTC instants; JSON/REST and generic
+CSV exports include the event timezone. See [event timezone details](docs/event-timezones.md).
+
 ## Import / Export
 
 The Import / Export screen supports:
@@ -195,6 +210,10 @@ The script checks PHP syntax for all `*.php` files with `php -l` and scans the r
 Existing pages using `[taka_homepage]` and existing CPT data (`taka_event`, `taka_organizer`, `taka_venue`) continue to work. Existing constants such as `TAKA_TOUR_VERSION` map to the new platform constants. Existing class names such as `Taka_Tour_Data` are aliased to the new `TAKA_Platform_*` classes.
 
 ## Changelog
+
+### v2.6.3
+
+- Added selectable event timezones, original and visitor timezone schedule displays, timezone details on native tickets, and timezone-aware UTC calendar exports.
 
 ### v2.3.0
 

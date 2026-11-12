@@ -104,6 +104,7 @@ class TAKA_Platform_Organizer_Dashboard {
 		foreach ( array( 'date_start' => __( 'Start date', 'taka-platform' ), 'date_end' => __( 'End date', 'taka-platform' ), 'time_start' => __( 'Start time', 'taka-platform' ), 'time_end' => __( 'End time', 'taka-platform' ), 'doors_open' => __( 'Doors open', 'taka-platform' ), 'format' => __( 'Format', 'taka-platform' ), 'audience' => __( 'Audience', 'taka-platform' ), 'level' => __( 'Level', 'taka-platform' ), 'ticket_mode' => __( 'Ticket mode', 'taka-platform' ), 'ticket_provider' => __( 'Ticket provider', 'taka-platform' ), 'ticket_shop_url' => __( 'Ticket shop URL', 'taka-platform' ), 'ticket_status' => __( 'Ticket status', 'taka-platform' ), 'ticket_door_price' => __( 'Door price / admission on site', 'taka-platform' ), 'ticket_door_price_reduced' => __( 'Reduced door price', 'taka-platform' ), 'ticket_door_price_child' => __( 'Child door price', 'taka-platform' ), 'ticket_door_price_member' => __( 'Member door price', 'taka-platform' ) ) as $field => $label ) {
 			$out .= self::input( $field, $label, self::meta_value( $event_id, $field ) );
 		}
+		$out .= '<p><label>' . esc_html( taka_tour_translate( 'event.timezone', 'Event timezone' ) ) . '<br>' . TAKA_Platform_Event_Time::select( 'timezone', (string) self::meta_value( $event_id, 'timezone' ) ) . '</label></p>';
 		$out .= self::media_field( 'image_id', __( 'Action image', 'taka-platform' ), self::meta_value( $event_id, 'image_id' ), false );
 		$out .= self::media_field( 'group_image_id', __( 'Group image', 'taka-platform' ), self::meta_value( $event_id, 'group_image_id' ), false );
 		$out .= self::media_field( 'gallery_image_ids', __( 'Gallery images', 'taka-platform' ), self::meta_value( $event_id, 'gallery_image_ids' ), true );
@@ -172,6 +173,7 @@ class TAKA_Platform_Organizer_Dashboard {
 		foreach ( self::event_meta_fields() as $field ) {
 			if ( 'organizer_id' === $field ) { continue; }
 			$value = wp_unslash( $_POST[ $field ] ?? '' );
+			if ( 'timezone' === $field && '' !== $value && ! TAKA_Platform_Event_Time::valid_timezone( $value ) ) { continue; }
 			if ( in_array( $field, array( 'venue_id', 'image_id', 'group_image_id' ), true ) ) { $value = absint( $value ); }
 			elseif ( 'gallery_image_ids' === $field ) { $value = implode( ',', array_map( 'absint', preg_split( '/\s*,\s*/', (string) $value ) ) ); }
 			elseif ( 'ticket_shop_url' === $field ) { $value = esc_url_raw( $value ); }
@@ -184,7 +186,7 @@ class TAKA_Platform_Organizer_Dashboard {
 		return taka_tour_translate( 'dashboard.event_saved', 'Event saved.' );
 	}
 
-	private static function event_meta_fields() { return array( 'subtitle', 'organizer_id', 'venue_id', 'date_start', 'date_end', 'time_start', 'time_end', 'doors_open', 'format', 'audience', 'level', 'ticket_mode', 'ticket_provider', 'ticket_shop_url', 'ticket_status', 'ticket_door_price', 'ticket_door_price_reduced', 'ticket_door_price_child', 'ticket_door_price_member', 'image_id', 'group_image_id', 'gallery_image_ids', 'short_description', 'long_description', 'ticket_card_text', 'notes', 'parking', 'accessibility' ); }
+	private static function event_meta_fields() { return array( 'subtitle', 'organizer_id', 'venue_id', 'date_start', 'date_end', 'time_start', 'time_end', 'doors_open', 'timezone', 'format', 'audience', 'level', 'ticket_mode', 'ticket_provider', 'ticket_shop_url', 'ticket_status', 'ticket_door_price', 'ticket_door_price_reduced', 'ticket_door_price_child', 'ticket_door_price_member', 'image_id', 'group_image_id', 'gallery_image_ids', 'short_description', 'long_description', 'ticket_card_text', 'notes', 'parking', 'accessibility' ); }
 	private static function dashboard_events() {
 		$args = array( 'post_type' => TAKA_PLATFORM_CPT_EVENT, 'post_status' => array( 'publish', 'draft', 'pending', 'future', 'private' ), 'posts_per_page' => -1, 'orderby' => 'modified', 'order' => 'DESC' );
 		if ( ! current_user_can( 'manage_options' ) ) {

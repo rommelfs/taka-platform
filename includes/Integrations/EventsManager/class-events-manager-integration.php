@@ -120,6 +120,7 @@ class TAKA_Platform_Events_Manager_Integration {
 				'translations' => is_array( $event['text_translations'] ?? null ) ? $event['text_translations'] : array(),
 				'start_date' => $range['start_date'],
 				'start_time' => $range['start_time'],
+				'timezone' => TAKA_Platform_Event_Time::timezone( $event ),
 				'end_date' => $range['end_date'],
 				'end_time' => $range['end_time'],
 				'program_items' => array_values( (array) ( $event['program_items'] ?? array() ) ),

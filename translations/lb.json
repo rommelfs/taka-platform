@@ -165,6 +165,11 @@
     }
   },
   "event": {
+    "timezone": "Zäitzon vum Evenement",
+    "view_timezone": "Auerzäiten och weisen an",
+    "original_timezone": "Nëmmen d’Zäitzon vum Evenement",
+    "automatic_timezone": "Automatesch (Land vum Evenement, duerno d’Zäitzon vun der Websäit)",
+
     "date": "Datum",
     "time": "Zäit",
     "doors_open": "Dieren op",

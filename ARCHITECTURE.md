@@ -447,3 +447,14 @@ The planned architecture remains WordPress-compatible but moves toward:
 - optional integration providers
 
 Future concepts in this document are marked as future direction. They should not be treated as implemented until corresponding code and documentation exist.
+
+## Event timezone interpretation
+
+`includes/Support/class-event-time.php` interprets existing event-local dates and
+clock values using `_taka_timezone`, the legacy country suggestion, or the website
+timezone. Editors use a shared native timezone select. Public schedules share
+`templates/partials/event-schedule.php` and the progressive enhancement in
+`assets/js/event-timezones.js`; original times remain server-rendered, with optional
+visitor-zone conversions from offset-bearing ISO instants. The same service drives
+UTC ICS exports. See [event timezones](docs/event-timezones.md) for compatibility
+and migration details.

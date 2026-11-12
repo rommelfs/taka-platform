@@ -5,6 +5,8 @@
 
 defined( 'ABSPATH' ) || exit;
 
+require_once dirname( __DIR__ ) . '/Support/class-event-time.php';
+
 class TAKA_Platform_Data {
 	const EVENT_POST_TYPE = TAKA_PLATFORM_CPT_EVENT;
 	const ORGANIZER_POST_TYPE = TAKA_PLATFORM_CPT_ORGANIZER;
@@ -3211,11 +3213,11 @@ class TAKA_Platform_Data {
 		return array_values( $groups );
 	}
 
-	private static function program_summary_text( $items, $lang ) {
+	private static function program_summary_text( $items, $lang, $event = array() ) {
 		$lines = array();
 		foreach ( self::program_groups( $items, $lang ) as $group ) {
 			foreach ( $group['items'] as $item ) {
-				$time = implode( '–', array_filter( array( $item['time_start'] ?? '', $item['time_end'] ?? '' ) ) );
+				$time = TAKA_Platform_Event_Time::range_label( $event, $item );
 				$text = trim( implode( ' ', array_filter( array( $group['label'] ?? '', $time, $item['title'] ?? '' ) ) ) );
 				if ( ! empty( $item['notes'] ) ) { $text .= "\n" . $item['notes']; }
 				if ( '' !== $text ) { $lines[] = $text; }
@@ -3353,7 +3355,8 @@ class TAKA_Platform_Data {
 			}
 			$event['date'] = self::format_event_date( $event );
 			$event['program_groups'] = self::program_groups( $event['program_items'], $lang );
-			$event['program_summary'] = self::program_summary_text( $event['program_items'], $lang );
+			$event['timezone'] = TAKA_Platform_Event_Time::timezone( $event );
+			$event['program_summary'] = self::program_summary_text( $event['program_items'], $lang, $event );
 			$event['organizer_relationships'] = $organizer_relationships;
 			$event['ticket_organizers'] = $ticket_organizers;
 			$event['organizer_data'] = is_array( $organizer ) ? $organizer : null;
@@ -4048,8 +4051,8 @@ class TAKA_Platform_Data {
 
 	/** Build prepared drawer view data; templates should not query raw meta. */
 	private static function build_info_drawers( $event, $organizer, $venue, $lang ) {
-		$time = implode( '–', array_filter( array( $event['time_start'] ?? '', $event['time_end'] ?? '' ) ) );
-		$schedule = $event['program_summary'] ?? self::program_summary_text( $event['program_items'] ?? array(), $lang );
+		$time = TAKA_Platform_Event_Time::range_label( $event, $event );
+		$schedule = $event['program_summary'] ?? self::program_summary_text( $event['program_items'] ?? array(), $lang, $event );
 		$drawers = array();
 		$drawers['event'] = array(
 			'type'  => 'event',
@@ -4062,7 +4065,7 @@ class TAKA_Platform_Data {
 				array( 'label' => taka_tour_translate( 'event.description', 'Description', $lang ), 'value' => $event['description'] ?? '' ),
 				array( 'label' => taka_tour_translate( 'event.date', 'Date', $lang ), 'value' => $event['date'] ?? '' ),
 				array( 'label' => taka_tour_translate( 'event.schedule', 'Schedule', $lang ), 'value' => $schedule ?: $time ),
-				array( 'label' => taka_tour_translate( 'event.doors_open', 'Doors open', $lang ), 'value' => $event['doors_open'] ?? '' ),
+				array( 'label' => taka_tour_translate( 'event.doors_open', 'Doors open', $lang ), 'value' => empty( $event['doors_open'] ) ? '' : $event['doors_open'] . ' (' . TAKA_Platform_Event_Time::timezone( $event ) . ')' ),
 				array( 'label' => taka_tour_translate( 'seminar.format_label', 'Format', $lang ), 'value' => $event['format'] ?? '' ),
 				array( 'label' => taka_tour_translate( 'event.audience', 'Audience', $lang ), 'value' => $event['audience'] ?? '' ),
 				array( 'label' => taka_tour_translate( 'event.level', 'Level', $lang ), 'value' => $event['level'] ?? '' ),

@@ -1153,6 +1153,9 @@ class TAKA_Ticketing_Ticket_Artifact_Service {
 				$lines[] = TAKA_Ticketing_Module::text( 'ticketing.' . $field, $fallback, $lang ) . ': ' . $details[ $field ];
 			}
 		}
+		if ( ! empty( $details['timezone'] ) ) {
+			$lines[] = TAKA_Ticketing_Module::text( 'event.timezone', 'Event timezone', $lang ) . ': ' . $details['timezone'];
+		}
 		$schedule = is_array( $details['schedule'] ?? null ) ? $details['schedule'] : array();
 		if ( count( $schedule ) > 1 ) {
 			foreach ( $schedule as $item ) {
